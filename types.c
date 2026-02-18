@@ -62,11 +62,21 @@ void array_push(
 }
 
 void array_extend(
-    void *data_ptr,
+    void **data_ptr,
     i64 *len,
     i64 *cap,
     i64 elem_size,
     struct ARENA_T* arena
 ) {
+    assert(*data_ptr);
 
+    i64 new_cap = 2 * (*cap);
+
+    void *new_data = arena_alloc(arena, new_cap * elem_size);
+    assert(new_data);
+
+    memcpy(new_data, *data_ptr, (*len) * elem_size);
+
+    *data_ptr = new_data;
+    *cap = new_cap;
 }

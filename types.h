@@ -61,7 +61,7 @@ for ( \
 #define ARRAY_EXTEND(array_ptr) \
 do { \
     array_extend( \
-        (array_ptr)->data, \
+        (void**)&((array_ptr)->data), \
         (array_ptr)->len, \
         (array_ptr)->cap, \
         sizeof(*((array_ptr)->data)), \
@@ -88,7 +88,7 @@ void array_push(
 );
 
 void array_extend(
-    void *data_ptr,
+    void **data_ptr,
     i64 *len,
     i64 *cap,
     i64 elem_size,
