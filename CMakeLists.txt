@@ -9,4 +9,6 @@ add_library(altcore STATIC
         arenas.c
         arenas.h
         strings.c
-        strings.h)
+        strings.h
+        defer.c
+        defer.h)
