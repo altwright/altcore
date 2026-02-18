@@ -9,6 +9,8 @@
 #include "assert.h"
 #include "arenas.h"
 
+void* kNullPtr = nullptr;
+
 void array_alloc(
     void **data_ptr,
     i64 *len,
@@ -37,26 +39,28 @@ void array_push(
     void **data_ptr,
     i64 *len,
     i64 *cap,
-    i64 elem_size,
+    i64 data_elem_size,
+    i64 new_elem_size,
     const void *new_elem,
     struct ARENA_T *arena
 ) {
+    assert(data_elem_size == new_elem_size);
     assert(*len >= 0);
     assert(*len <= *cap);
 
     if (*len == *cap) {
         i64 new_cap = 2 * (*cap);
-        void *new_data = arena_alloc(arena, new_cap * elem_size);
+        void *new_data = arena_alloc(arena, new_cap * new_elem_size);
         assert(new_data);
-        memcpy(new_data, *data_ptr, (*len) * elem_size);
+        memcpy(new_data, *data_ptr, (*len) * new_elem_size);
 
         *data_ptr = new_data;
         *cap = new_cap;
     }
 
     u8 *data_bytes = *data_ptr;
-    u8 *new_elem_bytes = data_bytes + (elem_size * (*len));
-    memcpy(new_elem_bytes, new_elem, elem_size);
+    u8 *new_elem_bytes = data_bytes + (new_elem_size * (*len));
+    memcpy(new_elem_bytes, new_elem, new_elem_size);
 
     (*len)++;
 }

@@ -22,6 +22,8 @@ typedef double f64;
 
 struct ARENA_T;
 
+extern void *kNullPtr;
+
 #ifndef ARRAY
 #define ARRAY(type) \
 type *data; \
@@ -70,21 +72,54 @@ do { \
 } while(0)
 #endif
 
+#ifndef ARRAY_ELEM
+#define ARRAY_ELEM(array_ptr, idx) \
+( \
+    ((idx) >= 0) && ((idx) < (array_ptr)->len) ? \
+        &((array_ptr)->data[(idx)]) : \
+        &kNullPtr[(idx)] \
+)
+#endif
+
+#ifndef ARRAY_PUSH
+#define ARRAY_PUSH(array_ptr, elem_ptr) \
+do { \
+    array_push( \
+        (void**)(&((array_ptr)->data)), \
+        &((array_ptr)->len), \
+        &((array_ptr)->cap), \
+        sizeof(*((array_ptr)->data)), \
+        sizeof(*(elem_ptr)), \
+        (const void*)(elem_ptr) \
+    ); \
+} while(0)
+#endif
+
+#ifndef ARRAY_POP
+#define ARRAY_POP(array_ptr) \
+( \
+(array_ptr)->len > 0 ? \
+(array_ptr)->data[--((array_ptr)->len)] : \
+kNullPtr[0] \
+)
+#endif
+
 void array_alloc(
     void **data_ptr,
     i64 *len,
     i64 *cap,
     i64 elem_size,
-    struct ARENA_T* arena
+    struct ARENA_T *arena
 );
 
 void array_push(
     void **data_ptr,
     i64 *len,
     i64 *cap,
-    i64 elem_size,
+    i64 data_elem_size,
+    i64 new_elem_size,
     const void *new_elem,
-    struct ARENA_T* arena
+    struct ARENA_T *arena
 );
 
 void array_extend(
@@ -92,7 +127,7 @@ void array_extend(
     i64 *len,
     i64 *cap,
     i64 elem_size,
-    struct ARENA_T* arena
+    struct ARENA_T *arena
 );
 
 #endif //ALTCORE_TYPES_H
