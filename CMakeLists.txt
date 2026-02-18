@@ -3,7 +3,7 @@ project(altcore C)
 
 set(CMAKE_C_STANDARD 23)
 
-add_library(altcore STATIC library.c
+add_library(altcore STATIC
         types.c
         types.h
         arenas.c
