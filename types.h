@@ -124,7 +124,7 @@ void array_push(
 
 void array_extend(
     void **data_ptr,
-    i64 *len,
+    const i64 *len,
     i64 *cap,
     i64 elem_size,
     struct ARENA_T *arena

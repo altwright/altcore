@@ -9,7 +9,7 @@
 #include "assert.h"
 #include "arenas.h"
 
-void* kNullPtr = nullptr;
+void *kNullPtr = nullptr;
 
 void array_alloc(
     void **data_ptr,
@@ -61,10 +61,10 @@ void array_push(
 
 void array_extend(
     void **data_ptr,
-    i64 *len,
+    const i64 *len,
     i64 *cap,
     i64 elem_size,
-    struct ARENA_T* arena
+    struct ARENA_T *arena
 ) {
     assert(*data_ptr);
 
