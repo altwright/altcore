@@ -24,8 +24,8 @@ struct ARENA_T;
 
 extern void *kNullPtr;
 
-#ifndef ARRAY
-#define ARRAY(type) \
+#ifndef ARRAY_TYPE
+#define ARRAY_TYPE(type) \
 struct ARENA_T* arena; \
 i64 len; \
 i64 cap; \
@@ -132,43 +132,43 @@ void array_extend(
 );
 
 typedef struct I8S_T {
-    ARRAY(i8)
+    ARRAY_TYPE(i8)
 } i8s;
 
 typedef struct I16S_T {
-    ARRAY(i16)
+    ARRAY_TYPE(i16)
 } i16s;
 
 typedef struct I32S_T {
-    ARRAY(i32)
+    ARRAY_TYPE(i32)
 } i32s;
 
 typedef struct I64S_T {
-    ARRAY(i64)
+    ARRAY_TYPE(i64)
 } i64s;
 
 typedef struct U8S_T {
-    ARRAY(u8)
+    ARRAY_TYPE(u8)
 } u8s;
 
 typedef struct U16S_T {
-    ARRAY(u16)
+    ARRAY_TYPE(u16)
 } u16s;
 
 typedef struct U32S_T {
-    ARRAY(u32)
+    ARRAY_TYPE(u32)
 } u32s;
 
 typedef struct U64S_T {
-    ARRAY(u64)
+    ARRAY_TYPE(u64)
 } u64s;
 
 typedef struct F32S_T {
-    ARRAY(f32)
+    ARRAY_TYPE(f32)
 } f32s;
 
 typedef struct F64S_T {
-    ARRAY(f64)
+    ARRAY_TYPE(f64)
 } f64s;
 
 #endif //ALTCORE_TYPES_H

@@ -13,4 +13,6 @@ add_library(altcore STATIC
         defer.c
         defer.h
         malloc.c
-        malloc.h)
+        malloc.h
+        hashmap.c
+        hashmap.h)
