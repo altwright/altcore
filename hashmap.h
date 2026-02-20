@@ -78,12 +78,12 @@ void hashmap_detect_type(HashmapType *type, const char *key_type_str);
                     default: \
                         break; \
                 } \
-                shdefault(*(default_val_ptr)); \
+                shdefault((default_val_ptr)); \
                 break; \
             } \
             case HASHMAP_TYPE_NON_STR_KEY: \
             { \
-                hmdefault(*(default_val_ptr)); \
+                hmdefault((default_val_ptr)); \
                 break; \
             } \
         } \
