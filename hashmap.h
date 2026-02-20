@@ -81,6 +81,8 @@ typedef enum HASHMAP_DEL_FREQ_E {
                 hmdefault((hashmap_ptr)->hash, *(default_val_ptr)); \
                 break; \
             } \
+            default: \
+                break; \
         } \
     } while(0)
 #endif
