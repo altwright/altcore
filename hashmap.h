@@ -97,6 +97,7 @@ typedef enum HASHMAP_DEL_FREQ_E {
             case HASHMAP_TYPE_NON_STR_KEY: \
             { \
                 hmfree((hashmap_ptr)->hash); \
+                (hashmap_ptr)->hash = nullptr; \
                 break; \
             } \
             default: \
