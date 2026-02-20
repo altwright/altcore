@@ -130,4 +130,44 @@ void array_extend(
     struct ARENA_T *arena
 );
 
+typedef struct I8S_T {
+    ARRAY(i8)
+} i8s;
+
+typedef struct I16S_T {
+    ARRAY(i16)
+} i16s;
+
+typedef struct I32S_T {
+    ARRAY(i32)
+} i32s;
+
+typedef struct I64S_T {
+    ARRAY(i64)
+} i64s;
+
+typedef struct U8S_T {
+    ARRAY(u8)
+} u8s;
+
+typedef struct U16S_T {
+    ARRAY(u16)
+} u16s;
+
+typedef struct U32S_T {
+    ARRAY(u32)
+} u32s;
+
+typedef struct U64S_T {
+    ARRAY(u64)
+} u64s;
+
+typedef struct F32S_T {
+    ARRAY(f32)
+} f32s;
+
+typedef struct F64S_T {
+    ARRAY(f64)
+} f64s;
+
 #endif //ALTCORE_TYPES_H
