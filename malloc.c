@@ -127,7 +127,7 @@ void *alt_malloc(size_t size) {
 
         if (!new_data) {
             AllocationInfo *next_alloc_info = (AllocationInfo *) (
-                (u8*)current_alloc_info +
+                (u8 *) current_alloc_info +
                 sizeof(AllocationInfo) +
                 current_alloc_info->cap
             );
@@ -167,4 +167,37 @@ void alt_free(void *ptr) {
 
     AllocationInfo *alloc_info = ptr - sizeof(AllocationInfo);
     alloc_info->used = -1;
+}
+
+void *alt_calloc(size_t num_elems, size_t elem_size) {
+    if (!g_buffer || !g_buffer->data || num_elems == 0 || elem_size == 0) {
+        return nullptr;
+    }
+
+    void *new_data = alt_malloc(num_elems * elem_size);
+    assert(new_data);
+
+    memset(new_data, 0, num_elems * elem_size);
+
+    return new_data;
+}
+
+void *alt_realloc(void *ptr, size_t new_size) {
+    if (!g_buffer || !g_buffer->data || !ptr || new_size == 0) {
+        return nullptr;
+    }
+
+    u8 *alloc_data = ptr;
+    AllocationInfo *alloc_info = (AllocationInfo *) (alloc_data - sizeof(AllocationInfo));
+    assert(alloc_info->cap >= 0 && alloc_info->used >= 0);
+
+    i64 copy_size = alloc_info->used > new_size ? (i64) new_size : alloc_info->used;
+
+    void *new_data = alt_malloc(new_size);
+
+    memcpy(new_data, alloc_data, copy_size);
+
+    alt_free(alloc_data);
+
+    return new_data;
 }
