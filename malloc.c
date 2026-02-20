@@ -22,6 +22,7 @@ typedef struct ALLOCATION_INFO_T {
 
 static MallocBuffer *g_buffer = nullptr;
 static mtx_t g_buffer_lock = {};
+static bool g_buffer_lock_initialized = false;
 
 static AllocationInfo create_empty_alloc_info() {
     return (AllocationInfo){
@@ -41,19 +42,25 @@ void alt_init(i64 initial_cap) {
         g_buffer->cap = (i64) sizeof(AllocationInfo) + aligned_cap;
         g_buffer->data = calloc(g_buffer->cap, sizeof(u8));
         assert(g_buffer->data);
+
+        AllocationInfo first_alloc_info = create_empty_alloc_info();
+        memcpy(g_buffer->data, &first_alloc_info, sizeof(first_alloc_info));
     }
 
-    AllocationInfo first_alloc_info = create_empty_alloc_info();
-    memcpy(g_buffer->data, &first_alloc_info, sizeof(first_alloc_info));
+    if (!g_buffer_lock_initialized) {
+        int res = mtx_init(&g_buffer_lock, mtx_plain);
+        assert(res == thrd_success);
 
-    int res = mtx_init(&g_buffer_lock, mtx_plain);
-    assert(res == thrd_success);
+        g_buffer_lock_initialized = true;
+    }
 }
 
 void alt_uninit() {
     MallocBuffer *current_buffer = g_buffer;
     while (current_buffer) {
-        free(current_buffer->data);
+        if (current_buffer->data) {
+            free(current_buffer->data);
+        }
         current_buffer->data = nullptr;
         current_buffer->cap = 0;
         MallocBuffer *next_buffer = current_buffer->next;
@@ -63,8 +70,11 @@ void alt_uninit() {
 
     g_buffer = nullptr;
 
-    mtx_destroy(&g_buffer_lock);
-    g_buffer_lock = (mtx_t){};
+    if (g_buffer_lock_initialized) {
+        mtx_destroy(&g_buffer_lock);
+        g_buffer_lock = (mtx_t){};
+        g_buffer_lock_initialized = false;
+    }
 }
 
 static void create_next_buffer(MallocBuffer *current_buffer, i64 new_alloc_size) {
