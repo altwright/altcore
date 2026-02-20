@@ -26,10 +26,10 @@ extern void *kNullPtr;
 
 #ifndef ARRAY
 #define ARRAY(type) \
-type *data; \
+struct ARENA_T* arena; \
 i64 len; \
 i64 cap; \
-struct ARENA_T* arena;
+type *data;
 #endif
 
 #ifndef ARRAY_MAKE
