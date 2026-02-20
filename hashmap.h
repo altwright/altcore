@@ -11,6 +11,7 @@
 typedef enum HASHMAP_TYPE_E {
 #ifndef X_HASHMAP_TYPES
 #define X_HASHMAP_TYPES \
+    X(NONE) \
     X(NON_STR_KEY) \
     X(STR_KEY) \
     X(COUNT)
@@ -27,6 +28,7 @@ typedef enum HASHMAP_TYPE_E {
 typedef enum HASHMAP_DEL_FREQ_E {
 #ifndef X_HASHMAP_DEL_FREQS
 #define X_HASHMAP_DEL_FREQS \
+    X(NONE) \
     X(LOW) \
     X(HIGH) \
     X(COUNT)
@@ -57,9 +59,9 @@ typedef enum HASHMAP_DEL_FREQ_E {
 void hashmap_detect_type(HashmapType *type, const char *key_type_str);
 
 #ifndef HASHMAP_MAKE
-#define HASHMAP_MAKE(hashmap_ptr, default_val_ptr) \
+#define HASHMAP_MAKE(hashmap_ptr, key_type, default_val_ptr) \
     do { \
-        hashmap_detect_type(&((hashmap_ptr)->type), HASHMAP_TYPE_TO_STR(typeof((hashmap_ptr)->hash->key))); \
+        hashmap_detect_type(&((hashmap_ptr)->type), #key_type); \
         switch ((hashmap_ptr)->type) { \
             case HASHMAP_TYPE_STR_KEY: \
             { \
