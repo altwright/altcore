@@ -94,13 +94,13 @@ void *alt_malloc(size_t size) {
     AllocationInfo *current_alloc_info = (AllocationInfo *) current_buffer->data;
 
     while (!new_data) {
-        // Offset of the beginning of the alloc data from the start of the buffer
-        i64 current_alloc_data_offset = ((u8 *) current_alloc_info - current_buffer->data) +
-                                        (i64) sizeof(AllocationInfo);
-
         if (current_alloc_info->cap < 0) {
             // Is an empty alloc
             i64 new_alloc_size = aligned_size + (i64) sizeof(AllocationInfo); // For the empty alloc info at the end
+
+            // Offset of the beginning of the alloc data from the start of the buffer
+            i64 current_alloc_data_offset = ((u8 *) current_alloc_info - current_buffer->data) +
+                                            (i64) sizeof(AllocationInfo);
 
             if ((current_buffer->cap - current_alloc_data_offset) < new_alloc_size) {
                 if (!current_buffer->next) {
@@ -127,8 +127,8 @@ void *alt_malloc(size_t size) {
 
         if (!new_data) {
             AllocationInfo *next_alloc_info = (AllocationInfo *) (
-                current_buffer->data +
-                current_alloc_data_offset +
+                (u8*)current_alloc_info +
+                sizeof(AllocationInfo) +
                 current_alloc_info->cap
             );
 
