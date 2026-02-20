@@ -11,7 +11,6 @@
 typedef enum HASHMAP_TYPE_E {
 #ifndef X_HASHMAP_TYPES
 #define X_HASHMAP_TYPES \
-    X(NONE) \
     X(NON_STR_KEY) \
     X(STR_KEY) \
     X(COUNT)
@@ -28,7 +27,6 @@ typedef enum HASHMAP_TYPE_E {
 typedef enum HASHMAP_DEL_FREQ_E {
 #ifndef X_HASHMAP_DEL_FREQS
 #define X_HASHMAP_DEL_FREQS \
-    X(NONE) \
     X(LOW) \
     X(HIGH) \
     X(COUNT)
