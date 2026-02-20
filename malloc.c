@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <threads.h>
 
 typedef struct MALLOC_BUFFER_T {
     u8 *data;
@@ -20,6 +21,7 @@ typedef struct ALLOCATION_INFO_T {
 } AllocationInfo;
 
 static MallocBuffer *g_buffer = nullptr;
+static mtx_t g_buffer_lock = {};
 
 static AllocationInfo create_empty_alloc_info() {
     return (AllocationInfo){
@@ -43,6 +45,9 @@ void alt_init(i64 initial_cap) {
 
     AllocationInfo first_alloc_info = create_empty_alloc_info();
     memcpy(g_buffer->data, &first_alloc_info, sizeof(first_alloc_info));
+
+    int res = mtx_init(&g_buffer_lock, mtx_plain);
+    assert(res == thrd_success);
 }
 
 void alt_uninit() {
@@ -57,6 +62,9 @@ void alt_uninit() {
     }
 
     g_buffer = nullptr;
+
+    mtx_destroy(&g_buffer_lock);
+    g_buffer_lock = (mtx_t){};
 }
 
 static void create_next_buffer(MallocBuffer *current_buffer, i64 new_alloc_size) {
@@ -84,6 +92,9 @@ void *alt_malloc(size_t size) {
     if (!g_buffer || !g_buffer->data || size <= 0) {
         return nullptr;
     }
+
+    int res = mtx_lock(&g_buffer_lock);
+    assert(res == thrd_success);
 
     u8 *new_data = nullptr;
 
@@ -154,6 +165,9 @@ void *alt_malloc(size_t size) {
             current_alloc_info = next_alloc_info;
         }
     }
+
+    res = mtx_unlock(&g_buffer_lock);
+    assert(res == thrd_success);
 
     return new_data;
 }
