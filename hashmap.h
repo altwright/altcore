@@ -44,24 +44,17 @@ typedef enum HASHMAP_DEL_FREQ_E {
 
 #ifndef HASHMAP_TYPE
 #define HASHMAP_TYPE(key_type, val_type) \
+    HashmapType type; \
     HashmapDelFreq del_freq; \
     struct { \
         key_type key; \
         val_type value; \
-    } *hash; \
-    HashmapType type;
+    } *hash;
 #endif
-
-#ifndef HASHMAP_TYPE_TO_STR
-#define HASHMAP_TYPE_TO_STR(type) #type
-#endif
-
-void hashmap_detect_type(HashmapType *type, const char *key_type_str);
 
 #ifndef HASHMAP_MAKE
-#define HASHMAP_MAKE(hashmap_ptr, key_type, default_val_lit) \
+#define HASHMAP_MAKE(hashmap_ptr, key_type, default_val_ptr) \
     do { \
-        hashmap_detect_type(&((hashmap_ptr)->type), #key_type); \
         switch ((hashmap_ptr)->type) { \
             case HASHMAP_TYPE_STR_KEY: \
             { \
@@ -80,12 +73,12 @@ void hashmap_detect_type(HashmapType *type, const char *key_type_str);
                     default: \
                         break; \
                 } \
-                shdefault((default_val_lit)); \
+                shdefault((hashmap_ptr)->hash, *(default_val_ptr)); \
                 break; \
             } \
             case HASHMAP_TYPE_NON_STR_KEY: \
             { \
-                hmdefault((default_val_lit)); \
+                hmdefault((hashmap_ptr)->hash, *(default_val_ptr)); \
                 break; \
             } \
         } \
