@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <assert.h>
+#include <ctype.h>
 #include <string.h>
 
 string str_make(Arena* arena, const char *fmt, ...) {
@@ -83,3 +84,14 @@ string str_dup(Arena* arena, const string *str) {
     return new_str;
 }
 
+void str_to_lower(string *str) {
+    ARRAY_FOR(c_ptr, str) {
+        *c_ptr = (char)tolower(*c_ptr);
+    }
+}
+
+void str_to_upper(string *str) {
+    ARRAY_FOR(c_ptr, str) {
+        *c_ptr = (char)toupper(*c_ptr);
+    }
+}

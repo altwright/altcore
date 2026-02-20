@@ -53,7 +53,7 @@ do { \
 #ifndef ARRAY_FOR
 #define ARRAY_FOR(ptr_var, array_ptr) \
 for ( \
-    typeof(*((array_ptr)->data)) ptr_var = (array_ptr)->data; \
+    typeof(*((array_ptr)->data)) *ptr_var = (array_ptr)->data; \
     ptr_var < (array_ptr)->data + (array_ptr)->len; \
     ptr_var++ \
 )

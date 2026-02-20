@@ -25,4 +25,8 @@ bool str_empty(const string *str);
 
 string str_dup(Arena *arena, const string *str);
 
+void str_to_lower(string *str);
+
+void str_to_upper(string *str);
+
 #endif //ALTCORE_STRINGS_H
