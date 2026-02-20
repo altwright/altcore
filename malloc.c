@@ -177,10 +177,16 @@ void alt_free(void *ptr) {
         return;
     }
 
+    int res = mtx_lock(&g_buffer_lock);
+    assert(res == thrd_success);
+
     u8 *alloc_data = ptr;
 
     AllocationInfo *alloc_info = ptr - sizeof(AllocationInfo);
     alloc_info->used = -1;
+
+    res = mtx_unlock(&g_buffer_lock);
+    assert(res == thrd_success);
 }
 
 void *alt_calloc(size_t num_elems, size_t elem_size) {
@@ -201,18 +207,18 @@ void *alt_realloc(void *ptr, size_t new_size) {
         return nullptr;
     }
 
+    void *new_data = alt_malloc(new_size);
+    assert(new_data);
+
     u8 *alloc_data = ptr;
     AllocationInfo *alloc_info = (AllocationInfo *) (alloc_data - sizeof(AllocationInfo));
     assert(alloc_info->cap >= 0 && alloc_info->used >= 0);
 
     i64 copy_size = alloc_info->used > new_size ? (i64) new_size : alloc_info->used;
 
-    void *new_data = alt_malloc(new_size);
-    assert(new_data);
-
     memcpy(new_data, alloc_data, copy_size);
 
-    alt_free(alloc_data);
+    alt_free(ptr);
 
     return new_data;
 }

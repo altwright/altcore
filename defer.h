@@ -8,8 +8,8 @@
 extern bool g_end_of_defer;
 
 #ifndef DEFER
-#define DEFER(fn_ptr, ...) \
-for(g_end_of_defer = false; !g_end_of_defer; g_end_of_defer = true, fn_ptr(__VA_ARGS__))
+#define DEFER(...) \
+for(g_end_of_defer = false; !g_end_of_defer; g_end_of_defer = true, __VA_ARGS__)
 #endif
 
 #endif //ALTCORE_DEFER_H
