@@ -49,13 +49,7 @@ void array_push(
     assert(*len <= *cap);
 
     if (*len == *cap) {
-        i64 new_cap = 2 * (*cap);
-        void *new_data = arena_alloc(arena, new_cap * new_elem_size);
-        assert(new_data);
-        memcpy(new_data, *data_ptr, (*len) * new_elem_size);
-
-        *data_ptr = new_data;
-        *cap = new_cap;
+        array_extend(data_ptr, len, cap, data_elem_size, arena);
     }
 
     u8 *data_bytes = *data_ptr;
