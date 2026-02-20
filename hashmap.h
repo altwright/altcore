@@ -85,4 +85,24 @@ typedef enum HASHMAP_DEL_FREQ_E {
     } while(0)
 #endif
 
+#ifndef HASHMAP_FREE
+#define HASHMAP_FREE(hashmap_ptr) \
+    do { \
+        switch ((hashmap_ptr)->type) { \
+            case HASHMAP_TYPE_STR_KEY: \
+            { \
+                shfree((hashmap_ptr)->hash); \
+                break; \
+            } \
+            case HASHMAP_TYPE_NON_STR_KEY: \
+            { \
+                hmfree((hashmap_ptr)->hash); \
+                break; \
+            } \
+            default: \
+                break; \
+        } \
+    } while(0)
+#endif
+
 #endif //ALTCORE_HASHMAP_H
