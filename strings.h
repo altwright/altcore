@@ -14,7 +14,7 @@ typedef struct STRING_T {
 
 typedef struct STRING_VIEW_T {
     const char* data;
-    const i64 len;
+    i64 len;
 } string_view;
 
 string str_make(Arena *arena, const char *fmt, ...);
