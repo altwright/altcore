@@ -90,7 +90,8 @@ do { \
         &((array_ptr)->cap), \
         sizeof(*((array_ptr)->data)), \
         sizeof(*(elem_ptr)), \
-        (const void*)(elem_ptr) \
+        (const void*)(elem_ptr), \
+        (array_ptr)->arena \
     ); \
 } while(0)
 #endif
