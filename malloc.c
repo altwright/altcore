@@ -194,6 +194,7 @@ void *alt_realloc(void *ptr, size_t new_size) {
     i64 copy_size = alloc_info->used > new_size ? (i64) new_size : alloc_info->used;
 
     void *new_data = alt_malloc(new_size);
+    assert(new_data);
 
     memcpy(new_data, alloc_data, copy_size);
 

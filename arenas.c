@@ -5,20 +5,20 @@
 #include "arenas.h"
 
 #include <assert.h>
-#include <stdlib.h>
+#include "malloc.h"
 
 Arena arena_make(i64 initial_cap) {
     Arena arena = {};
 
     assert(initial_cap > 0);
 
-    arena.buffer = calloc(1, sizeof(ArenaBuffer));
+    arena.buffer = alt_calloc(1, sizeof(ArenaBuffer));
     assert(arena.buffer);
 
     // Align to 32-bit
     initial_cap = ((initial_cap + 3) >> 2) << 2;
     arena.buffer->cap = initial_cap;
-    arena.buffer->data = calloc(arena.buffer->cap, sizeof(u8));
+    arena.buffer->data = alt_calloc(arena.buffer->cap, sizeof(u8));
     assert(arena.buffer->data);
 
     return arena;
@@ -30,13 +30,13 @@ void arena_free(Arena *arena) {
 
     while (current_buffer) {
         if (current_buffer->data) {
-            free(current_buffer->data);
+            alt_free(current_buffer->data);
             current_buffer->data = nullptr;
             current_buffer->cap = 0;
         }
 
         ArenaBuffer* next_buffer = current_buffer->next;
-        free(current_buffer);
+        alt_free(current_buffer);
         current_buffer = next_buffer;
     }
 
@@ -44,11 +44,7 @@ void arena_free(Arena *arena) {
 }
 
 void *arena_alloc(Arena *arena, i64 size) {
-    if (!arena || !arena->buffer) {
-        return nullptr;
-    }
-
-    if (size <= 0) {
+    if (!arena || !arena->buffer || size <= 0) {
         return nullptr;
     }
 
@@ -64,10 +60,10 @@ void *arena_alloc(Arena *arena, i64 size) {
 
     while (aligned_size >= (current_buffer->cap - current_buffer_offset)) {
         if (!current_buffer->next) {
-            ArenaBuffer* next_buffer = calloc(1, sizeof(ArenaBuffer));
+            ArenaBuffer* next_buffer = alt_calloc(1, sizeof(ArenaBuffer));
             assert(next_buffer);
             next_buffer->cap = aligned_size > current_buffer->cap ? aligned_size : current_buffer->cap;
-            next_buffer->data = calloc(next_buffer->cap, sizeof(u8));
+            next_buffer->data = alt_calloc(next_buffer->cap, sizeof(u8));
             current_buffer->next = next_buffer;
         }
         current_buffer = current_buffer->next;
