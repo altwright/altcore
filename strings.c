@@ -22,6 +22,7 @@ string str_make(Arena* arena, const char *fmt, ...) {
     }
 
     string str = {
+        .len = len,
         .cap = cap,
         .arena = arena
     };
