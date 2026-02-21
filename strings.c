@@ -127,7 +127,7 @@ strings str_split(Arena *arena, const string *str, const char *delimiter) {
 }
 
 string str_view_make(Arena *arena, const string_view* view) {
-    string str = str_make(arena, "%.*s", view->data, view->len);
+    string str = str_make(arena, "%.*s", view->len, view->data);
     return str;
 }
 
