@@ -99,26 +99,6 @@ typedef enum HASHMAP_DEL_FREQ_E {
     }))
 #endif
 
-/*
-do { \
-    switch ((hashmap_ptr)->type) { \
-        case HASHMAP_TYPE_STR_KEY: \
-        { \
-            shfree((hashmap_ptr)->hash); \
-            break; \
-        } \
-        case HASHMAP_TYPE_NON_STR_KEY: \
-        { \
-            hmfree((hashmap_ptr)->hash); \
-            (hashmap_ptr)->hash = nullptr; \
-            break; \
-        } \
-        default: \
-            break; \
-    } \
-} while(0)
-*/
-
 #ifndef HASHMAP_PUT
 #define HASHMAP_PUT(hashmap_ptr, key_ptr, val_ptr) \
     do { \

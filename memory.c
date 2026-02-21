@@ -2,12 +2,13 @@
 // Created by wright on 2/19/26.
 //
 
-#include "malloc.h"
+#include "memory.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <threads.h>
+#include "defer.h"
 
 typedef struct MALLOC_BUFFER_T {
     u8 *data;
@@ -53,6 +54,8 @@ void alt_init(i64 initial_cap) {
 
         g_buffer_lock_initialized = true;
     }
+
+    defer_init();
 }
 
 void alt_uninit() {
@@ -75,6 +78,8 @@ void alt_uninit() {
         g_buffer_lock = (mtx_t){};
         g_buffer_lock_initialized = false;
     }
+
+    defer_uninit();
 }
 
 static void create_next_buffer(MallocBuffer *current_buffer, i64 new_alloc_size) {

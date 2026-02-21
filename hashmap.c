@@ -3,7 +3,7 @@
 //
 
 #include "hashmap.h"
-#include "malloc.h"
+#include "memory.h"
 
 static void* hashmap_realloc(void* context, void* ptr, size_t new_size) {
     return alt_realloc(ptr, new_size);

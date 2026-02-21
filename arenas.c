@@ -5,7 +5,7 @@
 #include "arenas.h"
 
 #include <assert.h>
-#include "malloc.h"
+#include "memory.h"
 
 Arena arena_make(i64 initial_cap) {
     Arena arena = {};

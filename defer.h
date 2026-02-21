@@ -5,11 +5,19 @@
 #ifndef ALTCORE_DEFER_H
 #define ALTCORE_DEFER_H
 
-extern bool g_end_of_defer;
+void defer_init();
+
+void defer_uninit();
+
+void defer_lock_false();
+
+void defer_lock_true();
+
+bool defer_is_false_unlock();
 
 #ifndef DEFER
 #define DEFER(...) \
-for(g_end_of_defer = false; !g_end_of_defer; g_end_of_defer = true, __VA_ARGS__)
+for(defer_lock_false(); defer_is_false_unlock(); defer_lock_true(), __VA_ARGS__)
 #endif
 
 #endif //ALTCORE_DEFER_H
