@@ -213,22 +213,24 @@ void *alt_calloc(size_t num_elems, size_t elem_size) {
 }
 
 void *alt_realloc(void *ptr, size_t new_size) {
-    if (!g_buffer || !g_buffer->data || !ptr || new_size == 0) {
+    if (!g_buffer || !g_buffer->data || new_size == 0) {
         return nullptr;
     }
 
     void *new_data = alt_malloc(new_size);
     assert(new_data);
 
-    u8 *alloc_data = ptr;
-    AllocationInfo *alloc_info = (AllocationInfo *) (alloc_data - sizeof(AllocationInfo));
-    assert(alloc_info->cap >= 0 && alloc_info->used >= 0);
+    if (ptr) {
+        u8 *alloc_data = ptr;
+        AllocationInfo *alloc_info = (AllocationInfo *) (alloc_data - sizeof(AllocationInfo));
+        assert(alloc_info->cap >= 0 && alloc_info->used >= 0);
 
-    i64 copy_size = alloc_info->used > new_size ? (i64) new_size : alloc_info->used;
+        i64 copy_size = alloc_info->used > new_size ? (i64) new_size : alloc_info->used;
 
-    memcpy(new_data, alloc_data, copy_size);
+        memcpy(new_data, alloc_data, copy_size);
 
-    alt_free(ptr);
+        alt_free(ptr);
+    }
 
     return new_data;
 }
