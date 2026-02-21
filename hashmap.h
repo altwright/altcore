@@ -146,7 +146,7 @@ typedef enum HASHMAP_DEL_FREQ_E {
             ( \
                 (hashmap_ptr)->type == HASHMAP_TYPE_NON_STR_KEY ? \
                     hmgeti((hashmap_ptr)->hash, *(key_ptr)) : \
-                    *((typeof((hashmap_ptr)->hash->value)*) kNullPtr) \
+                    -1 \
             ) \
     )
 #endif
