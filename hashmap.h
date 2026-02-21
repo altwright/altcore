@@ -158,7 +158,7 @@ typedef enum HASHMAP_DEL_FREQ_E {
 #ifndef HASHMAP_FOR
 #define HASHMAP_FOR(key_val_ptr_var, hashmap_ptr) \
     for ( \
-        typeof((hashmap_ptr)->hash)* key_val_ptr_var = (hashmap_ptr)->hash; \
+        typeof((hashmap_ptr)->hash) key_val_ptr_var = (hashmap_ptr)->hash; \
         key_val_ptr_var < (hashmap_ptr)->hash + ( \
             (hashmap_ptr)->type == HASHMAP_TYPE_STR_KEY ? \
                 shlen((hashmap_ptr)->hash) : \
