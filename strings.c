@@ -96,3 +96,32 @@ void str_to_upper(string *str) {
         *c_ptr = (char)toupper(*c_ptr);
     }
 }
+
+strings str_split(Arena *arena, const string *str, const char *delimiter) {
+    assert(str);
+
+    strings split_strs = {arena};
+    ARRAY_MAKE(&split_strs);
+
+    size_t delim_len = strlen(delimiter);
+
+    const char* delim_start = str->data;
+    const char* prev_start = str->data;
+
+    while (delim_start = strstr(delim_start, delimiter), delim_start) {
+        i64 sub_str_len = (delim_start - prev_start);
+        string sub_str = str_make(arena, "%.*s", sub_str_len, prev_start);
+
+        ARRAY_PUSH(&split_strs, &sub_str);
+
+        delim_start += delim_len;
+        prev_start = delim_start;
+    }
+
+    if (prev_start < str->data + str->len) {
+        string final_sub_str = str_make(arena, "%s", prev_start);
+        ARRAY_PUSH(&split_strs, &final_sub_str);
+    }
+
+    return split_strs;
+}

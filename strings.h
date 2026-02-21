@@ -12,6 +12,10 @@ typedef struct STRING_T {
     ARRAY_FIELDS(char)
 } string;
 
+typedef struct STRINGS_T {
+    ARRAY_FIELDS(string)
+} strings;
+
 typedef struct STRING_VIEW_T {
     const char* data;
     i64 len;
@@ -28,5 +32,7 @@ string str_dup(Arena *arena, const string *str);
 void str_to_lower(string *str);
 
 void str_to_upper(string *str);
+
+strings str_split(Arena *arena, const string *str, const char *delimiter);
 
 #endif //ALTCORE_STRINGS_H
