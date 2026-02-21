@@ -5,14 +5,22 @@
 #include "hashmap.h"
 #include "malloc.h"
 
+static void* hashmap_realloc(void* context, void* ptr, size_t new_size) {
+    return alt_realloc(ptr, new_size);
+}
+
+static void hashmap_free(void* context, void* ptr) {
+    alt_free(ptr);
+}
+
 #ifdef STBDS_REALLOC
 #undef STBDS_REALLOC
-#define STBDS_REALLOC(context, ptr, size) alt_realloc(ptr, size)
+#define STBDS_REALLOC(context, ptr, size) hashmap_realloc
 #endif
 
 #ifdef STBDS_FREE
 #undef STBDS_FREE
-#define STBDS_FREE(context, ptr) alt_free(ptr)
+#define STBDS_FREE(context, ptr) hashmap_free
 #endif
 
 #define STB_DS_IMPLEMENTATION
