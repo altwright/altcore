@@ -125,3 +125,23 @@ strings str_split(Arena *arena, const string *str, const char *delimiter) {
 
     return split_strs;
 }
+
+void str_view_strip(string_view *str) {
+    i64 c_idx = 0;
+    for (c_idx = 0; c_idx < str->len; c_idx++) {
+        if (!isspace(str->data[c_idx])) {
+            break;
+        }
+    }
+
+    str->data += c_idx;
+    str->len -= c_idx;
+
+    for (c_idx = str->len - 1; c_idx >= 0; c_idx--) {
+        if (!isspace(str->data[c_idx])) {
+            break;
+        }
+    }
+
+    str->len = c_idx + 1;
+}
