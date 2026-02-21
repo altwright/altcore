@@ -15,12 +15,12 @@ static void hashmap_free(void* context, void* ptr) {
 
 #ifdef STBDS_REALLOC
 #undef STBDS_REALLOC
-#define STBDS_REALLOC(context, ptr, size) hashmap_realloc
+#define STBDS_REALLOC(context, ptr, size) hashmap_realloc(context, ptr, size)
 #endif
 
 #ifdef STBDS_FREE
 #undef STBDS_FREE
-#define STBDS_FREE(context, ptr) hashmap_free
+#define STBDS_FREE(context, ptr) hashmap_free(context, ptr)
 #endif
 
 #define STB_DS_IMPLEMENTATION
