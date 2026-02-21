@@ -137,4 +137,39 @@ typedef enum HASHMAP_DEL_FREQ_E {
     )
 #endif
 
+#ifndef HASHMAP_DEL
+#define HASHMAP_DEL(hashmap_ptr, key_ptr) \
+    do { \
+        switch ((hashmap_ptr)->type) { \
+            case HASHMAP_TYPE_STR_KEY: { \
+                shdel((hashmap_ptr)->hash, *((char **)(key_ptr))); \
+                break; \
+            } \
+            case HASHMAP_TYPE_NON_STR_KEY: { \
+                hmdel((hashmap_ptr)->hash, *(key_ptr)); \
+                break; \
+            } \
+            default: \
+                break; \
+        } \
+    } while(0)
+#endif
+
+#ifndef HASHMAP_FOR
+#define HASHMAP_FOR(key_val_ptr_var, hashmap_ptr) \
+    for ( \
+        typeof((hashmap_ptr)->hash)* key_val_ptr_var = (hashmap_ptr)->hash; \
+        key_val_ptr_var < (hashmap_ptr)->hash + ( \
+            (hashmap_ptr)->type == HASHMAP_TYPE_STR_KEY ? \
+                shlen((hashmap_ptr)->hash) : \
+                ( \
+                    (hashmap_ptr)->type == HASHMAP_TYPE_NON_STR_KEY ? \
+                        hmlen((hashmap_ptr)->hash) : \
+                        0 \
+                ) \
+        ); \
+        key_val_ptr_var++; \
+    )
+#endif
+
 #endif //ALTCORE_HASHMAP_H
