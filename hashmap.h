@@ -6,7 +6,7 @@
 #define ALTCORE_HASHMAP_H
 
 #include "libs/stb_ds.h"
-#include <string.h>
+#include "types.h"
 
 typedef enum HASHMAP_TYPE_E {
 #ifndef X_HASHMAP_TYPES
@@ -104,6 +104,37 @@ typedef enum HASHMAP_DEL_FREQ_E {
                 break; \
         } \
     } while(0)
+#endif
+
+#ifndef HASHMAP_PUT
+#define HASHMAP_PUT(hashmap_ptr, key_ptr, val_ptr) \
+    do { \
+        switch ((hashmap_ptr)->type) { \
+            case HASHMAP_TYPE_STR_KEY: { \
+                shput((hashmap_ptr)->hash, *(key_ptr), *(val_ptr)); \
+                break; \
+            } \
+            case HASHMAP_TYPE_NON_STR_KEY: { \
+                hmput((hashmap_ptr)->hash, *(key_ptr), *(val_ptr)); \
+                break; \
+            } \
+            default: \
+                break; \
+        } \
+    } while(0)
+#endif
+
+#ifndef HASHMAP_GET
+#define HASHMAP_GET(hashmap_ptr, key_ptr) \
+    ( \
+        (hashmap_ptr)->type == HASHMAP_TYPE_STR_KEY ? \
+            shget((hashmap_ptr)->hash, *(key_ptr)) : \
+            ( \
+                (hashmap_ptr)->type == HASHMAP_TYPE_NON_STR_KEY ? \
+                    hmget((hashmap_ptr)->hash, *(key_ptr)) : \
+                    *((typeof((hashmap_ptr)->hash->value)*) kNullPtr) \
+            ) \
+    )
 #endif
 
 #endif //ALTCORE_HASHMAP_H
