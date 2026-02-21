@@ -11,6 +11,7 @@
 typedef enum HASHMAP_TYPE_E {
 #ifndef X_HASHMAP_TYPES
 #define X_HASHMAP_TYPES \
+    X(NONE) \
     X(NON_STR_KEY) \
     X(STR_KEY) \
     X(COUNT)
