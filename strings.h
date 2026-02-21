@@ -9,7 +9,7 @@
 #include "arenas.h"
 
 typedef struct STRING_T {
-    ARRAY_TYPE(char)
+    ARRAY_FIELDS(char)
 } string;
 
 typedef struct STRING_VIEW_T {

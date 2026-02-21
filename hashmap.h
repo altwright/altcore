@@ -40,8 +40,8 @@ typedef enum HASHMAP_DEL_FREQ_E {
 #undef X
 } HashmapDelFreq;
 
-#ifndef HASHMAP_TYPE
-#define HASHMAP_TYPE(key_type, val_type) \
+#ifndef HASHMAP_FIELDS
+#define HASHMAP_FIELDS(key_type, val_type) \
     HashmapType type; \
     HashmapDelFreq del_freq; \
     struct { \
