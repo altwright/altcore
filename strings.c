@@ -126,6 +126,11 @@ strings str_split(Arena *arena, const string *str, const char *delimiter) {
     return split_strs;
 }
 
+string str_view_make(Arena *arena, const string_view* view) {
+    string str = str_make(arena, "%.*s", view->data, view->len);
+    return str;
+}
+
 void str_view_strip(string_view *str) {
     i64 c_idx = 0;
     for (c_idx = 0; c_idx < str->len; c_idx++) {

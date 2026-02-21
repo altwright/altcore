@@ -35,6 +35,8 @@ void str_to_upper(string *str);
 
 strings str_split(Arena *arena, const string *str, const char *delimiter);
 
+string str_view_make(Arena *arena, const string_view* view);
+
 void str_view_strip(string_view *str);
 
 #endif //ALTCORE_STRINGS_H
