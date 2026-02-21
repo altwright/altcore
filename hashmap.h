@@ -128,7 +128,7 @@ typedef enum HASHMAP_DEL_FREQ_E {
 #define HASHMAP_GET(hashmap_ptr, key_ptr) \
     ( \
         (hashmap_ptr)->type == HASHMAP_TYPE_STR_KEY ? \
-            shget((hashmap_ptr)->hash, *(key_ptr)) : \
+            shget((hashmap_ptr)->hash, *((char**)(key_ptr))) : \
             ( \
                 (hashmap_ptr)->type == HASHMAP_TYPE_NON_STR_KEY ? \
                     hmget((hashmap_ptr)->hash, *(key_ptr)) : \
