@@ -168,7 +168,7 @@ typedef enum HASHMAP_DEL_FREQ_E {
                         0 \
                 ) \
         ); \
-        key_val_ptr_var++; \
+        key_val_ptr_var++ \
     )
 #endif
 
