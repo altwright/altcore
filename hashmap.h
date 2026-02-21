@@ -88,16 +88,15 @@ typedef enum HASHMAP_DEL_FREQ_E {
 
 #ifndef HASHMAP_FREE
 #define HASHMAP_FREE(hashmap_ptr) \
-    ( \
+    ((void)sizeof((hashmap_ptr) ? 1 : 0), ({ \
         if ((hashmap_ptr)->type == HASHMAP_TYPE_STR_KEY) { \
             shfree((hashmap_ptr)->hash); \
         } else if ((hashmap_ptr)->type == HASHMAP_TYPE_NON_STR_KEY) { \
             hmfree((hashmap_ptr)->hash); \
             (hashmap_ptr)->hash = nullptr; \
-        } else { \
+        } else \
             ; \
-        } \
-    )
+    }))
 #endif
 
 /*
