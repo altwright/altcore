@@ -73,11 +73,11 @@ do { \
 #endif
 
 #ifndef ARRAY_ELEM
-#define ARRAY_ELEM(array_ptr, idx) \
+#define ARRAY_ELEM(array_ptr, idx_ptr) \
 ( \
-    ((idx) >= 0) && ((idx) < (array_ptr)->len) ? \
-        &((array_ptr)->data[(idx)]) : \
-        &kNullPtr[(idx)] \
+    (*(idx_ptr) >= 0) && (*(idx_ptr) < (array_ptr)->len) ? \
+        &((array_ptr)->data[*(idx_ptr)]) : \
+        &kNullPtr[*(idx_ptr)] \
 )
 #endif
 
