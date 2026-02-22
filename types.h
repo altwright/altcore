@@ -171,4 +171,9 @@ typedef struct F64S_T {
     ARRAY_FIELDS(f64)
 } f64s;
 
+#ifndef STATIC_ARRAY_LEN
+#define STATIC_ARRAY_LEN(k_array) \
+    (sizeof(k_array) / sizeof(k_array[0]))
+#endif
+
 #endif //ALTCORE_TYPES_H
