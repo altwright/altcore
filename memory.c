@@ -135,7 +135,8 @@ void *alt_malloc(size_t size) {
 
                 // Fill up the remainder of the undersized alloc, excluding the alloc info
                 current_alloc_info->cap = current_buffer->cap - current_alloc_data_offset;
-                current_buffer = current_buffer->next;;
+                current_buffer = current_buffer->next;
+                current_alloc_info = (AllocationInfo *) current_buffer->data;
             }
 
             current_alloc_info->cap = current_alloc_info->used = aligned_size;
@@ -197,7 +198,7 @@ void alt_free(void *ptr) {
 
     u8 *alloc_data = ptr;
 
-    AllocationInfo *alloc_info = ptr - sizeof(AllocationInfo);
+    AllocationInfo *alloc_info = (AllocationInfo*)(alloc_data - sizeof(AllocationInfo));
     alloc_info->used = -1;
 
     res = mtx_unlock(&g_buffer_lock);
