@@ -17,8 +17,15 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-typedef float f32;
-typedef double f64;
+typedef struct FX12_T {
+    i32 data;
+} fx12;
+typedef struct FX24_T {
+    i32 data;
+} fx24;
+
+typedef float fl32;
+typedef double fl64;
 
 struct ARENA_T;
 
@@ -131,6 +138,24 @@ void array_extend(
     struct ARENA_T *arena
 );
 
+#ifndef FX12_INIT
+#define FX12_INIT(float_val) \
+    ((fx12)((float_val) * (1LL << 12)))
+#endif
+
+inline fx12 fx12_mul(fx12 left, fx12 right);
+
+inline fx12 fx12_div(fx12 left, fx12 right);
+
+#ifndef FX24_INIT
+#define FX24_INIT(float_val) \
+    ((fx24)((float_val) * (1LL << 24)))
+#endif
+
+inline fx24 fx24_mul(fx24 left, fx24 right);
+
+inline fx24 fx24_div(fx24 left, fx24 right);
+
 typedef struct I8S_T {
     ARRAY_FIELDS(i8)
 } i8s;
@@ -163,13 +188,21 @@ typedef struct U64S_T {
     ARRAY_FIELDS(u64)
 } u64s;
 
+typedef struct FX12S_T {
+    ARRAY_FIELDS(fx12)
+} fx12s;
+
+typedef struct FX24S_T {
+    ARRAY_FIELDS(fx24)
+} fx24s;
+
 typedef struct F32S_T {
-    ARRAY_FIELDS(f32)
-} f32s;
+    ARRAY_FIELDS(fl32)
+} fl32s;
 
 typedef struct F64S_T {
-    ARRAY_FIELDS(f64)
-} f64s;
+    ARRAY_FIELDS(fl64)
+} fl64s;
 
 #ifndef STATIC_ARRAY_LEN
 #define STATIC_ARRAY_LEN(k_array) \

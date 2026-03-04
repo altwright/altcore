@@ -78,3 +78,27 @@ void array_extend(
     *data_ptr = new_data;
     *cap = new_cap;
 }
+
+fx12 fx12_mul(fx12 left, fx12 right) {
+    return (fx12){ (i32)(((i64)left.data * (i64)right.data) >> 12)};
+}
+
+fx12 fx12_div(fx12 left, fx12 right) {
+    fx12 result = {INT32_MAX};
+    if (right.data != 0) {
+        result.data = (i32)(((i64)left.data << 12)/((i64)right.data));
+    }
+    return result;
+}
+
+fx24 fx24_mul(fx24 left, fx24 right) {
+    return (fx24){ (i32)(((i64)left.data * (i64)right.data) >> 24)};
+}
+
+fx24 fx24_div(fx24 left, fx24 right) {
+    fx24 result = {INT32_MAX};
+    if (right.data != 0) {
+        result.data = (i32)(((i64)left.data << 24)/((i64)right.data));
+    }
+    return result;
+}
