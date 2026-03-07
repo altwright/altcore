@@ -126,6 +126,35 @@ strings str_split(Arena *arena, const string *str, const char *delimiter) {
     return split_strs;
 }
 
+string str_join(Arena* arena, const strings* strs, const char *delimiter) {
+    string new_str = {arena};
+
+    i64 total_len = 0;
+
+    u64 delim_len = strlen(delimiter);
+
+    ARRAY_FOR(str, strs) {
+        total_len += str->len;
+    }
+
+    total_len += (i64)delim_len * (strs->len - 1);
+
+    new_str.cap = total_len + 1;
+
+    ARRAY_MAKE(&new_str);
+    memset(new_str.data, 0, new_str.cap);
+
+    for (i64 str_idx = 0; str_idx < strs->len; str_idx++) {
+        str_append(&new_str, "%s", strs->data[str_idx].data);
+
+        if (str_idx < strs->len - 1) {
+            str_append(&new_str, "%s", delimiter);
+        }
+    }
+
+    return new_str;
+}
+
 string str_view_make(Arena *arena, const string_view *view) {
     string str = str_make(arena, "%.*s", view->len, view->data);
     return str;
