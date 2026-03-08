@@ -17,7 +17,7 @@ typedef struct STRINGS_T {
 } strings;
 
 typedef struct STRING_VIEW_T {
-    const char* data;
+    const char *data;
     i64 len;
 } string_view;
 
@@ -35,11 +35,13 @@ void str_to_upper(string *str);
 
 strings str_split(Arena *arena, const string *str, const char *delimiter);
 
-string str_join(Arena* arena, const strings* strs, const char *delimiter);
+i64s str_split_idxs(Arena *arena, const string *str, const char *delimiter);
 
-string str_view_make(Arena *arena, const string_view* view);
+string str_join(Arena *arena, const strings *strs, const char *delimiter);
 
-void str_view_advance(string_view* str, i64 offset);
+string str_view_make(Arena *arena, const string_view *view);
+
+void str_view_advance(string_view *str, i64 offset);
 
 void str_view_strip(string_view *str);
 

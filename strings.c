@@ -126,7 +126,27 @@ strings str_split(Arena *arena, const string *str, const char *delimiter) {
     return split_strs;
 }
 
-string str_join(Arena* arena, const strings* strs, const char *delimiter) {
+i64s str_split_idxs(Arena *arena, const string *str, const char *delimiter) {
+    assert(str);
+
+    i64s idxs = {arena};
+    ARRAY_MAKE(&idxs);
+
+    size_t delim_len = strlen(delimiter);
+
+    const char *delim_start = str->data;
+
+    while (delim_start = strstr(delim_start, delimiter), delim_start) {
+        i64 delim_idx = delim_start - str->data;
+        ARRAY_PUSH(&idxs, &delim_idx);
+
+        delim_start += delim_len;
+    }
+
+    return idxs;
+}
+
+string str_join(Arena *arena, const strings *strs, const char *delimiter) {
     string new_str = {arena};
 
     i64 total_len = 0;
@@ -137,7 +157,7 @@ string str_join(Arena* arena, const strings* strs, const char *delimiter) {
         total_len += str->len;
     }
 
-    total_len += (i64)delim_len * (strs->len - 1);
+    total_len += (i64) delim_len * (strs->len - 1);
 
     new_str.cap = total_len + 1;
 
