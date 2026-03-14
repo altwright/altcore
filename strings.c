@@ -205,3 +205,44 @@ void str_view_advance(string_view *str, i64 offset) {
     str->data += offset;
     str->len -= offset;
 }
+
+void str_replace_at(string *str, i64 section_start_idx, i64 section_len, const char *new_str) {
+    assert(
+        str
+        && new_str
+        && section_start_idx >= 0
+        && section_start_idx < str->len
+        && section_len <= str->len - section_start_idx
+    );
+
+    u64 new_str_len = strlen(new_str);
+
+    i64 new_section_len_delta = (i64) new_str_len - section_len;
+
+    while (str->len + new_section_len_delta >= str->cap) {
+        ARRAY_EXTEND(str);
+    }
+
+    if (new_section_len_delta < 0) {
+        for (
+            i64 c_idx = section_start_idx + section_len;
+            c_idx < str->len + new_section_len_delta;
+            c_idx++
+        ) {
+            str->data[c_idx + new_section_len_delta] = str->data[c_idx];
+        }
+    } else if (new_section_len_delta > 0) {
+        for (
+            i64 c_idx = str->len - 1;
+            c_idx >= section_start_idx + section_len;
+            c_idx--
+        ) {
+            str->data[c_idx + new_section_len_delta] = str->data[c_idx];
+        }
+    }
+
+    str->data[str->len + new_section_len_delta] = '\0';
+    str->len += new_section_len_delta;
+
+    memcpy(str->data + section_start_idx, new_str, new_str_len);
+}

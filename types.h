@@ -71,8 +71,8 @@ for ( \
 do { \
     array_extend( \
         (void**)&((array_ptr)->data), \
-        (array_ptr)->len, \
-        (array_ptr)->cap, \
+        &((array_ptr)->len), \
+        &((array_ptr)->cap), \
         sizeof(*((array_ptr)->data)), \
         (array_ptr)->arena \
     ); \

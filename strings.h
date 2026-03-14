@@ -39,6 +39,8 @@ i64s str_split_idxs(Arena *arena, const string *str, const char *delimiter);
 
 string str_join(Arena *arena, const strings *strs, const char *delimiter);
 
+void str_replace_at(string* str, i64 section_start_idx, i64 section_len, const char* new_str);
+
 string str_view_make(Arena *arena, const string_view *view);
 
 void str_view_advance(string_view *str, i64 offset);
