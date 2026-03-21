@@ -21,7 +21,21 @@ typedef struct STRING_VIEW_T {
     i64 len;
 } string_view;
 
+typedef struct STRING_VIEWS_T {
+    ARRAY_FIELDS(string_view)
+} string_views;
+
+#ifndef SV_FMT
+#define SV_FMT "%.*s"
+#endif
+
+#ifndef SV_FMT_DATA
+#define SV_FMT_DATA(sv_ptr) (sv_ptr)->len, (sv_ptr)->data
+#endif
+
 string str_make(Arena *arena, const char *fmt, ...);
+
+string str_make_view(Arena *arena, const string_view *view);
 
 void str_append(string *str, const char *fmt, ...);
 
@@ -33,18 +47,20 @@ void str_to_lower(string *str);
 
 void str_to_upper(string *str);
 
-strings str_split(Arena *arena, const string *str, const char *delimiter);
+string_views str_split(Arena *arena, const string_view *view, const char *delimiter);
 
-i64s str_split_idxs(Arena *arena, const string *str, const char *delimiter);
+string str_join(Arena *arena, const string_views *strs, const char *delimiter);
 
-string str_join(Arena *arena, const strings *strs, const char *delimiter);
+void str_replace_at(string *str, i64 section_start_idx, i64 section_len, const char *new_str);
 
-void str_replace_at(string* str, i64 section_start_idx, i64 section_len, const char* new_str);
+void str_advance(string_view *str, i64 offset);
 
-string str_view_make(Arena *arena, const string_view *view);
+void str_strip(string_view *str);
 
-void str_view_advance(string_view *str, i64 offset);
+const char* str_find_sub(const string_view* haystack, const char* needle);
 
-void str_view_strip(string_view *str);
+string_views str_strs_to_views(Arena *arena, const strings *strs);
+
+strings str_views_to_strs(Arena *arena, const string_views *strs);
 
 #endif //ALTCORE_STRINGS_H

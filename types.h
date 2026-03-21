@@ -54,7 +54,7 @@ do { \
 
 #ifndef ARRAY_EMPTY
 #define ARRAY_EMPTY(array_ptr) \
-(!(array_ptr)->data || (array_ptr)->len <= 0 || (array_ptr)->cap <= 0)
+(!((array_ptr)->data) || (array_ptr)->len <= 0 || (array_ptr)->cap <= 0)
 #endif
 
 #ifndef ARRAY_FOR
@@ -64,19 +64,6 @@ for ( \
     ptr_var < (array_ptr)->data + (array_ptr)->len; \
     ptr_var++ \
 )
-#endif
-
-#ifndef ARRAY_EXTEND
-#define ARRAY_EXTEND(array_ptr) \
-do { \
-    array_extend( \
-        (void**)&((array_ptr)->data), \
-        &((array_ptr)->len), \
-        &((array_ptr)->cap), \
-        sizeof(*((array_ptr)->data)), \
-        (array_ptr)->arena \
-    ); \
-} while(0)
 #endif
 
 #ifndef ARRAY_ELEM
@@ -127,14 +114,6 @@ void array_push(
     i64 data_elem_size,
     i64 new_elem_size,
     const void *new_elem,
-    struct ARENA_T *arena
-);
-
-void array_extend(
-    void **data_ptr,
-    const i64 *len,
-    i64 *cap,
-    i64 elem_size,
     struct ARENA_T *arena
 );
 

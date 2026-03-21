@@ -44,12 +44,18 @@ void array_push(
     const void *new_elem,
     struct ARENA_T *arena
 ) {
+    assert(data_ptr && *data_ptr);
     assert(data_elem_size == new_elem_size);
     assert(*len >= 0);
     assert(*len <= *cap);
 
     if (*len == *cap) {
-        array_extend(data_ptr, len, cap, data_elem_size, arena);
+        i64 new_cap = 2 * (*cap);
+        u8 *new_data = arena_alloc(arena, new_cap * data_elem_size);
+        assert(new_data);
+        memcpy(new_data, *data_ptr, (*len) * data_elem_size);
+        *data_ptr = new_data;
+        *cap = new_cap;
     }
 
     u8 *data_bytes = *data_ptr;
@@ -59,46 +65,26 @@ void array_push(
     (*len)++;
 }
 
-void array_extend(
-    void **data_ptr,
-    const i64 *len,
-    i64 *cap,
-    i64 elem_size,
-    struct ARENA_T *arena
-) {
-    assert(*data_ptr);
-
-    i64 new_cap = 2 * (*cap);
-
-    void *new_data = arena_alloc(arena, new_cap * elem_size);
-    assert(new_data);
-
-    memcpy(new_data, *data_ptr, (*len) * elem_size);
-
-    *data_ptr = new_data;
-    *cap = new_cap;
-}
-
 fx12 fx12_mul(fx12 left, fx12 right) {
-    return (fx12){ (i32)(((i64)left.data * (i64)right.data) >> 12)};
+    return (fx12){(i32) (((i64) left.data * (i64) right.data) >> 12)};
 }
 
 fx12 fx12_div(fx12 left, fx12 right) {
     fx12 result = {INT32_MAX};
     if (right.data != 0) {
-        result.data = (i32)(((i64)left.data << 12)/((i64)right.data));
+        result.data = (i32) (((i64) left.data << 12) / ((i64) right.data));
     }
     return result;
 }
 
 fx24 fx24_mul(fx24 left, fx24 right) {
-    return (fx24){ (i32)(((i64)left.data * (i64)right.data) >> 24)};
+    return (fx24){(i32) (((i64) left.data * (i64) right.data) >> 24)};
 }
 
 fx24 fx24_div(fx24 left, fx24 right) {
     fx24 result = {INT32_MAX};
     if (right.data != 0) {
-        result.data = (i32)(((i64)left.data << 24)/((i64)right.data));
+        result.data = (i32) (((i64) left.data << 24) / ((i64) right.data));
     }
     return result;
 }
