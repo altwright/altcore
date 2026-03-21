@@ -29,8 +29,8 @@ typedef struct STRING_VIEWS_T {
 #define SV_FMT "%.*s"
 #endif
 
-#ifndef SV_FMT_DATA
-#define SV_FMT_DATA(sv_ptr) (sv_ptr)->len, (sv_ptr)->data
+#ifndef SV_DATA
+#define SV_DATA(sv_ptr) (sv_ptr)->len, (sv_ptr)->data
 #endif
 
 string str_make(Arena *arena, const char *fmt, ...);
