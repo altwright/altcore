@@ -15,4 +15,6 @@ add_library(altcore STATIC
         memory.c
         memory.h
         hashmap.c
-        hashmap.h)
+        hashmap.h
+        debug.c
+        debug.h)

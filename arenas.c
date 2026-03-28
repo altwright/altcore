@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include "memory.h"
+#include "debug.h"
 
 Arena arena_make(i64 initial_cap) {
     Arena arena = {};
@@ -33,7 +34,7 @@ void arena_free(Arena *arena) {
     int res = mtx_lock(&arena->lock);
     assert(res == thrd_success);
 
-    ArenaBuffer* current_buffer = arena->buffer;
+    ArenaBuffer *current_buffer = arena->buffer;
 
     while (current_buffer) {
         if (current_buffer->data) {
@@ -42,7 +43,7 @@ void arena_free(Arena *arena) {
             current_buffer->cap = 0;
         }
 
-        ArenaBuffer* next_buffer = current_buffer->next;
+        ArenaBuffer *next_buffer = current_buffer->next;
         alt_free(current_buffer);
         current_buffer = next_buffer;
     }
@@ -57,6 +58,15 @@ void arena_free(Arena *arena) {
 
 void *arena_alloc(Arena *arena, i64 size) {
     if (!arena || !arena->buffer || size <= 0) {
+
+        if (!arena) {
+            debugf("arena is NULL\n");
+        } else if (!arena->buffer) {
+            debugf("arena buffer is NULL\n");
+        } else {
+            debugf("size is lte zero\n");
+        }
+
         return nullptr;
     }
 
@@ -66,7 +76,7 @@ void *arena_alloc(Arena *arena, i64 size) {
     i64 aligned_size = ((size + 3) >> 2) << 2;
     i64 current_buffer_offset = arena->offset;
 
-    ArenaBuffer* current_buffer = arena->buffer;
+    ArenaBuffer *current_buffer = arena->buffer;
     while (current_buffer_offset > current_buffer->cap) {
         current_buffer_offset -= current_buffer->cap;
         assert(current_buffer->next);
@@ -75,7 +85,7 @@ void *arena_alloc(Arena *arena, i64 size) {
 
     while (aligned_size > (current_buffer->cap - current_buffer_offset)) {
         if (!current_buffer->next) {
-            ArenaBuffer* next_buffer = alt_calloc(1, sizeof(ArenaBuffer));
+            ArenaBuffer *next_buffer = alt_calloc(1, sizeof(ArenaBuffer));
             assert(next_buffer);
             next_buffer->cap = aligned_size > current_buffer->cap ? aligned_size : current_buffer->cap;
             next_buffer->data = alt_calloc(next_buffer->cap, sizeof(u8));
@@ -85,7 +95,7 @@ void *arena_alloc(Arena *arena, i64 size) {
         current_buffer_offset = 0;
     }
 
-    u8* new_alloc = current_buffer->data + current_buffer_offset;
+    u8 *new_alloc = current_buffer->data + current_buffer_offset;
     arena->offset += aligned_size;
 
     res = mtx_unlock(&arena->lock);
