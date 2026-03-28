@@ -5,6 +5,6 @@
 #ifndef ALTCORE_DEBUG_H
 #define ALTCORE_DEBUG_H
 
-void debugf(const char* fmt, ...);
+void debug_f(const char* fmt, ...);
 
 #endif //ALTCORE_DEBUG_H

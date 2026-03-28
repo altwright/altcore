@@ -58,15 +58,6 @@ void arena_free(Arena *arena) {
 
 void *arena_alloc(Arena *arena, i64 size) {
     if (!arena || !arena->buffer || size <= 0) {
-
-        if (!arena) {
-            debugf("arena is NULL\n");
-        } else if (!arena->buffer) {
-            debugf("arena buffer is NULL\n");
-        } else {
-            debugf("size is lte zero\n");
-        }
-
         return nullptr;
     }
 
