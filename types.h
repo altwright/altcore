@@ -20,6 +20,7 @@ typedef uint64_t u64;
 typedef struct FX12_T {
     i32 data;
 } fx12;
+
 typedef struct FX24_T {
     i32 data;
 } fx24;
@@ -99,6 +100,18 @@ kNullPtr[0] \
 )
 #endif
 
+#ifndef ARRAY_SORT
+#define ARRAY_SORT(array_ptr, sort_fn) \
+do { \
+    array_sort( \
+        (array_ptr)->data, \
+        (array_ptr)->len, \
+        sizeof(*((array_ptr)->data)), \
+        &sort_fn \
+    ); \
+} while(0)
+#endif
+
 void array_alloc(
     void **data_ptr,
     i64 *len,
@@ -115,6 +128,13 @@ void array_push(
     i64 new_elem_size,
     const void *new_elem,
     struct ARENA_T *arena
+);
+
+void array_sort(
+    void *data,
+    i64 len,
+    i64 elem_size,
+    int (*sort_fn)(const void*, const void*)
 );
 
 #ifndef FX12_INIT

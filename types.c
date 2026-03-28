@@ -4,6 +4,7 @@
 
 #include "types.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "assert.h"
@@ -63,6 +64,16 @@ void array_push(
     memcpy(new_elem_bytes, new_elem, new_elem_size);
 
     (*len)++;
+}
+
+void array_sort(
+    void *data,
+    i64 len,
+    i64 elem_size,
+    int (*sort_fn)(const void *, const void *)
+) {
+    assert(data && len > 0 && elem_size > 0 && sort_fn);
+    qsort(data, len, elem_size, sort_fn);
 }
 
 fx12 fx12_mul(fx12 left, fx12 right) {
