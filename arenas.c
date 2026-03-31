@@ -22,17 +22,11 @@ Arena arena_make(i64 initial_cap) {
     arena.buffer->data = alt_calloc(arena.buffer->cap, sizeof(u8));
     assert(arena.buffer->data);
 
-    int res = mtx_init(&arena.lock, mtx_plain);
-    assert(res == thrd_success);
-
     return arena;
 }
 
 void arena_free(Arena *arena) {
     assert(arena);
-
-    int res = mtx_lock(&arena->lock);
-    assert(res == thrd_success);
 
     ArenaBuffer *current_buffer = arena->buffer;
 
@@ -49,20 +43,12 @@ void arena_free(Arena *arena) {
     }
 
     arena->buffer = nullptr;
-
-    res = mtx_unlock(&arena->lock);
-    assert(res == thrd_success);
-
-    mtx_destroy(&arena->lock);
 }
 
 void *arena_alloc(Arena *arena, i64 size) {
     if (!arena || !arena->buffer || size <= 0) {
         return nullptr;
     }
-
-    int res = mtx_lock(&arena->lock);
-    assert(res == thrd_success);
 
     i64 aligned_size = ((size + 3) >> 2) << 2;
     i64 current_buffer_offset = arena->offset;
@@ -88,9 +74,6 @@ void *arena_alloc(Arena *arena, i64 size) {
 
     u8 *new_alloc = current_buffer->data + current_buffer_offset;
     arena->offset += aligned_size;
-
-    res = mtx_unlock(&arena->lock);
-    assert(res == thrd_success);
 
     return new_alloc;
 }

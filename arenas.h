@@ -5,8 +5,6 @@
 #ifndef ALTCORE_ARENAS_H
 #define ALTCORE_ARENAS_H
 
-#include <threads.h>
-
 #include "types.h"
 
 typedef struct ARENA_BUFFER_T {
@@ -18,7 +16,6 @@ typedef struct ARENA_BUFFER_T {
 typedef struct ARENA_T {
     ArenaBuffer *buffer;
     i64 offset;
-    mtx_t lock;
 } Arena;
 
 Arena arena_make(i64 initial_cap);
