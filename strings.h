@@ -17,7 +17,7 @@ typedef struct STRINGS_T {
 } strings;
 
 typedef struct STRING_VIEW_T {
-    const char *data;
+    const char *start;
     i64 len;
 } string_view;
 

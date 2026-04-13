@@ -107,10 +107,10 @@ string_views str_split(Arena *arena, const string_view *str, const char *delimit
 
     const char *delim_start = nullptr;
     string_view delim_view = {
-        str->data,
+        str->start,
         str->len,
     };
-    const char *prev_start = str->data;
+    const char *prev_start = str->start;
 
     while (delim_start = str_find_sub(&delim_view, delimiter)
            , delim_start) {
@@ -123,10 +123,10 @@ string_views str_split(Arena *arena, const string_view *str, const char *delimit
         prev_start = delim_start + delim_len;
     }
 
-    if (prev_start < str->data + str->len) {
+    if (prev_start < str->start+ str->len) {
         string_view final_sub_str = {
             prev_start,
-            (str->data + str->len) - prev_start,
+            (str->start + str->len) - prev_start,
         };
         ARRAY_PUSH(&split_views, &final_sub_str);
     }
@@ -142,10 +142,10 @@ i64s str_split_idxs(Arena *arena, const string_view *str, const char *delimiter)
 
     size_t delim_len = strlen(delimiter);
 
-    const char *delim_start = str->data;
+    const char *delim_start = str->start;
 
     while (delim_start = strstr(delim_start, delimiter), delim_start) {
-        i64 delim_idx = delim_start - str->data;
+        i64 delim_idx = delim_start - str->start;
         ARRAY_PUSH(&idxs, &delim_idx);
 
         delim_start += delim_len;
@@ -173,7 +173,7 @@ string str_join(Arena *arena, const string_views *strs, const char *delimiter) {
     memset(new_str.data, 0, new_str.cap);
 
     for (i64 str_idx = 0; str_idx < strs->len; str_idx++) {
-        str_append(&new_str, "%s", strs->data[str_idx].data);
+        str_append(&new_str, "%s", strs->data[str_idx].start);
 
         if (str_idx < strs->len - 1) {
             str_append(&new_str, "%s", delimiter);
@@ -184,14 +184,14 @@ string str_join(Arena *arena, const string_views *strs, const char *delimiter) {
 }
 
 string str_make_view(Arena *arena, const string_view *view) {
-    string str = str_make(arena, "%.*s", view->len, view->data);
+    string str = str_make(arena, "%.*s", view->len, view->start);
     return str;
 }
 
 void str_strip(string_view *str) {
     i64 c_idx = 0;
     for (c_idx = 0; c_idx < str->len; c_idx++) {
-        if (!isspace(str->data[c_idx])) {
+        if (!isspace(str->start[c_idx])) {
             break;
         }
     }
@@ -199,7 +199,7 @@ void str_strip(string_view *str) {
     str_advance(str, c_idx);
 
     for (c_idx = str->len - 1; c_idx >= 0; c_idx--) {
-        if (!isspace(str->data[c_idx])) {
+        if (!isspace(str->start[c_idx])) {
             break;
         }
     }
@@ -210,7 +210,7 @@ void str_strip(string_view *str) {
 void str_advance(string_view *str, i64 offset) {
     assert(offset >= 0 && offset <= str->len);
 
-    str->data += offset;
+    str->start += offset;
     str->len -= offset;
 }
 
@@ -222,7 +222,7 @@ const char *str_find_sub(const string_view *haystack, const char *needle) {
     bool found = false;
     i64 c_idx = 0;
     for (c_idx = 0; c_idx < haystack->len - needle_len; c_idx++) {
-        const char *current_start = haystack->data + c_idx;
+        const char *current_start = haystack->start + c_idx;
 
         if (strncmp(current_start, needle, needle_len) == 0) {
             found = true;
@@ -231,7 +231,7 @@ const char *str_find_sub(const string_view *haystack, const char *needle) {
     }
 
     if (found) {
-        sub_str = haystack->data + c_idx;
+        sub_str = haystack->start + c_idx;
     }
 
     return sub_str;
