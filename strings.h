@@ -30,7 +30,7 @@ typedef struct STRING_VIEWS_T {
 #endif
 
 #ifndef SV_DATA
-#define SV_DATA(sv_ptr) (sv_ptr)->len, (sv_ptr)->data
+#define SV_DATA(sv_ptr) (sv_ptr)->len, (sv_ptr)->start
 #endif
 
 string str_make(Arena *arena, const char *fmt, ...);
