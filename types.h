@@ -30,6 +30,31 @@ typedef struct FX24_T {
 typedef float fl32;
 typedef double fl64;
 
+typedef enum VEC_TYPE {
+#ifndef X_VEC_ELEM_TYPES
+#define X_VEC_ELEM_TYPES \
+    X(U8) \
+    X(U16) \
+    X(U32) \
+    X(U64) \
+    X(I8) \
+    X(I16) \
+    X(I32) \
+    X(I64) \
+    X(FX12) \
+    X(FX24) \
+    X(FL32) \
+    X(FL64) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(type) \
+    VEC_ELEM_TYPE_##type,
+#endif
+    X_VEC_ELEM_TYPES
+#undef X
+} VecElemType;
+
 typedef struct V128_T {
     u8 data[16];
 } v128;
@@ -148,7 +173,7 @@ void array_sort(
     void *data,
     i64 len,
     i64 elem_size,
-    int (*sort_fn)(const void*, const void*)
+    int (*sort_fn)(const void *, const void *)
 );
 
 #ifndef FX12_INIT
@@ -156,18 +181,26 @@ void array_sort(
     ((fx12)((float_val) * (1LL << 12)))
 #endif
 
-inline fx12 fx12_mul(fx12 left, fx12 right);
+fx12 fx12_mul(fx12 left, fx12 right);
 
-inline fx12 fx12_div(fx12 left, fx12 right);
+fx12 fx12_div(fx12 left, fx12 right);
 
 #ifndef FX24_INIT
 #define FX24_INIT(float_val) \
     ((fx24)((float_val) * (1LL << 24)))
 #endif
 
-inline fx24 fx24_mul(fx24 left, fx24 right);
+fx24 fx24_mul(fx24 left, fx24 right);
 
-inline fx24 fx24_div(fx24 left, fx24 right);
+fx24 fx24_div(fx24 left, fx24 right);
+
+void v128_add(VecElemType type, const v128 *left, const v128 *right, v128 *out);
+
+void v128_sub(VecElemType type, const v128 *left, const v128 *right, v128 *out);
+
+void v128_mul(VecElemType type, const v128 *left, const v128 *right, v128 *out);
+
+void v128_div(VecElemType type, const v128 *left, const v128 *right, v128 *out);
 
 typedef struct I8S_T {
     ARRAY_FIELDS(i8)

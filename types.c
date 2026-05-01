@@ -99,3 +99,19 @@ fx24 fx24_div(fx24 left, fx24 right) {
     }
     return result;
 }
+
+void v128_add(VecElemType type, const v128 *left, const v128 *right, v128 *out) {
+
+}
+
+void v128_sub(VecElemType type, const v128 *left, const v128 *right, v128 *out) {
+
+}
+
+void v128_mul(VecElemType type, const v128 *left, const v128 *right, v128 *out) {
+
+}
+
+void v128_div(VecElemType type, const v128 *left, const v128 *right, v128 *out) {
+
+}
