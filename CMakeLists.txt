@@ -21,7 +21,7 @@ foreach(HEADER ${HEADER_FILES})
     configure_file(${HEADER} ${GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/${HEADER_NAME} COPYONLY)
 endforeach()
 
-add_library(altcore STATIC
+add_library(${PROJECT_NAME} STATIC
         types.c
         arenas.c
         strings.c
@@ -32,6 +32,14 @@ add_library(altcore STATIC
         init.c
 )
 
-target_include_directories(altcore INTERFACE
+set(SDL_SHARED OFF)
+set(SDL_STATIC ON)
+add_subdirectory(libs/SDL3-3.4.4 EXCLUDE_FROM_ALL)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+        SDL3::SDL3-static
+)
+
+target_include_directories(${PROJECT_NAME} INTERFACE
         $<BUILD_INTERFACE:${GENERATED_INCLUDE_DIR}>
 )
