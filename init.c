@@ -16,5 +16,7 @@ void alt_init(i64 address_space_max_size) {
 }
 
 void alt_uninit() {
+    dlmalloc_trim(0);
+
     defer_uninit();
 }
