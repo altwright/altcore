@@ -30,6 +30,18 @@ typedef struct FX24_T {
 typedef float fl32;
 typedef double fl64;
 
+typedef struct V128_T {
+    u8 data[16];
+} v128;
+
+typedef struct V256_T {
+    u8 data[32];
+} v256;
+
+typedef struct V512_T {
+    u8 data[64];
+} v512;
+
 struct ARENA_T;
 
 extern void *kNullPtr;
