@@ -9,9 +9,6 @@
 
 #include "types.h"
 
-void alt_init(i64 initial_cap);
-
-void alt_uninit();
 
 void *alt_malloc(size_t size);
 
