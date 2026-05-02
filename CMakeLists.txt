@@ -3,7 +3,7 @@ project(altcore C)
 
 set(CMAKE_C_STANDARD 23)
 
-set(HEADER_FILES
+set(HEADER_FILEPATHS
         types.h
         arenas.h
         strings.h
@@ -16,9 +16,8 @@ set(HEADER_FILES
 
 set(GENERATED_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 
-foreach(HEADER ${HEADER_FILES})
-    get_filename_component(HEADER_NAME ${HEADER} NAME)
-    configure_file(${HEADER} ${GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/${HEADER_NAME} COPYONLY)
+foreach(HEADER_FILEPATH ${HEADER_FILEPATHS})
+    configure_file(${HEADER} ${GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/${HEADER_FILEPATH} COPYONLY)
 endforeach()
 
 add_library(${PROJECT_NAME} STATIC
