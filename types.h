@@ -191,6 +191,8 @@ typedef enum F32_PRECISION_E {
 #define F32_PRECISION_DEFAULT (F32_PRECISION_FLOAT)
 #endif
 
+extern const f32 kF32Infinity;
+
 inline f32 f32_init_ex(float val, F32Precision precision);
 
 inline f32 f32_add_ex(f32 left, f32 right, F32Precision precision);
@@ -200,6 +202,8 @@ inline f32 f32_sub_ex(f32 left, f32 right, F32Precision precision);
 inline f32 f32_mul_ex(f32 left, f32 right, F32Precision precision);
 
 inline f32 f32_div_ex(f32 left, f32 right, F32Precision precision);
+
+inline bool f32_is_inf(f32 val);
 
 #ifndef f32_init
 #define f32_init(val, ...) \
@@ -245,6 +249,8 @@ typedef enum F64_PRECISION_E {
 #define F64_PRECISION_DEFAULT (F64_PRECISION_DOUBLE)
 #endif
 
+extern const f64 kF64Infinity;
+
 inline f64 f64_init_ex(double val, F64Precision precision);
 
 inline f64 f64_add_ex(f64 left, f64 right, F64Precision precision);
@@ -254,6 +260,8 @@ inline f64 f64_sub_ex(f64 left, f64 right, F64Precision precision);
 inline f64 f64_mul_ex(f64 left, f64 right, F64Precision precision);
 
 inline f64 f64_div_ex(f64 left, f64 right, F64Precision precision);
+
+inline bool f64_is_inf(f64 val);
 
 #ifndef f64_init
 #define f64_init(val, ...) \

@@ -12,6 +12,14 @@
 
 void *kNullPtr = nullptr;
 
+const f32 kF32Infinity = {
+    .data = {0xff, 0xff, 0xff, 0xff},
+};
+
+const f64 kF64Infinity = {
+    .data = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+};
+
 void array_alloc(
     void **data_ptr,
     i64 *len,
@@ -172,7 +180,7 @@ f32 f32_div_ex(f32 left, f32 right, F32Precision precision) {
     f32 out = {};
 
     if (memcmp(&right, &out, sizeof(f32)) == 0) {
-        memset(&out, 0xff, sizeof(f32));
+        out = kF32Infinity;
     } else {
         switch (precision) {
             case F32_PRECISION_FLOAT: {
@@ -191,6 +199,10 @@ f32 f32_div_ex(f32 left, f32 right, F32Precision precision) {
     }
 
     return out;
+}
+
+bool f32_is_inf(f32 val) {
+    return memcmp(&val, &kF32Infinity, sizeof(f32)) == 0;
 }
 
 f64 f64_init_ex(double val, F64Precision precision) {
@@ -278,7 +290,7 @@ f64 f64_div_ex(f64 left, f64 right, F64Precision precision) {
     f64 out = {};
 
     if (memcmp(&right, &out, sizeof(f64)) == 0) {
-        memset(&out, 0xff, sizeof(f64));
+        out = kF64Infinity;
     } else {
         switch (precision) {
             case F64_PRECISION_DOUBLE: {
@@ -296,4 +308,8 @@ f64 f64_div_ex(f64 left, f64 right, F64Precision precision) {
     }
 
     return out;
+}
+
+bool f64_is_inf(f64 val) {
+    return memcmp(&val, &kF64Infinity, sizeof(f64)) == 0;
 }
