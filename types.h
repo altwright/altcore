@@ -187,6 +187,12 @@ typedef enum F32_PRECISION_E {
 #undef X
 } F32Precision;
 
+#ifndef F32_PRECISION_DEFAULT
+#define F32_PRECISION_DEFAULT (F32_PRECISION_FLOAT)
+#endif
+
+inline f32 f32_init_ex(float val, F32Precision precision);
+
 inline f32 f32_add_ex(f32 left, f32 right, F32Precision precision);
 
 inline f32 f32_sub_ex(f32 left, f32 right, F32Precision precision);
@@ -195,24 +201,29 @@ inline f32 f32_mul_ex(f32 left, f32 right, F32Precision precision);
 
 inline f32 f32_div_ex(f32 left, f32 right, F32Precision precision);
 
+#ifndef f32_init
+#define f32_init(val, ...) \
+    f32_init_ex((val), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_DEFAULT)
+#endif
+
 #ifndef f32_add
 #define f32_add(left, right, ...) \
-    f32_add_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_FLOAT)
+    f32_add_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_DEFAULT)
 #endif
 
 #ifndef f32_sub
 #define f32_sub(left, right, ...) \
-    f32_sub_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_FLOAT)
+    f32_sub_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_DEFAULT)
 #endif
 
 #ifndef f32_mul
 #define f32_mul(left, right, ...) \
-    f32_mul_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_FLOAT)
+    f32_mul_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_DEFAULT)
 #endif
 
 #ifndef f32_div
 #define f32_div(left, right, ...) \
-    f32_div_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_FLOAT)
+    f32_div_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_DEFAULT)
 #endif
 
 typedef enum F64_PRECISION_E {
@@ -230,6 +241,12 @@ typedef enum F64_PRECISION_E {
 #undef X
 } F64Precision;
 
+#ifndef F64_PRECISION_DEFAULT
+#define F64_PRECISION_DEFAULT (F64_PRECISION_DOUBLE)
+#endif
+
+inline f64 f64_init_ex(double val, F64Precision precision);
+
 inline f64 f64_add_ex(f64 left, f64 right, F64Precision precision);
 
 inline f64 f64_sub_ex(f64 left, f64 right, F64Precision precision);
@@ -238,24 +255,29 @@ inline f64 f64_mul_ex(f64 left, f64 right, F64Precision precision);
 
 inline f64 f64_div_ex(f64 left, f64 right, F64Precision precision);
 
+#ifndef f64_init
+#define f64_init(val, ...) \
+    f64_init_ex((val), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DEFAULT)
+#endif
+
 #ifndef f64_add
 #define f64_add(left, right, ...) \
-    f64_add_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DOUBLE)
+    f64_add_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DEFAULT)
 #endif
 
 #ifndef f64_sub
 #define f64_sub(left, right, ...) \
-    f64_sub_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DOUBLE)
+    f64_sub_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DEFAULT)
 #endif
 
 #ifndef f64_mul
 #define f64_mul(left, right, ...) \
-    f64_mul_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DOUBLE)
+    f64_mul_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DEFAULT)
 #endif
 
 #ifndef f64_div
 #define f64_div(left, right, ...) \
-    f64_div_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DOUBLE)
+    f64_div_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DEFAULT)
 #endif
 
 void v128_add(VecElemType type, const v128 *left, const v128 *right, v128 *out);

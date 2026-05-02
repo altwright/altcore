@@ -88,6 +88,23 @@ void v128_mul(VecElemType type, const v128 *left, const v128 *right, v128 *out) 
 void v128_div(VecElemType type, const v128 *left, const v128 *right, v128 *out) {
 }
 
+f32 f32_init_ex(float val, F32Precision precision) {
+    f32 out = {};
+
+    switch (precision) {
+        case F32_PRECISION_FLOAT: {
+            float *fo = (float *) &out;
+            *fo = val;
+            break;
+        }
+        default:
+            assert(0 && "Unhandled f32 precision");
+            break;
+    }
+
+    return out;
+}
+
 f32 f32_add_ex(f32 left, f32 right, F32Precision precision) {
     f32 out = {};
 
@@ -169,6 +186,24 @@ f32 f32_div_ex(f32 left, f32 right, F32Precision precision) {
         }
         default: {
             assert(0 && "Unhandled f32 precision");
+            break;
+        }
+    }
+
+    return out;
+}
+
+f64 f64_init_ex(double val, F64Precision precision) {
+    f64 out = {};
+
+    switch (precision) {
+        case F64_PRECISION_DOUBLE: {
+            double *fo = (double *) (&out);
+            *fo = val;
+            break;
+        }
+        default: {
+            assert(0 && "Unhandled f64 precision");
             break;
         }
     }
