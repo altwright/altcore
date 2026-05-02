@@ -171,22 +171,22 @@ f32 f32_mul_ex(f32 left, f32 right, F32Precision precision) {
 f32 f32_div_ex(f32 left, f32 right, F32Precision precision) {
     f32 out = {};
 
-    switch (precision) {
-        case F32_PRECISION_FLOAT: {
-            float *fl = (float *) (&left);
-            float *fr = (float *) (&right);
-
-            if (*fr == 0.0f) {
-                memset(&out, 0xff, sizeof(f32));
-            } else {
+    if (memcmp(&right, &out, sizeof(f32)) == 0) {
+        memset(&out, 0xff, sizeof(f32));
+    } else {
+        switch (precision) {
+            case F32_PRECISION_FLOAT: {
+                float *fl = (float *) (&left);
+                float *fr = (float *) (&right);
                 float *fo = (float *) (&out);
                 *fo = (*fl) / (*fr);
+
+                break;
             }
-            break;
-        }
-        default: {
-            assert(0 && "Unhandled f32 precision");
-            break;
+            default: {
+                assert(0 && "Unhandled f32 precision");
+                break;
+            }
         }
     }
 
@@ -277,22 +277,21 @@ f64 f64_mul_ex(f64 left, f64 right, F64Precision precision) {
 f64 f64_div_ex(f64 left, f64 right, F64Precision precision) {
     f64 out = {};
 
-    switch (precision) {
-        case F64_PRECISION_DOUBLE: {
-            double *fl = (double *) (&left);
-            double *fr = (double *) (&right);
-
-            if (*fr == 0.0) {
-                memset(&out, 0xff, sizeof(f64));
-            } else {
+    if (memcmp(&right, &out, sizeof(f64)) == 0) {
+        memset(&out, 0xff, sizeof(f64));
+    } else {
+        switch (precision) {
+            case F64_PRECISION_DOUBLE: {
+                double *fl = (double *) (&left);
+                double *fr = (double *) (&right);
                 double *fo = (double *) (&out);
                 *fo = (*fl) / (*fr);
+                break;
             }
-            break;
-        }
-        default: {
-            assert(0 && "Unhandled f64 precision");
-            break;
+            default: {
+                assert(0 && "Unhandled f64 precision");
+                break;
+            }
         }
     }
 
