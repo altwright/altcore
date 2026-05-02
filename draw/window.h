@@ -51,12 +51,25 @@ typedef enum WINDOW_FLAG_E : u64 {
 
 typedef u64 WindowFlags;
 
-typedef struct WINDOW_CREATE_INFO {
+typedef struct WINDOW_CREATE_INFO_T {
     const char* title;
     iVec2 size;
+    iVec2 pos;
+    i32 display_idx;
     WindowMode mode;
     WindowFlags flags;
 } WindowCreateInfo;
+
+typedef struct DISPLAY_INFO_T {
+    iVec2 windowed_size;
+    iVec2 fullscreen_size;
+} DisplayInfo;
+
+typedef struct DISPLAY_INFOS_T {
+    ARRAY_FIELDS(DisplayInfo)
+} DisplayInfos;
+
+void window_get_display_infos(DisplayInfos *out);
 
 WindowHandle* window_create(const WindowCreateInfo* info);
 

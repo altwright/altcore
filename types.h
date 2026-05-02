@@ -122,6 +122,14 @@ typedef struct F_VEC4_T {
     };
 } fVec4;
 
+typedef struct I_RECT_T {
+    i32 x, y, w, h;
+} iRect;
+
+typedef struct F_RECT_T {
+    f32 x, y, w, h;
+} fRect;
+
 struct ARENA_T;
 
 extern void *kNullPtr;
