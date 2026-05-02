@@ -12,12 +12,15 @@ set(HEADER_FILEPATHS
         hashmap.h
         debug.h
         init.h
+        draw/window.h
 )
 
+set(SOURCE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(GENERATED_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 
 foreach(HEADER_FILEPATH ${HEADER_FILEPATHS})
-    configure_file(${HEADER} ${GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/${HEADER_FILEPATH} COPYONLY)
+    get_filename_component(DEST_DIR ${HEADER_FILEPATH} DIRECTORY)
+    file(COPY ${SOURCE_INCLUDE_DIR}/${HEADER_FILEPATH} DESTINATION ${GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/${DEST_DIR})
 endforeach()
 
 add_library(${PROJECT_NAME} STATIC
@@ -29,6 +32,7 @@ add_library(${PROJECT_NAME} STATIC
         hashmap.c
         debug.c
         init.c
+        draw/window.c
 )
 
 set(SDL_SHARED OFF)
@@ -46,4 +50,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 target_include_directories(${PROJECT_NAME} INTERFACE
         $<BUILD_INTERFACE:${GENERATED_INCLUDE_DIR}>
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}
 )

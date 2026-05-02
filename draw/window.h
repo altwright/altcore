@@ -1,0 +1,65 @@
+//
+// Created by wright on 5/2/26.
+//
+
+#ifndef ALTCORE_WINDOW_H
+#define ALTCORE_WINDOW_H
+
+#include "types.h"
+
+struct WINDOW_HANDLE_T;
+typedef struct WINDOW_HANDLE_T WindowHandle;
+
+typedef enum WINDOW_MODE_E {
+#ifndef X_WINDOW_MODES
+#define X_WINDOW_MODES \
+    X(WINDOWED) \
+    X(FULLSCREEN) \
+    X(BORDERLESS) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(mode) \
+    WINDOW_MODE_##mode,
+#endif
+    X_WINDOW_MODES
+#undef X
+} WindowMode;
+
+typedef enum WINDOW_FLAG_OPTION_E {
+#ifndef X_WINDOW_FLAG_OPTIONS
+#define X_WINDOW_FLAG_OPTIONS \
+    X(RESIZABLE) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(option) \
+    WINDOW_FLAG_OPTION_##option,
+#endif
+    X_WINDOW_FLAG_OPTIONS
+#undef X
+} WindowFlagOption;
+
+typedef enum WINDOW_FLAG_E : u64 {
+#ifndef X
+#define X(flag) \
+    WINDOW_FLAG_##flag = 1ULL << WINDOW_FLAG_OPTION_##flag,
+#endif
+    X_WINDOW_FLAG_OPTIONS
+#undef X
+} WindowFlag;
+
+typedef u64 WindowFlags;
+
+typedef struct WINDOW_CREATE_INFO {
+    const char* title;
+    iVec2 size;
+    WindowMode mode;
+    WindowFlags flags;
+} WindowCreateInfo;
+
+WindowHandle* window_create(const WindowCreateInfo* info);
+
+void window_destroy(WindowHandle* handle);
+
+#endif //ALTCORE_WINDOW_H

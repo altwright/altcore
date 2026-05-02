@@ -50,6 +50,10 @@ typedef enum VEC_TYPE {
 #undef X
 } VecElemType;
 
+typedef struct V64_T {
+    u8 data[8];
+} v64;
+
 typedef struct V128_T {
     u8 data[16];
 } v128;
@@ -61,6 +65,62 @@ typedef struct V256_T {
 typedef struct V512_T {
     u8 data[64];
 } v512;
+
+typedef struct I_VEC2_T {
+    union {
+        v64 data;
+
+        struct {
+            i32 x, y;
+        };
+
+        struct {
+            i32 u, v;
+        };
+    };
+} iVec2;
+
+typedef struct F_VEC2_T {
+    union {
+        v64 data;
+
+        struct {
+            f32 x, y;
+        };
+
+        struct {
+            f32 u, v;
+        };
+    };
+} fVec2;
+
+typedef struct I_VEC4_T {
+    union {
+        v128 data;
+
+        struct {
+            i32 x, y, z, w;
+        };
+
+        struct {
+            i32 r, g, b, a;
+        };
+    };
+} iVec4;
+
+typedef struct F_VEC4_T {
+    union {
+        v128 data;
+
+        struct {
+            f32 x, y, z, w;
+        };
+
+        struct {
+            f32 r, g, b, a;
+        };
+    };
+} fVec4;
 
 struct ARENA_T;
 
