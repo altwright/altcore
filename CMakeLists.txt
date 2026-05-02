@@ -36,8 +36,13 @@ set(SDL_SHARED OFF)
 set(SDL_STATIC ON)
 add_subdirectory(libs/SDL3-3.4.4 EXCLUDE_FROM_ALL)
 
+set(CGLM_SHARED OFF)
+set(CGLM_STATIC ON)
+add_subdirectory(libs/cglm-0.9.6 EXCLUDE_FROM_ALL)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE
         SDL3::SDL3-static
+        cglm
 )
 
 target_include_directories(${PROJECT_NAME} INTERFACE

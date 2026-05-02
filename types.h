@@ -19,16 +19,13 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 typedef unsigned _BitInt(128) u128;
 
-typedef struct FX12_T {
-    i32 data;
-} fx12;
+typedef struct F32_T {
+    u8 data[4];
+} f32;
 
-typedef struct FX24_T {
-    i64 data;
-} fx24;
-
-typedef float fl32;
-typedef double fl64;
+typedef struct F64_T {
+    u8 data[8];
+} f64;
 
 typedef enum VEC_TYPE {
 #ifndef X_VEC_ELEM_TYPES
@@ -41,10 +38,8 @@ typedef enum VEC_TYPE {
     X(I16) \
     X(I32) \
     X(I64) \
-    X(FX12) \
-    X(FX24) \
-    X(FL32) \
-    X(FL64) \
+    X(F32) \
+    X(F64) \
     X(COUNT)
 #endif
 #ifndef X
@@ -176,23 +171,92 @@ void array_sort(
     int (*sort_fn)(const void *, const void *)
 );
 
-#ifndef FX12_INIT
-#define FX12_INIT(float_val) \
-    ((fx12)((float_val) * (1LL << 12)))
+typedef enum F32_PRECISION_E {
+#ifndef X_F32_PRECISIONS
+#define X_F32_PRECISIONS \
+    X(FLOAT) \
+    X(20_12) \
+    X(8_24) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(precision) \
+    F32_PRECISION_##precision,
+#endif
+    X_F32_PRECISIONS
+#undef X
+} F32Precision;
+
+inline f32 f32_add_ex(f32 left, f32 right, F32Precision precision);
+
+inline f32 f32_sub_ex(f32 left, f32 right, F32Precision precision);
+
+inline f32 f32_mul_ex(f32 left, f32 right, F32Precision precision);
+
+inline f32 f32_div_ex(f32 left, f32 right, F32Precision precision);
+
+#ifndef f32_add
+#define f32_add(left, right, ...) \
+    f32_add_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_FLOAT)
 #endif
 
-fx12 fx12_mul(fx12 left, fx12 right);
-
-fx12 fx12_div(fx12 left, fx12 right);
-
-#ifndef FX24_INIT
-#define FX24_INIT(float_val) \
-    ((fx24)((float_val) * (1LL << 24)))
+#ifndef f32_sub
+#define f32_sub(left, right, ...) \
+    f32_sub_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_FLOAT)
 #endif
 
-fx24 fx24_mul(fx24 left, fx24 right);
+#ifndef f32_mul
+#define f32_mul(left, right, ...) \
+    f32_mul_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_FLOAT)
+#endif
 
-fx24 fx24_div(fx24 left, fx24 right);
+#ifndef f32_div
+#define f32_div(left, right, ...) \
+    f32_div_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_FLOAT)
+#endif
+
+typedef enum F64_PRECISION_E {
+#ifndef X_F64_PRECISIONS
+#define X_F64_PRECISIONS \
+    X(DOUBLE) \
+    X(40_24) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(precision) \
+    F64_PRECISION_##precision,
+#endif
+    X_F64_PRECISIONS
+#undef X
+} F64Precision;
+
+inline f64 f64_add_ex(f64 left, f64 right, F64Precision precision);
+
+inline f64 f64_sub_ex(f64 left, f64 right, F64Precision precision);
+
+inline f64 f64_mul_ex(f64 left, f64 right, F64Precision precision);
+
+inline f64 f64_div_ex(f64 left, f64 right, F64Precision precision);
+
+#ifndef f64_add
+#define f64_add(left, right, ...) \
+    f64_add_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DOUBLE)
+#endif
+
+#ifndef f64_sub
+#define f64_sub(left, right, ...) \
+    f64_sub_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DOUBLE)
+#endif
+
+#ifndef f64_mul
+#define f64_mul(left, right, ...) \
+    f64_mul_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DOUBLE)
+#endif
+
+#ifndef f64_div
+#define f64_div(left, right, ...) \
+    f64_div_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DOUBLE)
+#endif
 
 void v128_add(VecElemType type, const v128 *left, const v128 *right, v128 *out);
 
@@ -234,21 +298,13 @@ typedef struct U64S_T {
     ARRAY_FIELDS(u64)
 } u64s;
 
-typedef struct FX12S_T {
-    ARRAY_FIELDS(fx12)
-} fx12s;
-
-typedef struct FX24S_T {
-    ARRAY_FIELDS(fx24)
-} fx24s;
-
 typedef struct F32S_T {
-    ARRAY_FIELDS(fl32)
-} fl32s;
+    ARRAY_FIELDS(f32)
+} f32s;
 
 typedef struct F64S_T {
-    ARRAY_FIELDS(fl64)
-} fl64s;
+    ARRAY_FIELDS(f64)
+} f64s;
 
 #ifndef STATIC_ARRAY_LEN
 #define STATIC_ARRAY_LEN(k_array) \
