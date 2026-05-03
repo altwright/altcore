@@ -12,8 +12,10 @@ set(HEADER_FILEPATHS
         hashmap.h
         debug.h
         init.h
+        worker.h
         draw/window.h
         draw/framebuffer.h
+        draw/renderer.h
 )
 
 set(SOURCE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -33,8 +35,10 @@ add_library(${PROJECT_NAME} STATIC
         hashmap.c
         debug.c
         init.c
+        worker.c
         draw/window.c
         draw/framebuffer.c
+        draw/renderer.c
 )
 
 set(SDL_SHARED OFF)

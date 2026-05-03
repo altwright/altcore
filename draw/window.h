@@ -87,16 +87,19 @@ typedef struct DISPLAY_INFOS_T {
     ARRAY_FIELDS(DisplayInfo)
 } DisplayInfos;
 
+struct SWAPCHAIN_BUFFER_T;
+typedef struct SWAPCHAIN_BUFFER_T SwapchainBuffer;
+
 void window_get_display_infos(DisplayInfos *out);
 
 WindowHandle* window_create(const WindowCreateInfo* info);
 
 void window_destroy(WindowHandle* handle);
 
-i32 window_get_framebuffer_count(WindowHandle* handle);
+i32 window_get_swapchain_bufs_count(const WindowHandle* handle);
 
-Framebuffer* window_get_next_framebuffer();
+SwapchainBuffer* window_get_free_swapchain_buf(WindowHandle* handle);
 
-void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf);
+void window_present_swapchain_buf(WindowHandle* handle, const SwapchainBuffer* buf);
 
 #endif //ALTCORE_WINDOW_H
