@@ -12,7 +12,14 @@
 #include "memory.h"
 
 struct WINDOW_HANDLE_T {
-    SDL_Window *sdl_window;
+    SDL_Window *window;
+    iVec2 window_size;
+    SDL_Surface *window_surface;
+
+    struct {
+        SDL_Surface** bufs;
+        i32 count;
+    } swapchain;
 };
 
 static bool g_sdl_video_initd = false;
@@ -74,6 +81,8 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, info->size.x);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, info->size.y);
 
+    bool disable_vsync = false;
+
     for (i32 flag_idx = 0; flag_idx < WINDOW_FLAG_OPTION_COUNT; flag_idx++) {
         WindowFlag flag = 1ULL << flag_idx;
 
@@ -81,6 +90,10 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
             switch (flag) {
                 case WINDOW_FLAG_RESIZABLE: {
                     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, true);
+                    break;
+                }
+                case WINDOW_FLAG_DISABLE_VSYNC: {
+                    disable_vsync = true;
                     break;
                 }
                 default:
@@ -127,13 +140,50 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
             break;
     }
 
-    handle->sdl_window = SDL_CreateWindowWithProperties(props);
-    assert(handle->sdl_window);
+    handle->window = SDL_CreateWindowWithProperties(props);
+    assert(handle->window);
 
     SDL_DestroyProperties(props);
     SDL_free(displays);
 
     g_num_windows++;
+
+    if (disable_vsync) {
+        SDL_SetWindowSurfaceVSync(handle->window, SDL_WINDOW_SURFACE_VSYNC_DISABLED);
+    }
+
+    bool success = SDL_GetWindowSize(handle->window, &handle->window_size.x, &handle->window_size.y);
+    assert(success);
+
+    handle->window_surface = SDL_GetWindowSurface(handle->window);
+
+    switch (info->swapchain_mode) {
+        case SWAPCHAIN_MODE_DOUBLE_BUFFERED: {
+            handle->swapchain.count = 2;
+            break;
+        }
+        case SWAPCHAIN_MODE_TRIPLE_BUFFERED: {
+            handle->swapchain.count = 3;
+            break;
+        }
+
+        default:
+            assert(0 && "Unhandled swapchain mode");
+            break;
+    }
+
+    handle->swapchain.bufs = alt_calloc(handle->swapchain.count, sizeof(*handle->swapchain.bufs));
+    assert(handle->swapchain.bufs);
+
+    for (i32 swapchain_idx = 0; swapchain_idx < handle->swapchain.count; swapchain_idx++) {
+        handle->swapchain.bufs[swapchain_idx] = SDL_CreateSurface(
+            handle->window_surface->w,
+            handle->window_surface->h,
+            handle->window_surface->format
+        );
+
+        assert(handle->swapchain.bufs[swapchain_idx]);
+    }
 
     return handle;
 }
@@ -141,7 +191,11 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
 void window_destroy(WindowHandle *handle) {
     assert(g_sdl_video_initd);
 
-    SDL_DestroyWindow(handle->sdl_window);
+    for (i32 swapchain_idx = 0; swapchain_idx < handle->swapchain.count; swapchain_idx++) {
+        SDL_DestroySurface(handle->swapchain.bufs[swapchain_idx]);
+    }
+
+    SDL_DestroyWindow(handle->window);
 
     alt_free(handle);
 

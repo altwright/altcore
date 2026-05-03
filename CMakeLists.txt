@@ -13,6 +13,7 @@ set(HEADER_FILEPATHS
         debug.h
         init.h
         draw/window.h
+        draw/framebuffer.h
 )
 
 set(SOURCE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -33,6 +34,7 @@ add_library(${PROJECT_NAME} STATIC
         debug.c
         init.c
         draw/window.c
+        draw/framebuffer.c
 )
 
 set(SDL_SHARED OFF)
