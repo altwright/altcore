@@ -96,106 +96,61 @@ void v128_mul(VecElemType type, const v128 *left, const v128 *right, v128 *out) 
 void v128_div(VecElemType type, const v128 *left, const v128 *right, v128 *out) {
 }
 
-f32 f32_init_ex(float val, F32Precision precision) {
+f32 f32_init(float val) {
     f32 out = {};
 
-    switch (precision) {
-        case F32_PRECISION_FLOAT: {
-            float *fo = (float *) &out;
-            *fo = val;
-            break;
-        }
-        default:
-            assert(0 && "Unhandled f32 precision");
-            break;
-    }
+    float *fo = (float *) &out;
+    *fo = val;
 
     return out;
 }
 
-f32 f32_add_ex(f32 left, f32 right, F32Precision precision) {
+f32 f32_add(f32 left, f32 right) {
     f32 out = {};
 
-    switch (precision) {
-        case F32_PRECISION_FLOAT: {
-            float *fl = (float *) (&left);
-            float *fr = (float *) (&right);
-            float *fo = (float *) (&out);
+    float *fl = (float *) (&left);
+    float *fr = (float *) (&right);
+    float *fo = (float *) (&out);
 
-            *fo = *fl + *fr;
-            break;
-        }
-        default: {
-            assert(0 && "Unhandled f32 precision");
-            break;
-        }
-    }
+    *fo = *fl + *fr;
 
     return out;
 }
 
-f32 f32_sub_ex(f32 left, f32 right, F32Precision precision) {
+f32 f32_sub(f32 left, f32 right) {
     f32 out = {};
 
-    switch (precision) {
-        case F32_PRECISION_FLOAT: {
-            float *fl = (float *) (&left);
-            float *fr = (float *) (&right);
-            float *fo = (float *) (&out);
+    float *fl = (float *) (&left);
+    float *fr = (float *) (&right);
+    float *fo = (float *) (&out);
 
-            *fo = *fl - *fr;
-            break;
-        }
-        default: {
-            assert(0 && "Unhandled f32 precision");
-            break;
-        }
-    }
+    *fo = *fl - *fr;
 
     return out;
 }
 
-f32 f32_mul_ex(f32 left, f32 right, F32Precision precision) {
+f32 f32_mul(f32 left, f32 right) {
     f32 out = {};
 
-    switch (precision) {
-        case F32_PRECISION_FLOAT: {
-            float *fl = (float *) (&left);
-            float *fr = (float *) (&right);
-            float *fo = (float *) (&out);
+    float *fl = (float *) (&left);
+    float *fr = (float *) (&right);
+    float *fo = (float *) (&out);
 
-            *fo = (*fl) * (*fr);
-            break;
-        }
-        default: {
-            assert(0 && "Unhandled f32 precision");
-            break;
-        }
-    }
+    *fo = (*fl) * (*fr);
 
     return out;
 }
 
-f32 f32_div_ex(f32 left, f32 right, F32Precision precision) {
+f32 f32_div(f32 left, f32 right) {
     f32 out = {};
 
     if (memcmp(&right, &out, sizeof(f32)) == 0) {
         out = kF32Infinity;
     } else {
-        switch (precision) {
-            case F32_PRECISION_FLOAT: {
-                float *fl = (float *) (&left);
-                float *fr = (float *) (&right);
-                float *fo = (float *) (&out);
-                *fo = (*fl) / (*fr);
-
-                break;
-            }
-            default: {
-                assert(0 && "Unhandled f32 precision");
-                break;
-            }
-        }
+        float *fl = (float *) (&left);
+        float *fr = (float *) (&right);
+        float *fo = (float *) (&out);
+        *fo = (*fl) / (*fr);
     }
 
     return out;
@@ -205,106 +160,61 @@ bool f32_is_inf(f32 val) {
     return memcmp(&val, &kF32Infinity, sizeof(f32)) == 0;
 }
 
-f64 f64_init_ex(double val, F64Precision precision) {
+f64 f64_init(double val) {
     f64 out = {};
 
-    switch (precision) {
-        case F64_PRECISION_DOUBLE: {
-            double *fo = (double *) (&out);
-            *fo = val;
-            break;
-        }
-        default: {
-            assert(0 && "Unhandled f64 precision");
-            break;
-        }
-    }
+    double *fo = (double *) (&out);
+    *fo = val;
 
     return out;
 }
 
-f64 f64_add_ex(f64 left, f64 right, F64Precision precision) {
+f64 f64_add(f64 left, f64 right) {
     f64 out = {};
 
-    switch (precision) {
-        case F64_PRECISION_DOUBLE: {
-            double *fl = (double *) (&left);
-            double *fr = (double *) (&right);
-            double *fo = (double *) (&out);
+    double *fl = (double *) (&left);
+    double *fr = (double *) (&right);
+    double *fo = (double *) (&out);
 
-            *fo = *fl + *fr;
-            break;
-        }
-        default: {
-            assert(0 && "Unhandled f64 precision");
-            break;
-        }
-    }
+    *fo = *fl + *fr;
 
     return out;
 }
 
-f64 f64_sub_ex(f64 left, f64 right, F64Precision precision) {
+f64 f64_sub(f64 left, f64 right) {
     f64 out = {};
 
-    switch (precision) {
-        case F64_PRECISION_DOUBLE: {
-            double *fl = (double *) (&left);
-            double *fr = (double *) (&right);
-            double *fo = (double *) (&out);
+    double *fl = (double *) (&left);
+    double *fr = (double *) (&right);
+    double *fo = (double *) (&out);
 
-            *fo = *fl - *fr;
-            break;
-        }
-        default: {
-            assert(0 && "Unhandled f64 precision");
-            break;
-        }
-    }
+    *fo = *fl - *fr;
 
     return out;
 }
 
-f64 f64_mul_ex(f64 left, f64 right, F64Precision precision) {
+f64 f64_mul(f64 left, f64 right) {
     f64 out = {};
 
-    switch (precision) {
-        case F64_PRECISION_DOUBLE: {
-            double *fl = (double *) (&left);
-            double *fr = (double *) (&right);
-            double *fo = (double *) (&out);
+    double *fl = (double *) (&left);
+    double *fr = (double *) (&right);
+    double *fo = (double *) (&out);
 
-            *fo = (*fl) * (*fr);
-            break;
-        }
-        default: {
-            assert(0 && "Unhandled f64 precision");
-            break;
-        }
-    }
+    *fo = (*fl) * (*fr);
 
     return out;
 }
 
-f64 f64_div_ex(f64 left, f64 right, F64Precision precision) {
+f64 f64_div(f64 left, f64 right) {
     f64 out = {};
 
     if (memcmp(&right, &out, sizeof(f64)) == 0) {
         out = kF64Infinity;
     } else {
-        switch (precision) {
-            case F64_PRECISION_DOUBLE: {
-                double *fl = (double *) (&left);
-                double *fr = (double *) (&right);
-                double *fo = (double *) (&out);
-                *fo = (*fl) / (*fr);
-                break;
-            }
-            default: {
-                assert(0 && "Unhandled f64 precision");
-                break;
-            }
-        }
+        double *fl = (double *) (&left);
+        double *fr = (double *) (&right);
+        double *fo = (double *) (&out);
+        *fo = (*fl) / (*fr);
     }
 
     return out;

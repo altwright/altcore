@@ -239,130 +239,37 @@ void array_sort(
     int (*sort_fn)(const void *, const void *)
 );
 
-typedef enum F32_PRECISION_E {
-#ifndef X_F32_PRECISIONS
-#define X_F32_PRECISIONS \
-    X(FLOAT) \
-    X(20_12) \
-    X(8_24) \
-    X(COUNT)
-#endif
-#ifndef X
-#define X(precision) \
-    F32_PRECISION_##precision,
-#endif
-    X_F32_PRECISIONS
-#undef X
-} F32Precision;
+inline f32 f32_init(float val);
 
-#ifndef F32_PRECISION_DEFAULT
-#define F32_PRECISION_DEFAULT (F32_PRECISION_FLOAT)
-#endif
+inline f32 f32_add(f32 left, f32 right);
 
-extern const f32 kF32Infinity;
+inline f32 f32_sub(f32 left, f32 right);
 
-inline f32 f32_init_ex(float val, F32Precision precision);
+inline f32 f32_mul(f32 left, f32 right);
 
-inline f32 f32_add_ex(f32 left, f32 right, F32Precision precision);
-
-inline f32 f32_sub_ex(f32 left, f32 right, F32Precision precision);
-
-inline f32 f32_mul_ex(f32 left, f32 right, F32Precision precision);
-
-inline f32 f32_div_ex(f32 left, f32 right, F32Precision precision);
+inline f32 f32_div(f32 left, f32 right);
 
 inline bool f32_is_inf(f32 val);
 
-#ifndef f32_init
-#define f32_init(val, ...) \
-    f32_init_ex((val), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_DEFAULT)
-#endif
+inline f64 f64_init(double val);
 
-#ifndef f32_add
-#define f32_add(left, right, ...) \
-    f32_add_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_DEFAULT)
-#endif
+inline f64 f64_add(f64 left, f64 right);
 
-#ifndef f32_sub
-#define f32_sub(left, right, ...) \
-    f32_sub_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_DEFAULT)
-#endif
+inline f64 f64_sub(f64 left, f64 right);
 
-#ifndef f32_mul
-#define f32_mul(left, right, ...) \
-    f32_mul_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_DEFAULT)
-#endif
+inline f64 f64_mul(f64 left, f64 right);
 
-#ifndef f32_div
-#define f32_div(left, right, ...) \
-    f32_div_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F32_PRECISION_DEFAULT)
-#endif
-
-typedef enum F64_PRECISION_E {
-#ifndef X_F64_PRECISIONS
-#define X_F64_PRECISIONS \
-    X(DOUBLE) \
-    X(40_24) \
-    X(COUNT)
-#endif
-#ifndef X
-#define X(precision) \
-    F64_PRECISION_##precision,
-#endif
-    X_F64_PRECISIONS
-#undef X
-} F64Precision;
-
-#ifndef F64_PRECISION_DEFAULT
-#define F64_PRECISION_DEFAULT (F64_PRECISION_DOUBLE)
-#endif
-
-extern const f64 kF64Infinity;
-
-inline f64 f64_init_ex(double val, F64Precision precision);
-
-inline f64 f64_add_ex(f64 left, f64 right, F64Precision precision);
-
-inline f64 f64_sub_ex(f64 left, f64 right, F64Precision precision);
-
-inline f64 f64_mul_ex(f64 left, f64 right, F64Precision precision);
-
-inline f64 f64_div_ex(f64 left, f64 right, F64Precision precision);
+inline f64 f64_div(f64 left, f64 right);
 
 inline bool f64_is_inf(f64 val);
 
-#ifndef f64_init
-#define f64_init(val, ...) \
-    f64_init_ex((val), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DEFAULT)
-#endif
+inline void v128_add(VecElemType type, const v128 *left, const v128 *right, v128 *out);
 
-#ifndef f64_add
-#define f64_add(left, right, ...) \
-    f64_add_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DEFAULT)
-#endif
+inline void v128_sub(VecElemType type, const v128 *left, const v128 *right, v128 *out);
 
-#ifndef f64_sub
-#define f64_sub(left, right, ...) \
-    f64_sub_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DEFAULT)
-#endif
+inline void v128_mul(VecElemType type, const v128 *left, const v128 *right, v128 *out);
 
-#ifndef f64_mul
-#define f64_mul(left, right, ...) \
-    f64_mul_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DEFAULT)
-#endif
-
-#ifndef f64_div
-#define f64_div(left, right, ...) \
-    f64_div_ex((left), (right), __VA_OPT__(__VA_ARGS__,) F64_PRECISION_DEFAULT)
-#endif
-
-void v128_add(VecElemType type, const v128 *left, const v128 *right, v128 *out);
-
-void v128_sub(VecElemType type, const v128 *left, const v128 *right, v128 *out);
-
-void v128_mul(VecElemType type, const v128 *left, const v128 *right, v128 *out);
-
-void v128_div(VecElemType type, const v128 *left, const v128 *right, v128 *out);
+inline void v128_div(VecElemType type, const v128 *left, const v128 *right, v128 *out);
 
 typedef struct I8S_T {
     ARRAY_FIELDS(i8)
