@@ -10,12 +10,12 @@
 
 #include "memory.h"
 
-constexpr i64 kDefaultTaskQueueCap = 64;
+constexpr i32 kDefaultTaskQueueCap = 32;
 
 typedef struct TASK_QUEUE_T {
     Task *data;
-    i64 head_idx, tail_idx, count;
-    i64 cap;
+    i32 head_idx, tail_idx, count;
+    i32 cap;
     mtx_t lock;
     cnd_t not_empty;
     cnd_t not_full;
@@ -42,7 +42,7 @@ static Task task_queue_pop(TaskQueue *q) {
 }
 
 static int worker_thread_fn(void *arg) {
-    Worker *worker = (Worker *)arg;
+    Worker *worker = arg;
 
     TaskQueue *q = &worker->task_q;
 
@@ -64,14 +64,7 @@ static int worker_thread_fn(void *arg) {
 
         mtx_unlock(&q->lock);
 
-        switch (task.type) {
-            case TASK_TYPE_FN_PTR: {
-                task.data.fn.ptr(task.data.fn.arg);
-                break;
-            }
-            default:
-                break;
-        }
+        task.fn_ptr(task.arg);
     }
 }
 
@@ -90,8 +83,6 @@ Worker *worker_create(WorkerCreateInfo *info) {
 
     q->data = alt_calloc(q_cap, sizeof(Task));
     assert(q->data);
-
-    worker->block_if_full = !info->drop_task_if_q_full;
 
     mtx_init(&q->lock, mtx_plain);
     cnd_init(&q->not_empty);
@@ -126,20 +117,13 @@ bool worker_push_task(Worker *worker, const Task *task) {
     TaskQueue *q = &worker->task_q;
     mtx_lock(&q->lock);
 
-    if (worker->block_if_full) {
-        while (q->count == q->cap && !atomic_load(&q->shutdown)) {
-            cnd_wait(&q->not_full, &q->lock);
-        }
+    while (q->count == q->cap && !atomic_load(&q->shutdown)) {
+        cnd_wait(&q->not_full, &q->lock);
+    }
 
-        if (atomic_load(&q->shutdown)) {
-            mtx_unlock(&q->lock);
-            return false;
-        }
-    } else {
-       if (q->count == q->cap || atomic_load(&q->shutdown)) {
-           mtx_unlock(&q->lock);
-           return false;
-       }
+    if (atomic_load(&q->shutdown)) {
+        mtx_unlock(&q->lock);
+        return false;
     }
 
     task_queue_push(q, task);

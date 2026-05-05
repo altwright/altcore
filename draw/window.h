@@ -100,6 +100,6 @@ i32 window_get_swapchain_bufs_count(const WindowHandle* handle);
 
 SwapchainBuffer* window_get_free_swapchain_buf(WindowHandle* handle);
 
-void window_present_swapchain_buf(WindowHandle* handle, const SwapchainBuffer* buf);
+void window_present_swapchain_buf(WindowHandle* handle, SwapchainBuffer* buf);
 
 #endif //ALTCORE_WINDOW_H

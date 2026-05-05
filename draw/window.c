@@ -6,12 +6,12 @@
 
 #include <assert.h>
 #include <threads.h>
-#include <stdatomic.h>
 
 #include "SDL3/SDL_init.h"
 #include <SDL3/SDL_video.h>
 
 #include "memory.h"
+#include "worker.h"
 
 constexpr i32 kMaxSwapchainBuffers = 3;
 
@@ -19,9 +19,10 @@ typedef enum SWAPCHAIN_BUFFER_STATE_E {
 #ifndef X_SWAPCHAIN_BUFFER_STATES
 #define X_SWAPCHAIN_BUFFER_STATES \
     X(FREE) \
-    X(READING) \
-    X(WRITING) \
-    X(SUBMIT) \
+    X(RENDERING_TO) \
+    X(WAITING_TO_PRESENT) \
+    X(INVALIDATED) \
+    X(PRESENTING) \
     X(COUNT)
 #endif
 #ifndef X
@@ -46,6 +47,9 @@ struct WINDOW_HANDLE_T {
     struct {
         SwapchainBuffer bufs[kMaxSwapchainBuffers];
         i32 count;
+        Worker* presenter;
+
+        i32 next_free_idx;
     } swapchain;
 };
 
@@ -61,29 +65,36 @@ static void swapchain_present_task(void* arg) {
     SwapchainPresentTaskArg *task_arg = arg;
     SwapchainBuffer *swapchain_buf = task_arg->swapchain_buf;
 
-    bool swapchain_buf_submitted = true;
+    SwapchainBufferState state = SWAPCHAIN_BUFFER_STATE_COUNT;
 
-    do {
+    while (
+        state != SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT
+        && state != SWAPCHAIN_BUFFER_STATE_INVALIDATED
+    ) {
         mtx_lock(&swapchain_buf->lock);
-        swapchain_buf_submitted = (swapchain_buf->state == SWAPCHAIN_BUFFER_STATE_SUBMIT);
+        state = swapchain_buf->state;
         mtx_unlock(&swapchain_buf->lock);
-    } while (!swapchain_buf_submitted);
+    }
 
-    mtx_lock(&swapchain_buf->lock);
-    swapchain_buf->state = SWAPCHAIN_BUFFER_STATE_READING;
-    mtx_unlock(&swapchain_buf->lock);
+    if (state == SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT) {
+        mtx_lock(&swapchain_buf->lock);
+        swapchain_buf->state = SWAPCHAIN_BUFFER_STATE_PRESENTING;
+        mtx_unlock(&swapchain_buf->lock);
 
-    bool success = SDL_BlitSurface(
-        swapchain_buf->surface,
-        nullptr,
-        task_arg->window_handle->window_surface,
-        nullptr
-    );
-    assert(success);
+        bool success = SDL_BlitSurface(
+            swapchain_buf->surface,
+            nullptr,
+            task_arg->window_handle->window_surface,
+            nullptr
+        );
+        assert(success);
+    }
 
     mtx_lock(&swapchain_buf->lock);
     swapchain_buf->state = SWAPCHAIN_BUFFER_STATE_FREE;
     mtx_unlock(&swapchain_buf->lock);
+
+    alt_free(task_arg);
 }
 
 void window_get_display_infos(DisplayInfos *out) {
@@ -247,11 +258,21 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
         handle->swapchain.bufs[swapchain_idx].state = SWAPCHAIN_BUFFER_STATE_FREE;
     }
 
+    handle->swapchain.next_free_idx = 0;
+
+    WorkerCreateInfo presenter_info = {
+        .task_q_cap = kMaxSwapchainBuffers,
+    };
+    handle->swapchain.presenter = worker_create(&presenter_info);
+
     return handle;
 }
 
 void window_destroy(WindowHandle *handle) {
     assert(g_window_system_initd);
+
+    worker_destroy(handle->swapchain.presenter);
+    handle->swapchain.presenter = nullptr;
 
     for (i32 swapchain_idx = 0; swapchain_idx < handle->swapchain.count; swapchain_idx++) {
         SwapchainBuffer *buf = &handle->swapchain.bufs[swapchain_idx];
@@ -278,30 +299,54 @@ i32 window_get_swapchain_bufs_count(const WindowHandle *handle) {
 }
 
 SwapchainBuffer *window_get_free_swapchain_buf(WindowHandle *handle) {
-    SwapchainBuffer *buf = nullptr;
+    SwapchainBuffer *buf = &handle->swapchain.bufs[handle->swapchain.next_free_idx];
 
-    i32 current_buf_idx = 0;
+    SwapchainBufferState state = SWAPCHAIN_BUFFER_STATE_COUNT;
 
-    while (!buf) {
-        SwapchainBuffer *current_buf = &handle->swapchain.bufs[current_buf_idx];
-
-        mtx_lock(&current_buf->lock);
-
-        if (current_buf->state == SWAPCHAIN_BUFFER_STATE_FREE) {
-            buf = current_buf;
-        }
-
-        mtx_unlock(&current_buf->lock);
-
-        current_buf_idx++;
-        current_buf_idx = current_buf_idx % handle->swapchain.count;
+    while (state != SWAPCHAIN_BUFFER_STATE_FREE) {
+        mtx_lock(&buf->lock);
+        state = buf->state;
+        mtx_unlock(&buf->lock);
     }
+
+    mtx_lock(&buf->lock);
+    buf->state = SWAPCHAIN_BUFFER_STATE_RENDERING_TO;
+    mtx_unlock(&buf->lock);
+
+    i32 next_free_idx = handle->swapchain.next_free_idx;
+    handle->swapchain.next_free_idx = (next_free_idx + 1) % handle->swapchain.count;
 
     return buf;
 }
 
-void window_present_swapchain_buf(WindowHandle *handle, const SwapchainBuffer *buf) {
-    i64 buf_idx = buf - handle->swapchain.bufs;
+void window_present_swapchain_buf(WindowHandle *handle, SwapchainBuffer *buf) {
+    i32 buf_idx = (i32)(buf - handle->swapchain.bufs);
     assert(buf_idx >= 0 && buf_idx < handle->swapchain.count);
 
+    i32 prev_buf_ifx = (buf_idx - 1) % handle->swapchain.count;
+    SwapchainBuffer* prev_buf = &handle->swapchain.bufs[prev_buf_ifx];
+
+    mtx_lock(&prev_buf->lock);
+    if (prev_buf->state == SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT) {
+        prev_buf->state = SWAPCHAIN_BUFFER_STATE_INVALIDATED;
+    }
+    mtx_unlock(&prev_buf->lock);
+
+    mtx_lock(&buf->lock);
+    buf->state = SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT;
+    mtx_unlock(&buf->lock);
+
+    SwapchainPresentTaskArg* task_arg = alt_malloc(sizeof(SwapchainPresentTaskArg));
+
+    *task_arg = (SwapchainPresentTaskArg) {
+        .window_handle = handle,
+        .swapchain_buf = buf,
+    };
+
+    Task task = {
+        .fn_ptr = swapchain_present_task,
+        .arg = task_arg,
+    };
+
+    worker_push_task(handle->swapchain.presenter, &task);
 }
