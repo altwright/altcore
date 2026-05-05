@@ -5,6 +5,7 @@
 #include "window.h"
 
 #include <assert.h>
+#include <stdatomic.h>
 #include <threads.h>
 
 #include "SDL3/SDL_init.h"
@@ -35,8 +36,7 @@ typedef enum SWAPCHAIN_BUFFER_STATE_E {
 
 struct SWAPCHAIN_BUFFER_T {
     SDL_Surface *surface;
-    SwapchainBufferState state;
-    mtx_t lock;
+    _Atomic SwapchainBufferState state;
 };
 
 struct WINDOW_HANDLE_T {
@@ -71,15 +71,11 @@ static void swapchain_present_task(void* arg) {
         state != SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT
         && state != SWAPCHAIN_BUFFER_STATE_INVALIDATED
     ) {
-        mtx_lock(&swapchain_buf->lock);
         state = swapchain_buf->state;
-        mtx_unlock(&swapchain_buf->lock);
     }
 
     if (state == SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT) {
-        mtx_lock(&swapchain_buf->lock);
-        swapchain_buf->state = SWAPCHAIN_BUFFER_STATE_PRESENTING;
-        mtx_unlock(&swapchain_buf->lock);
+        atomic_store(&swapchain_buf->state, SWAPCHAIN_BUFFER_STATE_PRESENTING);
 
         bool success = SDL_BlitSurface(
             swapchain_buf->surface,
@@ -90,9 +86,7 @@ static void swapchain_present_task(void* arg) {
         assert(success);
     }
 
-    mtx_lock(&swapchain_buf->lock);
-    swapchain_buf->state = SWAPCHAIN_BUFFER_STATE_FREE;
-    mtx_unlock(&swapchain_buf->lock);
+    atomic_store(&swapchain_buf->state, SWAPCHAIN_BUFFER_STATE_FREE);
 
     alt_free(task_arg);
 }
@@ -252,9 +246,6 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
 
         assert(handle->swapchain.bufs[swapchain_idx].surface);
 
-        int err = mtx_init(&handle->swapchain.bufs[swapchain_idx].lock, mtx_plain);
-        assert(!err);
-
         handle->swapchain.bufs[swapchain_idx].state = SWAPCHAIN_BUFFER_STATE_FREE;
     }
 
@@ -277,7 +268,6 @@ void window_destroy(WindowHandle *handle) {
     for (i32 swapchain_idx = 0; swapchain_idx < handle->swapchain.count; swapchain_idx++) {
         SwapchainBuffer *buf = &handle->swapchain.bufs[swapchain_idx];
         SDL_DestroySurface(buf->surface);
-        mtx_destroy(&buf->lock);
     }
 
     handle->swapchain.count = 0;
@@ -304,14 +294,10 @@ SwapchainBuffer *window_get_free_swapchain_buf(WindowHandle *handle) {
     SwapchainBufferState state = SWAPCHAIN_BUFFER_STATE_COUNT;
 
     while (state != SWAPCHAIN_BUFFER_STATE_FREE) {
-        mtx_lock(&buf->lock);
-        state = buf->state;
-        mtx_unlock(&buf->lock);
+        state = atomic_load(&buf->state);
     }
 
-    mtx_lock(&buf->lock);
-    buf->state = SWAPCHAIN_BUFFER_STATE_RENDERING_TO;
-    mtx_unlock(&buf->lock);
+    atomic_store(&buf->state, SWAPCHAIN_BUFFER_STATE_RENDERING_TO);
 
     i32 next_free_idx = handle->swapchain.next_free_idx;
     handle->swapchain.next_free_idx = (next_free_idx + 1) % handle->swapchain.count;
@@ -326,15 +312,11 @@ void window_present_swapchain_buf(WindowHandle *handle, SwapchainBuffer *buf) {
     i32 prev_buf_ifx = (buf_idx - 1) % handle->swapchain.count;
     SwapchainBuffer* prev_buf = &handle->swapchain.bufs[prev_buf_ifx];
 
-    mtx_lock(&prev_buf->lock);
-    if (prev_buf->state == SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT) {
-        prev_buf->state = SWAPCHAIN_BUFFER_STATE_INVALIDATED;
+    if (atomic_load(&prev_buf->state) == SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT) {
+        atomic_store(&prev_buf->state, SWAPCHAIN_BUFFER_STATE_INVALIDATED);
     }
-    mtx_unlock(&prev_buf->lock);
 
-    mtx_lock(&buf->lock);
-    buf->state = SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT;
-    mtx_unlock(&buf->lock);
+    atomic_store(&buf->state, SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT);
 
     SwapchainPresentTaskArg* task_arg = alt_malloc(sizeof(SwapchainPresentTaskArg));
 
