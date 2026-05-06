@@ -28,11 +28,12 @@ struct FRAMEBUFFER_T {
     union {
         struct {
             SwapchainBuffer* buf;
+            SwapchainBufferData data;
         } swapchain;
     } data;
 };
 
-Framebuffer* framebuffer_create_from_swapchain_buf(SwapchainBuffer* swapchain_buf) {
+Framebuffer* framebuffer_open_swapchain_buf(SwapchainBuffer* swapchain_buf) {
     Framebuffer* framebuffer = alt_malloc(sizeof(Framebuffer));
 
     *framebuffer = (Framebuffer) {
@@ -40,6 +41,7 @@ Framebuffer* framebuffer_create_from_swapchain_buf(SwapchainBuffer* swapchain_bu
         .data = {
             .swapchain = {
                 .buf = swapchain_buf,
+                .data = swapchain_open(swapchain_buf),
             },
         },
     };
@@ -47,6 +49,8 @@ Framebuffer* framebuffer_create_from_swapchain_buf(SwapchainBuffer* swapchain_bu
     return framebuffer;
 }
 
-void framebuffer_destroy(Framebuffer* framebuffer) {
+void framebuffer_close(Framebuffer* framebuffer) {
+    swapchain_close(framebuffer->data.swapchain.buf, &framebuffer->data.swapchain.data);
+
     alt_free(framebuffer);
 }

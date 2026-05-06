@@ -7,6 +7,7 @@
 
 #include "types.h"
 #include "draw/framebuffer.h"
+#include "draw/pixels.h"
 
 struct WINDOW_HANDLE_T;
 typedef struct WINDOW_HANDLE_T WindowHandle;
@@ -89,6 +90,17 @@ typedef struct DISPLAY_INFOS_T {
 
 struct SWAPCHAIN_BUFFER_T;
 typedef struct SWAPCHAIN_BUFFER_T SwapchainBuffer;
+
+typedef struct SWAPCHAIN_BUFFER_DATA_T {
+    u8* pixels;
+    PixelFormat format;
+    i32 width, height;
+    i32 pitch;
+} SwapchainBufferData;
+
+SwapchainBufferData swapchain_open(SwapchainBuffer* buf);
+
+void swapchain_close(SwapchainBuffer* buf, SwapchainBufferData* data);
 
 void window_get_display_infos(DisplayInfos *out);
 

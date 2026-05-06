@@ -10,6 +10,7 @@
 #include "SDL3/SDL_init.h"
 #include <SDL3/SDL_video.h>
 
+#include "debug.h"
 #include "memory.h"
 #include "worker.h"
 
@@ -330,4 +331,33 @@ void window_present_swapchain_buf(WindowHandle *handle, SwapchainBuffer *buf) {
     };
 
     worker_push_task(handle->swapchain.presenter, &task);
+}
+
+SwapchainBufferData swapchain_open(SwapchainBuffer* buf) {
+    SDL_LockSurface(buf->surface);
+
+    SwapchainBufferData data = {
+        .pixels = buf->surface->pixels,
+        .width = buf->surface->w,
+        .height = buf->surface->h,
+        .pitch = buf->surface->pitch,
+    };
+
+    switch (buf->surface->format) {
+        case SDL_PIXELFORMAT_RGBA8888: {
+            data.format = PIXEL_FORMAT_RGBA_8888;
+            break;
+        }
+        default:
+            crash_msg("Unhandled surface format\n");
+            break;
+    }
+
+    return data;
+}
+
+void swapchain_close(SwapchainBuffer* buf, SwapchainBufferData* data) {
+    SDL_UnlockSurface(buf->surface);
+
+    *data = (SwapchainBufferData){};
 }

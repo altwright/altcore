@@ -10,8 +10,9 @@ typedef struct FRAMEBUFFER_T Framebuffer;
 
 struct SWAPCHAIN_BUFFER_T;
 
-Framebuffer* framebuffer_create_from_swapchain_buf(struct SWAPCHAIN_BUFFER_T* swapchain_buf);
 
-void framebuffer_destroy(Framebuffer* framebuffer);
+Framebuffer* framebuffer_open_swapchain_buf(struct SWAPCHAIN_BUFFER_T* swapchain_buf);
+
+void framebuffer_close(Framebuffer* framebuffer);
 
 #endif //ALTCORE_FRAMEBUFFER_H
