@@ -13,6 +13,7 @@ set(HEADER_FILEPATHS
         debug.h
         init.h
         worker.h
+        events.h
         draw/window.h
         draw/framebuffer.h
         draw/renderer.h
@@ -36,6 +37,7 @@ add_library(${PROJECT_NAME} STATIC
         debug.c
         init.c
         worker.c
+        events.c
         draw/window.c
         draw/framebuffer.c
         draw/renderer.c
