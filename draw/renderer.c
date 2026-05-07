@@ -6,8 +6,8 @@
 
 #include <SDL3/SDL_cpuinfo.h>
 
-#include "memory.h"
-#include "worker.h"
+#include "../memory.h"
+#include "../worker.h"
 
 typedef enum RENDERER_TYPE_E {
 #ifndef X_RENDERER_TYPES

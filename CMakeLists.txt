@@ -59,7 +59,3 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME} INTERFACE
         $<BUILD_INTERFACE:${GENERATED_INCLUDE_DIR}>
 )
-
-target_include_directories(${PROJECT_NAME} PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}
-)

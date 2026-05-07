@@ -2,10 +2,10 @@
 // Created by wright on 5/3/26.
 //
 
-#include "draw/framebuffer.h"
+#include "framebuffer.h"
 
-#include "memory.h"
-#include "draw/window.h"
+#include "../memory.h"
+#include "window.h"
 
 typedef enum FRAMEBUFFER_TYPE_E {
 #ifndef X_FRAMEBUFFER_TYPES

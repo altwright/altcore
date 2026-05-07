@@ -10,9 +10,9 @@
 #include "SDL3/SDL_init.h"
 #include <SDL3/SDL_video.h>
 
-#include "debug.h"
-#include "memory.h"
-#include "worker.h"
+#include "../debug.h"
+#include "../memory.h"
+#include "../worker.h"
 
 constexpr i32 kMaxSwapchainBuffers = 3;
 

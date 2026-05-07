@@ -5,9 +5,9 @@
 #ifndef ALTCORE_WINDOW_H
 #define ALTCORE_WINDOW_H
 
-#include "types.h"
-#include "draw/framebuffer.h"
-#include "draw/pixels.h"
+#include "../types.h"
+#include "framebuffer.h"
+#include "pixels.h"
 
 struct WINDOW_HANDLE_T;
 typedef struct WINDOW_HANDLE_T WindowHandle;

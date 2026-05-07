@@ -5,8 +5,8 @@
 #ifndef ALTCORE_RENDERER_H
 #define ALTCORE_RENDERER_H
 
-#include "types.h"
-#include "draw/framebuffer.h"
+#include "../types.h"
+#include "framebuffer.h"
 
 struct RENDERER_T;
 typedef struct RENDERER_T Renderer;
