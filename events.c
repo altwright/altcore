@@ -47,6 +47,7 @@ void events_poll() {
 
     while (SDL_PollEvent(&event)) {
         Event e = {};
+        bool handled = true;
         switch (event.type) {
             case SDL_EVENT_WINDOW_RESIZED:
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
@@ -66,6 +67,7 @@ void events_poll() {
                         break;
                     }
                     default:
+                        handled = false;
                         break;
                 }
 
@@ -74,10 +76,13 @@ void events_poll() {
                 break;
             }
             default:
+                handled = false;
                 break;
         }
 
-        g_events_q.data[g_events_q.count++] = e;
+        if (handled) {
+            g_events_q.data[g_events_q.count++] = e;
+        }
 
         if (g_events_q.count >= g_events_q.cap) {
             break;
