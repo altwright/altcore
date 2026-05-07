@@ -114,4 +114,6 @@ SwapchainBuffer* window_get_free_swapchain_buf(WindowHandle* handle);
 
 void window_present_swapchain_buf(WindowHandle* handle, SwapchainBuffer* buf);
 
+bool window_resize(WindowHandle* handle, iVec2 new_size);
+
 #endif //ALTCORE_WINDOW_H

@@ -361,3 +361,44 @@ void swapchain_close(SwapchainBuffer* buf, SwapchainBufferData* data) {
 
     *data = (SwapchainBufferData){};
 }
+
+bool window_resize(WindowHandle* handle, iVec2 new_size) {
+    i32 current_w, current_h;
+    bool success = SDL_GetWindowSize(handle->window, &current_w, &current_h);
+    assert(success);
+
+    if (current_w != new_size.x || current_h != new_size.y) {
+        success = SDL_SetWindowSize(handle->window, new_size.x, new_size.y);
+        if (success) {
+            current_w = new_size.x;
+            current_h = new_size.y;
+        }
+    }
+
+    handle->window_size = (iVec2){current_w, current_h};
+    handle->window_surface = SDL_GetWindowSurface(handle->window);
+
+    worker_destroy(handle->swapchain.presenter);
+
+    for (i32 swapchain_idx = 0; swapchain_idx < handle->swapchain.count; swapchain_idx++) {
+        SwapchainBuffer* swapchain_buf = &handle->swapchain.bufs[swapchain_idx];
+        SDL_DestroySurface(swapchain_buf->surface);
+
+        swapchain_buf->surface = SDL_CreateSurface(
+            handle->window_surface->w,
+            handle->window_surface->h,
+            handle->window_surface->format
+        );
+
+        assert(swapchain_buf->surface);
+
+        atomic_store(&swapchain_buf->state, SWAPCHAIN_BUFFER_STATE_FREE);
+    }
+
+    WorkerCreateInfo presenter_info = {
+        .task_q_cap = kMaxSwapchainBuffers,
+    };
+    handle->swapchain.presenter = worker_create(&presenter_info);
+
+    return success;
+}
