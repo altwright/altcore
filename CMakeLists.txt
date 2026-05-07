@@ -14,6 +14,7 @@ set(HEADER_FILEPATHS
         init.h
         worker.h
         events.h
+        draw/pixels.h
         draw/window.h
         draw/framebuffer.h
         draw/renderer.h
