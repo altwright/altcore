@@ -13,12 +13,13 @@ static bool g_events_initd = false;
 static EventSourceFlags g_event_source_flags = 0;
 
 typedef struct EVENTS_QUEUE_T {
-    Event* data;
-    i32 len;
+    Event *data;
+    i32 head_idx;
+    i32 count;
     i32 cap;
 } EventsQueue;
 
-static EventsQueue g_events_arrays[EVENT_SOURCE_COUNT] = {};
+static EventsQueue g_events_q = {};
 
 void events_init(const EventInitInfo *info) {
     if (g_events_initd) {
@@ -30,30 +31,77 @@ void events_init(const EventInitInfo *info) {
 
     g_event_source_flags = info->sources;
 
-    for (i32 source_idx = 0; source_idx < EVENT_SOURCE_COUNT; source_idx++) {
-        EventSourceFlag source_flag = 1ULL << source_idx;
-
-        EventsQueue* events_queue = &g_events_arrays[source_idx];
-
-        if (g_event_source_flags & source_flag) {
-            events_queue->data = alt_calloc(
-                info->event_queue_cap,
-                sizeof(*g_events_arrays[source_idx].data)
-            );
-
-            events_queue->cap = info->event_queue_cap;
-        } else {
-            events_queue->data = nullptr;
-            events_queue->cap = 0;
-        }
-
-        events_queue->len = 0;
-    }
+    g_events_q.data = alt_calloc(info->event_q_max_cap, sizeof(*g_events_q.data));
+    assert(g_events_q.data);
+    g_events_q.head_idx = 0;
+    g_events_q.count = 0;
+    g_events_q.cap = info->event_q_max_cap;
 
     g_events_initd = true;
 }
 
 void events_poll() {
+    g_events_q.count = g_events_q.head_idx = 0;
+
+    SDL_Event event;
+
+    while (SDL_PollEvent(&event)) {
+        Event e = {};
+        switch (event.type) {
+            case SDL_EVENT_WINDOW_RESIZED:
+            case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
+                WindowEvent we = {};
+
+                switch (event.type) {
+                    case SDL_EVENT_WINDOW_RESIZED: {
+                        we.type = WINDOW_EVENT_RESIZE;
+                        we.data.resize.new_size = (iVec2){
+                            event.window.data1,
+                            event.window.data2,
+                        };
+                        break;
+                    }
+                    case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
+                        we.type = WINDOW_EVENT_CLOSE;
+                        break;
+                    }
+                    default:
+                        break;
+                }
+
+                e.source = EVENT_SOURCE_WINDOW;
+                e.data.window = we;
+                break;
+            }
+            default:
+                break;
+        }
+
+        g_events_q.data[g_events_q.count++] = e;
+
+        if (g_events_q.count >= g_events_q.cap) {
+            break;
+        }
+    }
+}
+
+i32 events_get(Events *array) {
+    if (!array) {
+        return g_events_q.count;
+    }
+
+    i64 array_space = array->cap - array->len;
+
+    i64 fetch = array_space < g_events_q.count ? array_space : g_events_q.count;
+
+    for (i32 event_offset = 0; event_offset < fetch; event_offset++) {
+        ARRAY_PUSH(array, &g_events_q.data[g_events_q.head_idx + event_offset]);
+    }
+
+    g_events_q.head_idx += (i32)fetch;
+    g_events_q.count -= (i32)fetch;
+
+    return g_events_q.count;
 }
 
 void events_uninit() {
@@ -61,16 +109,10 @@ void events_uninit() {
         return;
     }
 
-    for (i32 source_idx = 0; source_idx < EVENT_SOURCE_COUNT; source_idx++) {
-        EventsQueue* events_array = &g_events_arrays[source_idx];
-        if (events_array->data) {
-            alt_free(events_array->data);
-        }
-
-        events_array->data = nullptr;
-        events_array->len = 0;
-        events_array->cap = 0;
-    }
+    alt_free(g_events_q.data);
+    g_events_q.head_idx = 0;
+    g_events_q.count = 0;
+    g_events_q.cap = 0;
 
     g_event_source_flags = 0;
 

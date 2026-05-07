@@ -38,8 +38,26 @@ typedef u64 EventSourceFlags;
 
 typedef struct EVENT_INIT_INFO_T {
     EventSourceFlags sources;
-    i32 event_queue_cap;
+    i32 event_q_max_cap;
 } EventInitInfo;
+
+typedef enum SYSTEM_EVENT_TYPE_E {
+#ifndef X_SYSTEM_EVENT_TYPES
+#define X_SYSTEM_EVENT_TYPES \
+    X(FOCUS) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(type) \
+    SYSTEM_EVENT_TYPE_##type,
+#endif
+    X_SYSTEM_EVENT_TYPES
+#undef X
+} SystemEventType;
+
+typedef struct SYSTEM_EVENT_T {
+    SystemEventType type;
+} SystemEvent;
 
 typedef enum WINDOW_EVENT_TYPE_E {
 #ifndef X_WINDOW_EVENT_TYPES
@@ -56,11 +74,18 @@ typedef enum WINDOW_EVENT_TYPE_E {
 #undef X
 } WindowEventType;
 
+typedef struct WINDOW_EVENT_RESIZE_T {
+    iVec2 new_size;
+} WindowEventResize;
+
 typedef struct WINDOW_EVENT_T {
     WindowEventType type;
+    union {
+        WindowEventResize resize;
+    } data;
 } WindowEvent;
 
-typedef struct KEYBOARD_EVENT_TYPE_E {
+typedef enum KEYBOARD_EVENT_TYPE_E {
 #ifndef X_KEYBOARD_EVENT_TYPES
 #define X_KEYBOARD_EVENT_TYPES \
     X(KEY_PRESS) \
@@ -71,6 +96,7 @@ typedef struct KEYBOARD_EVENT_TYPE_E {
 #define X(type) \
     KEYBOARD_EVENT_##type,
 #endif
+    X_KEYBOARD_EVENT_TYPES
 #undef X
 } KeyboardEventType;
 
@@ -78,11 +104,33 @@ typedef struct KEYBOARD_EVENT_T {
     KeyboardEventType type;
 } KeyboardEvent;
 
+typedef enum MOUSE_EVENT_TYPE_E {
+#ifndef X_MOUSE_EVENT_TYPES
+#define X_MOUSE_EVENT_TYPES \
+    X(MOVE) \
+    X(CLICK) \
+    X(SCROLL) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(type) \
+    MOUSE_EVENT_TYPE_##type,
+#endif
+    X_MOUSE_EVENT_TYPES
+#undef X
+} MouseEventType;
+
+typedef struct MOUSE_EVENT_T {
+    MouseEventType type;
+} MouseEvent;
+
 typedef struct EVENT_T {
-    EventSourceFlag source;
+    EventSource source;
     union {
+        SystemEvent system;
         WindowEvent window;
         KeyboardEvent keyboard;
+        MouseEvent mouse;
     } data;
 } Event;
 
@@ -94,7 +142,9 @@ void events_init(const EventInitInfo* info);
 
 void events_poll();
 
-void events_get(EventSource source, Events* events);
+// Returns the number of events remaining in the queue
+// since last poll, after they have been copied into array
+i32 events_get(Events* array);
 
 void events_uninit();
 
