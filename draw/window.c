@@ -349,6 +349,7 @@ SwapchainBufferData swapchain_open(SwapchainBuffer* buf) {
     };
 
     switch (buf->surface->format) {
+        case SDL_PIXELFORMAT_RGBX8888:
         case SDL_PIXELFORMAT_RGBA8888: {
             data.format = PIXEL_FORMAT_RGBA_8888;
             break;

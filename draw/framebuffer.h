@@ -5,14 +5,27 @@
 #ifndef ALTCORE_FRAMEBUFFER_H
 #define ALTCORE_FRAMEBUFFER_H
 
+#include "../types.h"
+#include "pixels.h"
+
 struct FRAMEBUFFER_T;
 typedef struct FRAMEBUFFER_T Framebuffer;
 
 struct SWAPCHAIN_BUFFER_T;
 
+typedef struct FRAMEBUFFER_DATA_T {
+    PixelFormat format;
+    u8 *pixels;
+    iVec2 size;
+    i32 pitch;
+} FramebufferData;
 
-Framebuffer* framebuffer_open_swapchain_buf(struct SWAPCHAIN_BUFFER_T* swapchain_buf);
+Framebuffer *framebuffer_open_swapchain_buf(struct SWAPCHAIN_BUFFER_T *swapchain_buf);
 
-void framebuffer_close(Framebuffer* framebuffer);
+void framebuffer_close(Framebuffer *framebuffer);
+
+FramebufferData frambuffer_get_data(Framebuffer *framebuffer);
+
+void framebuffer_data_set_pixel(FramebufferData *fb_data, i32 x, i32 y, uVec4 rgba);
 
 #endif //ALTCORE_FRAMEBUFFER_H

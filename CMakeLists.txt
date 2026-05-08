@@ -14,6 +14,7 @@ set(HEADER_FILEPATHS
         init.h
         worker.h
         events.h
+        barrier.h
         draw/pixels.h
         draw/window.h
         draw/framebuffer.h
@@ -39,9 +40,12 @@ add_library(${PROJECT_NAME} STATIC
         init.c
         worker.c
         events.c
+        barrier.c
         draw/window.c
         draw/framebuffer.c
         draw/renderer.c
+        draw/cmds/clear.c
+        draw/cmds/fb_transition.c
 )
 
 set(SDL_SHARED OFF)
