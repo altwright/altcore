@@ -51,6 +51,11 @@ void events_poll() {
         switch (event.type) {
             case SDL_EVENT_WINDOW_RESIZED:
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
+                if (!(g_event_source_flags & EVENT_SOURCE_FLAG_WINDOW)) {
+                    handled = false;
+                    break;
+                }
+
                 WindowEvent we = {};
 
                 switch (event.type) {
