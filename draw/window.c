@@ -84,6 +84,7 @@ static void swapchain_present_task(void* arg) {
             nullptr
         );
         assert(success);
+        SDL_UpdateWindowSurface(task_arg->window_handle->window);
     }
 
     atomic_store(&swapchain_buf->state, SWAPCHAIN_BUFFER_STATE_FREE);
@@ -222,6 +223,7 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
     assert(success);
 
     handle->window_surface = SDL_GetWindowSurface(handle->window);
+    SDL_UpdateWindowSurface(handle->window);
 
     switch (info->swapchain_mode) {
         case SWAPCHAIN_MODE_DOUBLE_BUFFERED: {
@@ -377,6 +379,7 @@ bool window_resize(WindowHandle* handle, iVec2 new_size) {
 
     handle->window_size = (iVec2){current_w, current_h};
     handle->window_surface = SDL_GetWindowSurface(handle->window);
+    SDL_UpdateWindowSurface(handle->window);
 
     worker_destroy(handle->swapchain.presenter);
 
