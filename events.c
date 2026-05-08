@@ -60,10 +60,12 @@ void events_poll() {
                             event.window.data1,
                             event.window.data2,
                         };
+                        we.data.resize.window_id = event.window.windowID;
                         break;
                     }
                     case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
                         we.type = WINDOW_EVENT_CLOSE;
+                        we.data.close.window_id = event.window.windowID;
                         break;
                     }
                     default:

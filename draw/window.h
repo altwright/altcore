@@ -12,6 +12,8 @@
 struct WINDOW_HANDLE_T;
 typedef struct WINDOW_HANDLE_T WindowHandle;
 
+typedef i64 WindowHandleId;
+
 typedef enum WINDOW_MODE_E {
 #ifndef X_WINDOW_MODES
 #define X_WINDOW_MODES \
@@ -115,5 +117,7 @@ SwapchainBuffer* window_get_free_swapchain_buf(WindowHandle* handle);
 void window_present_swapchain_buf(WindowHandle* handle, SwapchainBuffer* buf);
 
 bool window_resize(WindowHandle* handle, iVec2 new_size);
+
+bool window_matches_id(WindowHandle* handle, WindowHandleId id);
 
 #endif //ALTCORE_WINDOW_H

@@ -41,6 +41,7 @@ struct SWAPCHAIN_BUFFER_T {
 
 struct WINDOW_HANDLE_T {
     SDL_Window *window;
+    SDL_WindowID id;
     iVec2 window_size;
     SDL_Surface *window_surface;
 
@@ -214,6 +215,8 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
     SDL_free(displays);
 
     g_num_windows++;
+
+    handle->id = SDL_GetWindowID(handle->window);
 
     if (disable_vsync) {
         SDL_SetWindowSurfaceVSync(handle->window, SDL_WINDOW_SURFACE_VSYNC_DISABLED);
@@ -404,4 +407,8 @@ bool window_resize(WindowHandle* handle, iVec2 new_size) {
     handle->swapchain.presenter = worker_create(&presenter_info);
 
     return success;
+}
+
+bool window_matches_id(WindowHandle* handle, WindowHandleId id) {
+    return handle->id == (SDL_WindowID)id;
 }

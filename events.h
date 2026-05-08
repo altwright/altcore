@@ -76,12 +76,18 @@ typedef enum WINDOW_EVENT_TYPE_E {
 
 typedef struct WINDOW_EVENT_RESIZE_T {
     iVec2 new_size;
+    WindowHandleId window_id;
 } WindowEventResize;
+
+typedef struct WINDOW_EVENT_CLOSE_T {
+    WindowHandleId window_id;
+} WindowEventClose;
 
 typedef struct WINDOW_EVENT_T {
     WindowEventType type;
     union {
         WindowEventResize resize;
+        WindowEventClose close;
     } data;
 } WindowEvent;
 
