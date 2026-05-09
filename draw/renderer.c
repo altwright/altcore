@@ -128,3 +128,13 @@ void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer *cmd_buf) {
             break;
     }
 }
+
+void renderer_wait_until_idle(Renderer *renderer) {
+    i32 remaining_tasks = 0;
+    do {
+        remaining_tasks = 0;
+        for (i32 thread_idx = 0; thread_idx < renderer->data.software.rendering_threads_count; thread_idx++) {
+            remaining_tasks += worker_get_task_count(renderer->data.software.rendering_threads[thread_idx]);
+        }
+    } while (remaining_tasks);
+}

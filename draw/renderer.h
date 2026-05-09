@@ -74,4 +74,6 @@ void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer *cmd_buf);
 
 void renderer_destroy(Renderer *renderer);
 
+void renderer_wait_until_idle(Renderer *renderer);
+
 #endif //ALTCORE_RENDERER_H

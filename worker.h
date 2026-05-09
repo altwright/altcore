@@ -27,4 +27,6 @@ void worker_destroy(Worker *worker);
 
 bool worker_push_task(Worker *worker, const Task *task);
 
+i32 worker_get_task_count(Worker *worker);
+
 #endif //ALTCORE_WORKER_H

@@ -315,13 +315,6 @@ void window_present_swapchain_buf(WindowHandle *handle, SwapchainBuffer *buf) {
     i32 buf_idx = (i32) (buf - handle->swapchain.bufs);
     assert(buf_idx >= 0 && buf_idx < handle->swapchain.count);
 
-    i32 prev_buf_ifx = (buf_idx - 1) % handle->swapchain.count;
-    SwapchainBuffer *prev_buf = &handle->swapchain.bufs[prev_buf_ifx];
-
-    if (atomic_load(&prev_buf->state) == SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT) {
-        atomic_store(&prev_buf->state, SWAPCHAIN_BUFFER_STATE_INVALIDATED);
-    }
-
     SDL_UnlockSurface(buf->surface);
     atomic_store(&buf->state, SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT);
 

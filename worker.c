@@ -132,3 +132,15 @@ bool worker_push_task(Worker *worker, const Task *task) {
 
     return success;
 }
+
+i32 worker_get_task_count(Worker *worker) {
+    i32 q_size = 0;
+
+    mtx_lock(&worker->task_q.lock);
+
+    q_size = worker->task_q.count;
+
+    mtx_unlock(&worker->task_q.lock);
+
+    return q_size;
+}
