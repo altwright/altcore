@@ -10,6 +10,7 @@
 #include "../memory.h"
 #include "../worker.h"
 #include "cmds/clear.h"
+#include "../barrier.h"
 
 typedef enum RENDERER_TYPE_E {
 #ifndef X_RENDERER_TYPES
@@ -32,6 +33,8 @@ struct RENDERER_T {
         struct {
             Worker **rendering_threads;
             i32 rendering_threads_count;
+            Barrier **frame_barriers;
+            i32 frame_barriers_count;
         } software;
     } data;
 };
@@ -58,12 +61,28 @@ Renderer *renderer_create(const RendererCreateInfo *create_info) {
         rendering_threads[thread_idx] = worker_create(&worker_info);
     }
 
+    i32 frame_barriers_count = create_info->max_frames_in_flight;
+    Barrier **frame_barriers = alt_calloc(
+        frame_barriers_count,
+        sizeof(*frame_barriers)
+    );
+
+    for (i32 barrier_idx = 0; barrier_idx < frame_barriers_count; barrier_idx++) {
+        BarrierCreateInfo barrier_info = {
+            .expected_threads = num_rendering_threads,
+        };
+
+        frame_barriers[barrier_idx] = barrier_create(&barrier_info);
+    }
+
     *renderer = (Renderer){
         .type = RENDERER_TYPE_SOFTWARE,
         .data = {
             .software = {
                 .rendering_threads = rendering_threads,
                 .rendering_threads_count = num_rendering_threads,
+                .frame_barriers = frame_barriers,
+                .frame_barriers_count = frame_barriers_count,
             },
         },
     };
@@ -74,6 +93,10 @@ Renderer *renderer_create(const RendererCreateInfo *create_info) {
 void renderer_destroy(Renderer *renderer) {
     for (i32 thread_idx = 0; thread_idx < renderer->data.software.rendering_threads_count; thread_idx++) {
         worker_destroy(renderer->data.software.rendering_threads[thread_idx]);
+    }
+
+    for (i32 barrier_idx = 0; barrier_idx < renderer->data.software.frame_barriers_count; barrier_idx++) {
+        barrier_destroy(renderer->data.software.frame_barriers[barrier_idx]);
     }
 
     alt_free(renderer->data.software.rendering_threads);

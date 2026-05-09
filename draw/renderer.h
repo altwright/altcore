@@ -8,12 +8,12 @@
 #include "../types.h"
 #include "framebuffer.h"
 #include "window.h"
-#include "../barrier.h"
 
 struct RENDERER_T;
 typedef struct RENDERER_T Renderer;
 
 typedef struct RENDERER_CREATE_INFO_T {
+    i32 max_frames_in_flight;
 } RendererCreateInfo;
 
 typedef enum RENDER_CMD_TYPE_E {
@@ -58,8 +58,8 @@ typedef struct RENDER_CMD_CLEAR_T {
 } RenderCmdClear;
 
 typedef struct RENDER_CMD_SWAPCHAIN_BUF_PRESENT_T {
+    WindowHandle* window;
     SwapchainBuffer *swapchain_buf;
-    Barrier *barrier;
 } RenderCmdSwapchainBufPresent;
 
 typedef struct RENDER_CMD_T {
