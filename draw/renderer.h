@@ -77,7 +77,7 @@ typedef struct RENDER_CMD_BUFFER_T {
 
 Renderer *renderer_create(const RendererCreateInfo *create_info);
 
-void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer cmd_buf);
+void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer *cmd_buf);
 
 void renderer_destroy(Renderer *renderer);
 

@@ -83,43 +83,43 @@ void renderer_destroy(Renderer *renderer) {
     alt_free(renderer);
 }
 
-void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer cmd_buf) {
+void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer *cmd_buf) {
     switch (renderer->type) {
         case RENDERER_TYPE_SOFTWARE: {
-                ARRAY_FOR(cmd, &cmd_buf) {
-                    switch (cmd->type) {
-                        case RENDER_CMD_TYPE_CLEAR: {
-                            FramebufferData fb_data = {};
-                            switch (cmd->data.clear.buf_type) {
-                                case RENDER_BUFFER_TYPE_FRAMEBUFFER: {
-                                    fb_data = framebuffer_get_data(cmd->data.clear.buf.framebuffer);
-                                    break;
-                                }
-                                case RENDER_BUFFER_TYPE_SWAPCHAIN: {
-                                    fb_data = swapchain_buf_get_data(cmd->data.clear.buf.swapchain_buf);
-                                    break;
-                                }
-                                default:
-                                    crash_msg("Unhandled render buffer type %d\n", cmd->data.clear.buf_type);
-                                    break;
+            ARRAY_FOR(cmd, cmd_buf) {
+                switch (cmd->type) {
+                    case RENDER_CMD_TYPE_CLEAR: {
+                        FramebufferData fb_data = {};
+                        switch (cmd->data.clear.buf_type) {
+                            case RENDER_BUFFER_TYPE_FRAMEBUFFER: {
+                                fb_data = framebuffer_get_data(cmd->data.clear.buf.framebuffer);
+                                break;
                             }
+                            case RENDER_BUFFER_TYPE_SWAPCHAIN: {
+                                fb_data = swapchain_buf_get_data(cmd->data.clear.buf.swapchain_buf);
+                                break;
+                            }
+                            default:
+                                crash_msg("Unhandled render buffer type %d\n", cmd->data.clear.buf_type);
+                                break;
+                        }
 
-                            soft_renderer_clear(
-                                fb_data,
-                                cmd->data.clear.rgba,
-                                renderer->data.software.rendering_threads,
-                                renderer->data.software.rendering_threads_count
-                            );
-                            break;
-                        }
-                        case RENDER_CMD_TYPE_SWAPCHAIN_BUF_PRESENT: {
-                            break;
-                        }
-                        default:
-                            crash_msg("Unhandled cmd buf type %d\n", cmd->type);
-                            break;
+                        soft_renderer_clear(
+                            fb_data,
+                            cmd->data.clear.rgba,
+                            renderer->data.software.rendering_threads,
+                            renderer->data.software.rendering_threads_count
+                        );
+                        break;
                     }
+                    case RENDER_CMD_TYPE_SWAPCHAIN_BUF_PRESENT: {
+                        break;
+                    }
+                    default:
+                        crash_msg("Unhandled cmd buf type %d\n", cmd->type);
+                        break;
                 }
+            }
             break;
         }
         default:
