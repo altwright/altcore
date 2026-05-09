@@ -8,7 +8,14 @@
 #include "../../worker.h"
 #include "../framebuffer.h"
 #include "../../types.h"
+#include "../../barrier.h"
 
-void soft_renderer_clear(FramebufferData fb_data, rgba8888 rgba, Worker* workers[], i32 workers_len);
+void soft_renderer_clear(
+    FramebufferData fb_data,
+    rgba8888 rgba,
+    Worker* workers[],
+    i32 workers_len,
+    Barrier* sync_barrier
+);
 
 #endif //ALTCORE_CLEAR_H

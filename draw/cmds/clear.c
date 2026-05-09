@@ -13,6 +13,7 @@ typedef struct SOFT_RENDERER_CLEAR_TASK_ARG_T {
     i32 rows_per_worker;
     i32 num_remainder_rows;
     rgba8888 rgba;
+    Barrier *sync_barrier;
 } SoftRendererClearTaskArg;
 
 static void soft_renderer_clear_task(void *arg) {
@@ -43,10 +44,18 @@ static void soft_renderer_clear_task(void *arg) {
         }
     }
 
+    barrier_wait(clear_arg->sync_barrier);
+
     alt_free(clear_arg);
 }
 
-void soft_renderer_clear(FramebufferData fb_data, rgba8888 rgba, Worker *workers[], i32 workers_len) {
+void soft_renderer_clear(
+    FramebufferData fb_data,
+    rgba8888 rgba,
+    Worker *workers[],
+    i32 workers_len,
+    Barrier *sync_barrier
+) {
     i32 rows_per_worker = fb_data.size.y / workers_len;
     i32 rows_remainder = fb_data.size.y % workers_len;
 
@@ -56,7 +65,8 @@ void soft_renderer_clear(FramebufferData fb_data, rgba8888 rgba, Worker *workers
             .fb_data = fb_data,
             .y_offset = worker_idx,
             .rows_per_worker = rows_per_worker,
-            .rgba = rgba
+            .rgba = rgba,
+            .sync_barrier = sync_barrier,
         };
 
         if (worker_idx == workers_len - 1) {

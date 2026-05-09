@@ -13,14 +13,13 @@ struct RENDERER_T;
 typedef struct RENDERER_T Renderer;
 
 typedef struct RENDERER_CREATE_INFO_T {
-    i32 max_frames_in_flight;
 } RendererCreateInfo;
 
 typedef enum RENDER_CMD_TYPE_E {
 #ifndef X_RENDER_CMD_TYPES
 #define X_RENDER_CMD_TYPES \
     X(CLEAR) \
-    X(SWAPCHAIN_BUF_PRESENT) \
+    X(PRESENT) \
     X(COUNT)
 #endif
 #ifndef X
@@ -47,27 +46,21 @@ typedef enum RENDER_BUFFER_TYPE_E {
 } RenderBufferType;
 
 typedef struct RENDER_CMD_CLEAR_T {
-    RenderBufferType buf_type;
-
-    union {
-        Framebuffer *framebuffer;
-        SwapchainBuffer *swapchain_buf;
-    } buf;
-
+    FramebufferData fb_data;
     rgba8888 rgba;
 } RenderCmdClear;
 
-typedef struct RENDER_CMD_SWAPCHAIN_BUF_PRESENT_T {
+typedef struct RENDER_CMD_PRESENT_T {
     WindowHandle* window;
     SwapchainBuffer *swapchain_buf;
-} RenderCmdSwapchainBufPresent;
+} RenderCmdPresent;
 
 typedef struct RENDER_CMD_T {
     RenderCmdType type;
 
     union {
         RenderCmdClear clear;
-        RenderCmdSwapchainBufPresent swapchain_buf_present;
+        RenderCmdPresent present;
     } data;
 } RenderCmd;
 
