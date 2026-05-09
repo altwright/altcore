@@ -34,6 +34,14 @@ FramebufferData framebuffer_get_data(Framebuffer* framebuffer) {
 
 void framebuffer_data_set_pixel(FramebufferData fb_data, i32 x, i32 y, rgba8888 rgba) {
     switch (fb_data.format) {
+        case PIXEL_FORMAT_ARGB_8888: {
+            argb8888 *pixel = ((argb8888 *) fb_data.pixels) + (y * fb_data.pitch + x);
+            pixel->a = rgba.a;
+            pixel->r = rgba.r;
+            pixel->g = rgba.g;
+            pixel->b = rgba.b;
+            break;
+        }
         case PIXEL_FORMAT_RGBA_8888: {
             rgba8888 *pixel = ((rgba8888 *) fb_data.pixels) + (y * fb_data.pitch + x);
             *pixel = rgba;

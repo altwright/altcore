@@ -8,6 +8,7 @@
 typedef enum PIXEL_FORMAT_E {
 #ifndef X_PIXEL_FORMATS
 #define X_PIXEL_FORMATS \
+    X(ARGB_8888) \
     X(RGBA_8888) \
     X(COUNT)
 #endif
@@ -22,5 +23,9 @@ typedef enum PIXEL_FORMAT_E {
 typedef struct RGBA_8888_T {
     u8 r, g, b, a;
 } rgba8888;
+
+typedef struct ARGB_8888_T {
+    u8 a, r, g, b;
+} argb8888;
 
 #endif //ALTCORE_PIXELS_H

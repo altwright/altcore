@@ -390,6 +390,11 @@ FramebufferData swapchain_buf_get_data(SwapchainBuffer *buf) {
     FramebufferData data = {};
 
     switch (buf->surface->format) {
+        case SDL_PIXELFORMAT_ARGB8888:
+        case SDL_PIXELFORMAT_XRGB8888: {
+            data.format = PIXEL_FORMAT_ARGB_8888;
+            break;
+        }
         case SDL_PIXELFORMAT_RGBX8888:
         case SDL_PIXELFORMAT_RGBA8888: {
             data.format = PIXEL_FORMAT_RGBA_8888;
