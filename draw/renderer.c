@@ -83,41 +83,36 @@ void renderer_destroy(Renderer *renderer) {
     alt_free(renderer);
 }
 
-void renderer_execute_cmd_bufs(Renderer *renderer, RenderCmdBuffer cmd_bufs[], i32 cmd_bufs_len) {
+void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer cmd_buf) {
     switch (renderer->type) {
         case RENDERER_TYPE_SOFTWARE: {
-            i32 workers_per_cmd_buf = renderer->data.software.rendering_threads_count / cmd_bufs_len;
-            if (workers_per_cmd_buf < 1) {
-                workers_per_cmd_buf = 1;
-            }
-
-            bool serial_execution = false;
-            if ((cmd_bufs_len == 1)
-                || (
-                    (workers_per_cmd_buf * cmd_bufs_len) > renderer->data.software.rendering_threads_count
-                )
-            ) {
-                serial_execution = true;
-            }
-
-            for (i32 cmd_buf_idx = 0; cmd_buf_idx < cmd_bufs_len; cmd_buf_idx++) {
-                RenderCmdBuffer *cmd_buf = &cmd_bufs[cmd_buf_idx];
-
-                i32 worker_group_offset = serial_execution ? 0 : (cmd_buf_idx * workers_per_cmd_buf);
-
-                ARRAY_FOR(cmd, cmd_buf) {
+                ARRAY_FOR(cmd, &cmd_buf) {
                     switch (cmd->type) {
                         case RENDER_CMD_TYPE_CLEAR: {
+                            FramebufferData fb_data = {};
+                            switch (cmd->data.clear.buf_type) {
+                                case RENDER_BUFFER_TYPE_FRAMEBUFFER: {
+                                    fb_data = framebuffer_get_data(cmd->data.clear.buf.framebuffer);
+                                    break;
+                                }
+                                case RENDER_BUFFER_TYPE_SWAPCHAIN: {
+                                    fb_data = swapchain_buf_get_data(cmd->data.clear.buf.swapchain_buf);
+                                    break;
+                                }
+                                default:
+                                    crash_msg("Unhandled render buffer type %d\n", cmd->data.clear.buf_type);
+                                    break;
+                            }
+
                             soft_renderer_clear(
-                                cmd->data.clear.framebuffer,
+                                fb_data,
                                 cmd->data.clear.rgba,
-                                renderer->data.software.rendering_threads + worker_group_offset,
-                                workers_per_cmd_buf
+                                renderer->data.software.rendering_threads,
+                                renderer->data.software.rendering_threads_count
                             );
                             break;
                         }
-                        case RENDER_CMD_TYPE_FRAMEBUFFER_TRANSITION: {
-
+                        case RENDER_CMD_TYPE_SWAPCHAIN_BUF_PRESENT: {
                             break;
                         }
                         default:
@@ -125,11 +120,10 @@ void renderer_execute_cmd_bufs(Renderer *renderer, RenderCmdBuffer cmd_bufs[], i
                             break;
                     }
                 }
-            }
-
             break;
         }
         default:
+            crash_msg("Unhandled renderer type");
             break;
     }
 }

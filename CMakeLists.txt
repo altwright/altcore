@@ -45,7 +45,6 @@ add_library(${PROJECT_NAME} STATIC
         draw/framebuffer.c
         draw/renderer.c
         draw/cmds/clear.c
-        draw/cmds/fb_transition.c
 )
 
 set(SDL_SHARED OFF)

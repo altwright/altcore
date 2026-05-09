@@ -12,20 +12,20 @@ typedef struct SOFT_RENDERER_CLEAR_TASK_ARG_T {
     i32 y_offset;
     i32 rows_per_worker;
     i32 num_remainder_rows;
-    uVec4 rgba;
+    rgba8888 rgba;
 } SoftRendererClearTaskArg;
 
 static void soft_renderer_clear_task(void *arg) {
     SoftRendererClearTaskArg *clear_arg = arg;
 
-    FramebufferData *fb_data = &clear_arg->fb_data;
+    FramebufferData fb_data = clear_arg->fb_data;
 
     for (
         i32 row_idx = clear_arg->y_offset;
-        row_idx < fb_data->size.y;
+        row_idx < fb_data.size.y;
         row_idx += clear_arg->rows_per_worker
     ) {
-        for (i32 col_idx = 0; col_idx < fb_data->size.x; col_idx++) {
+        for (i32 col_idx = 0; col_idx < fb_data.size.x; col_idx++) {
             framebuffer_data_set_pixel(fb_data, col_idx, row_idx, clear_arg->rgba);
         }
     }
@@ -33,8 +33,8 @@ static void soft_renderer_clear_task(void *arg) {
     // If worker has been assigned to clear the remainder
     if (clear_arg->num_remainder_rows > 0) {
         for (
-            i32 row_idx = fb_data->size.y - clear_arg->num_remainder_rows;
-            row_idx < fb_data->size.y;
+            i32 row_idx = fb_data.size.y - clear_arg->num_remainder_rows;
+            row_idx < fb_data.size.y;
             row_idx++
         ) {
             for (i32 col_idx = 0; col_idx < clear_arg->fb_data.size.x; col_idx++) {
@@ -46,9 +46,7 @@ static void soft_renderer_clear_task(void *arg) {
     alt_free(clear_arg);
 }
 
-void soft_renderer_clear(Framebuffer *fb, uVec4 rgba, Worker *workers[], i32 workers_len) {
-    FramebufferData fb_data = frambuffer_get_data(fb);
-
+void soft_renderer_clear(FramebufferData fb_data, rgba8888 rgba, Worker *workers[], i32 workers_len) {
     i32 rows_per_worker = fb_data.size.y / workers_len;
     i32 rows_remainder = fb_data.size.y % workers_len;
 

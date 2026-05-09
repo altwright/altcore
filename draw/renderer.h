@@ -7,7 +7,8 @@
 
 #include "../types.h"
 #include "framebuffer.h"
-#include "../arenas.h"
+#include "window.h"
+#include "../barrier.h"
 
 struct RENDERER_T;
 typedef struct RENDERER_T Renderer;
@@ -18,8 +19,8 @@ typedef struct RENDERER_CREATE_INFO_T {
 typedef enum RENDER_CMD_TYPE_E {
 #ifndef X_RENDER_CMD_TYPES
 #define X_RENDER_CMD_TYPES \
-    X(FRAMEBUFFER_TRANSITION) \
     X(CLEAR) \
+    X(SWAPCHAIN_BUF_PRESENT) \
     X(COUNT)
 #endif
 #ifndef X
@@ -30,37 +31,43 @@ typedef enum RENDER_CMD_TYPE_E {
 #undef X
 } RenderCmdType;
 
-typedef struct RENDER_CMD_CLEAR_T {
-    Framebuffer *framebuffer;
-    uVec4 rgba;
-} RenderCmdClear;
-
-typedef enum FRAMEBUFFER_TRANSITION_TYPE_E {
-#ifndef X_FRAMEBUFFER_TRANSITION_TYPES
-#define X_FRAMEBUFFER_TRANSITION_TYPES \
-    X(BLIT) \
-    X(PRESENT) \
+typedef enum RENDER_BUFFER_TYPE_E {
+#ifndef X_RENDER_BUFFER_TYPES
+#define X_RENDER_BUFFER_TYPES \
+    X(FRAMEBUFFER) \
+    X(SWAPCHAIN) \
     X(COUNT)
 #endif
 #ifndef X
 #define X(type) \
-    FRAMEBUFFER_TRANSITION_TYPE_##type,
+    RENDER_BUFFER_TYPE_##type,
 #endif
-    X_FRAMEBUFFER_TRANSITION_TYPES
+    X_RENDER_BUFFER_TYPES
 #undef X
-} FramebufferTransitionType;
+} RenderBufferType;
 
-typedef struct RENDER_CMD_FRAMEBUFFER_TRANSITION_T {
-    Framebuffer *framebuffer;
-    FramebufferTransitionType to;
-} RenderCmdFramebufferTransition;
+typedef struct RENDER_CMD_CLEAR_T {
+    RenderBufferType buf_type;
+
+    union {
+        Framebuffer *framebuffer;
+        SwapchainBuffer *swapchain_buf;
+    } buf;
+
+    rgba8888 rgba;
+} RenderCmdClear;
+
+typedef struct RENDER_CMD_SWAPCHAIN_BUF_PRESENT_T {
+    SwapchainBuffer *swapchain_buf;
+    Barrier *barrier;
+} RenderCmdSwapchainBufPresent;
 
 typedef struct RENDER_CMD_T {
     RenderCmdType type;
 
     union {
         RenderCmdClear clear;
-        RenderCmdFramebufferTransition fb_transition;
+        RenderCmdSwapchainBufPresent swapchain_buf_present;
     } data;
 } RenderCmd;
 
@@ -70,7 +77,7 @@ typedef struct RENDER_CMD_BUFFER_T {
 
 Renderer *renderer_create(const RendererCreateInfo *create_info);
 
-void renderer_execute_cmd_bufs(Renderer *renderer, RenderCmdBuffer cmd_bufs[], i32 cmd_bufs_len);
+void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer cmd_buf);
 
 void renderer_destroy(Renderer *renderer);
 

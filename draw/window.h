@@ -93,17 +93,6 @@ typedef struct DISPLAY_INFOS_T {
 struct SWAPCHAIN_BUFFER_T;
 typedef struct SWAPCHAIN_BUFFER_T SwapchainBuffer;
 
-typedef struct SWAPCHAIN_BUFFER_DATA_T {
-    u8* pixels;
-    PixelFormat format;
-    i32 width, height;
-    i32 pitch;
-} SwapchainBufferData;
-
-SwapchainBufferData swapchain_open(SwapchainBuffer* buf);
-
-void swapchain_close(SwapchainBuffer* buf, SwapchainBufferData* data);
-
 void window_get_display_infos(DisplayInfos *out);
 
 WindowHandle* window_create(const WindowCreateInfo* info);
@@ -119,5 +108,7 @@ void window_present_swapchain_buf(WindowHandle* handle, SwapchainBuffer* buf);
 bool window_resize(WindowHandle* handle, iVec2 new_size);
 
 bool window_matches_id(WindowHandle* handle, WindowHandleId id);
+
+FramebufferData swapchain_buf_get_data(SwapchainBuffer* buf);
 
 #endif //ALTCORE_WINDOW_H

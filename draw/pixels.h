@@ -19,4 +19,8 @@ typedef enum PIXEL_FORMAT_E {
 #undef X
 } PixelFormat;
 
+typedef struct RGBA_8888_T {
+    u8 r, g, b, a;
+} rgba8888;
+
 #endif //ALTCORE_PIXELS_H

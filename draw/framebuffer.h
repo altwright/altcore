@@ -20,12 +20,8 @@ typedef struct FRAMEBUFFER_DATA_T {
     i32 pitch;
 } FramebufferData;
 
-Framebuffer *framebuffer_open_swapchain_buf(struct SWAPCHAIN_BUFFER_T *swapchain_buf);
+FramebufferData framebuffer_get_data(Framebuffer* framebuffer);
 
-void framebuffer_close(Framebuffer *framebuffer);
-
-FramebufferData frambuffer_get_data(Framebuffer *framebuffer);
-
-void framebuffer_data_set_pixel(FramebufferData *fb_data, i32 x, i32 y, uVec4 rgba);
+void framebuffer_data_set_pixel(FramebufferData fb_data, i32 x, i32 y, rgba8888 rgba);
 
 #endif //ALTCORE_FRAMEBUFFER_H
