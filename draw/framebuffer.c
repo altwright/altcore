@@ -26,7 +26,7 @@ struct FRAMEBUFFER_T {
     FramebufferType type;
 };
 
-FramebufferData framebuffer_get_data(Framebuffer* framebuffer) {
+FramebufferData framebuffer_get_data(Framebuffer *framebuffer) {
     FramebufferData data = {};
 
     return data;
@@ -35,7 +35,7 @@ FramebufferData framebuffer_get_data(Framebuffer* framebuffer) {
 void framebuffer_data_set_pixel(FramebufferData fb_data, i32 x, i32 y, rgba8888 rgba) {
     switch (fb_data.format) {
         case PIXEL_FORMAT_ARGB_8888: {
-            argb8888 *pixel = ((argb8888 *) fb_data.pixels) + (y * fb_data.pitch + x);
+            argb8888 *pixel = (argb8888 *) (fb_data.pixels + (y * fb_data.pitch_bytes + (x * sizeof(argb8888))));
             pixel->a = rgba.a;
             pixel->r = rgba.r;
             pixel->g = rgba.g;
@@ -43,7 +43,7 @@ void framebuffer_data_set_pixel(FramebufferData fb_data, i32 x, i32 y, rgba8888 
             break;
         }
         case PIXEL_FORMAT_RGBA_8888: {
-            rgba8888 *pixel = ((rgba8888 *) fb_data.pixels) + (y * fb_data.pitch + x);
+            rgba8888 *pixel = (rgba8888 *) (fb_data.pixels + (y * fb_data.pitch_bytes + (x * sizeof(rgba8888))));
             *pixel = rgba;
             break;
         }

@@ -17,7 +17,7 @@ typedef struct FRAMEBUFFER_DATA_T {
     PixelFormat format;
     u8 *pixels;
     iVec2 size;
-    i32 pitch;
+    i32 pitch_bytes;
 } FramebufferData;
 
 FramebufferData framebuffer_get_data(Framebuffer* framebuffer);

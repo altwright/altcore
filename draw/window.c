@@ -408,7 +408,7 @@ FramebufferData swapchain_buf_get_data(SwapchainBuffer *buf) {
     data.pixels = buf->surface->pixels;
     data.size.x = buf->surface->w;
     data.size.y = buf->surface->h;
-    data.pitch = buf->surface->pitch;
+    data.pitch_bytes = buf->surface->pitch;
 
     return data;
 }
