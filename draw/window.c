@@ -246,7 +246,11 @@ bool window_resize(WindowHandle *handle, iVec2 new_size) {
 
 WindowHandleInfo window_get_info(WindowHandle* handle) {
     WindowHandleInfo info = {
+        .pixel_format = pixels_impl_from_sdl_format(handle->window_surface->format),
+        .size = handle->window_size,
     };
+
+    SDL_GetWindowPosition(handle->window, &info.pos.x, &info.pos.y);
 
     return info;
 }
