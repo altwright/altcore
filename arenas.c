@@ -8,19 +8,30 @@
 #include "memory.h"
 #include "debug.h"
 
-Arena arena_make(i64 initial_cap) {
-    Arena arena = {};
+typedef struct ARENA_BUFFER_T {
+    u8 *data;
+    i64 cap;
+    struct ARENA_BUFFER_T *next;
+} ArenaBuffer;
+
+struct ARENA_T {
+    ArenaBuffer *buffer;
+    i64 offset;
+};
+
+Arena* arena_make(i64 initial_cap) {
+    Arena* arena = alt_malloc(sizeof(*arena));
 
     assert(initial_cap > 0);
 
-    arena.buffer = alt_calloc(1, sizeof(ArenaBuffer));
-    assert(arena.buffer);
+    arena->buffer = alt_calloc(1, sizeof(ArenaBuffer));
+    assert(arena->buffer);
 
     // Align to 32-bit
     initial_cap = ((initial_cap + 3) >> 2) << 2;
-    arena.buffer->cap = initial_cap;
-    arena.buffer->data = alt_calloc(arena.buffer->cap, sizeof(u8));
-    assert(arena.buffer->data);
+    arena->buffer->cap = initial_cap;
+    arena->buffer->data = alt_calloc(arena->buffer->cap, sizeof(u8));
+    assert(arena->buffer->data);
 
     return arena;
 }
@@ -43,6 +54,8 @@ void arena_free(Arena *arena) {
     }
 
     arena->buffer = nullptr;
+
+    alt_free(arena);
 }
 
 void *arena_alloc(Arena *arena, i64 size) {
@@ -76,4 +89,8 @@ void *arena_alloc(Arena *arena, i64 size) {
     arena->offset += aligned_size;
 
     return new_alloc;
+}
+
+void arena_reset(Arena *arena) {
+    arena->offset = 0;
 }

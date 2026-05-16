@@ -7,21 +7,15 @@
 
 #include "types.h"
 
-typedef struct ARENA_BUFFER_T {
-    u8 *data;
-    i64 cap;
-    struct ARENA_BUFFER_T *next;
-} ArenaBuffer;
+struct ARENA_T;
+typedef struct ARENA_T Arena;
 
-typedef struct ARENA_T {
-    ArenaBuffer *buffer;
-    i64 offset;
-} Arena;
-
-Arena arena_make(i64 initial_cap);
+Arena* arena_make(i64 initial_cap);
 
 void arena_free(Arena *arena);
 
 void *arena_alloc(Arena *arena, i64 size);
+
+void arena_reset(Arena *arena);
 
 #endif //ALTCORE_ARENAS_H
