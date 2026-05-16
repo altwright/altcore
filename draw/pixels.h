@@ -23,11 +23,11 @@ typedef enum PIXEL_FORMAT_E {
 } PixelFormat;
 
 typedef struct RGBA_8888_T {
-    u8 r, g, b, a;
+    u8 a, b, g, r;
 } RGBA8888;
 
 typedef struct ARGB_8888_T {
-    u8 a, r, g, b;
+    u8 b, g, r, a;
 } ARGB8888;
 
 i64 pixels_get_size(PixelFormat pixel_format);
