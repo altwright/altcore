@@ -239,7 +239,6 @@ bool window_resize(WindowHandle *handle, iVec2 new_size) {
 
     handle->window_size = (iVec2){current_w, current_h};
     handle->window_surface = SDL_GetWindowSurface(handle->window);
-    SDL_UpdateWindowSurface(handle->window);
 
     return success;
 }
