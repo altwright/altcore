@@ -6,8 +6,7 @@
 #define ALTCORE_PRESENT_H
 
 #include "../window.h"
-#include "../../worker.h"
 
-void soft_renderer_present(WindowHandle* window, SwapchainBuffer* swapchain_buf, Worker* worker);
+void cmd_soft_single_present(Framebuffer *fb, WindowHandle *window);
 
 #endif //ALTCORE_PRESENT_H

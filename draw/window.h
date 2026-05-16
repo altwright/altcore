@@ -12,8 +12,6 @@
 struct WINDOW_HANDLE_T;
 typedef struct WINDOW_HANDLE_T WindowHandle;
 
-typedef i64 WindowHandleId;
-
 typedef enum WINDOW_MODE_E {
 #ifndef X_WINDOW_MODES
 #define X_WINDOW_MODES \
@@ -90,8 +88,11 @@ typedef struct DISPLAY_INFOS_T {
     ARRAY_FIELDS(DisplayInfo)
 } DisplayInfos;
 
-struct SWAPCHAIN_BUFFER_T;
-typedef struct SWAPCHAIN_BUFFER_T SwapchainBuffer;
+typedef struct WINDOW_HANDLE_INFO_T {
+    PixelFormat pixel_format;
+    iVec2 size;
+    iVec2 pos;
+} WindowHandleInfo;
 
 void window_get_display_infos(DisplayInfos *out);
 
@@ -99,16 +100,10 @@ WindowHandle* window_create(const WindowCreateInfo* info);
 
 void window_destroy(WindowHandle* handle);
 
-i32 window_get_swapchain_bufs_count(const WindowHandle* handle);
-
-SwapchainBuffer* window_get_free_swapchain_buf(WindowHandle* handle);
-
-void window_present_swapchain_buf(WindowHandle* handle, SwapchainBuffer* buf);
+void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf);
 
 bool window_resize(WindowHandle* handle, iVec2 new_size);
 
-bool window_matches_id(WindowHandle* handle, WindowHandleId id);
-
-FramebufferData swapchain_buf_get_data(SwapchainBuffer* buf);
+WindowHandleInfo window_get_info(WindowHandle* handle);
 
 #endif //ALTCORE_WINDOW_H

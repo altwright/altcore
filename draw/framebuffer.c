@@ -4,51 +4,110 @@
 
 #include "framebuffer.h"
 
+#include <assert.h>
+#include <threads.h>
+
 #include "../memory.h"
 #include "../debug.h"
 #include "window.h"
+#include "framebuffer_impl.h"
 
-typedef enum FRAMEBUFFER_TYPE_E {
-#ifndef X_FRAMEBUFFER_TYPES
-#define X_FRAMEBUFFER_TYPES \
-    X(PIXEL_BUFFER) \
-    X(COUNT)
-#endif
-#ifndef X
-#define X(type) \
-    FRAMEBUFFER_TYPE_##type,
-#endif
-    X_FRAMEBUFFER_TYPES
-#undef X
-} FramebufferType;
+typedef struct PIXEL_BUFFER_T {
+    PixelFormat format;
+    u8 *bytes;
+    iVec2 size;
+} PixelBuffer;
 
 struct FRAMEBUFFER_T {
     FramebufferType type;
+    union {
+        PixelBuffer pixel_buf;
+    } data;
+
+    mtx_t lock;
 };
 
-FramebufferData framebuffer_get_data(Framebuffer *framebuffer) {
-    FramebufferData data = {};
+Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info) {
+    Framebuffer *fb = alt_malloc(sizeof(*fb));
 
-    return data;
-}
+    *fb = (Framebuffer){};
 
-void framebuffer_data_set_pixel(FramebufferData fb_data, i32 x, i32 y, rgba8888 rgba) {
-    switch (fb_data.format) {
-        case PIXEL_FORMAT_ARGB_8888: {
-            argb8888 *pixel = (argb8888 *) (fb_data.pixels + (y * fb_data.pitch_bytes + (x * sizeof(argb8888))));
-            pixel->a = rgba.a;
-            pixel->r = rgba.r;
-            pixel->g = rgba.g;
-            pixel->b = rgba.b;
-            break;
-        }
-        case PIXEL_FORMAT_RGBA_8888: {
-            rgba8888 *pixel = (rgba8888 *) (fb_data.pixels + (y * fb_data.pitch_bytes + (x * sizeof(rgba8888))));
-            *pixel = rgba;
+    switch (create_info->type) {
+        case FRAMEBUFFER_TYPE_PIXEL: {
+            fb->data.pixel_buf.format = create_info->data.pixel_buf.format;
+            fb->data.pixel_buf.size = create_info->data.pixel_buf.size;
+            fb->data.pixel_buf.bytes = alt_calloc(
+                fb->data.pixel_buf.size.x * fb->data.pixel_buf.size.y,
+                pixels_get_size(create_info->data.pixel_buf.format)
+            );
+            assert(fb->data.pixel_buf.bytes);
             break;
         }
         default:
-            crash_msg("Unhandled framebuffer format\n");
+            crash_msg("Unhandled framebuffer type %d\n", create_info->type);
             break;
     }
+
+    mtx_init(&fb->lock, mtx_plain);
+
+    return fb;
+}
+
+void framebuffer_destroy(Framebuffer *fb) {
+    switch (fb->type) {
+        case FRAMEBUFFER_TYPE_PIXEL: {
+            alt_free(fb->data.pixel_buf.bytes);
+            break;
+        }
+        default:
+            crash_msg("Unhandled framebuffer type %d\n", fb->type);
+            break;
+    }
+
+    mtx_destroy(&fb->lock);
+
+    alt_free(fb);
+}
+
+FramebufferInfo framebuffer_get_info(Framebuffer *fb) {
+    FramebufferInfo info = {};
+
+    switch (fb->type) {
+        case FRAMEBUFFER_TYPE_PIXEL: {
+            info.type = FRAMEBUFFER_TYPE_PIXEL;
+            info.data.pixel_buf.format = fb->data.pixel_buf.format;
+            info.data.pixel_buf.size = fb->data.pixel_buf.size;
+            info.data.pixel_buf.pitch_bytes = fb->data.pixel_buf.size.x * pixels_get_size(fb->data.pixel_buf.format);
+            break;
+        }
+        default:
+            crash_msg("Unhandled framebuffer type %d\n", fb->type);
+            break;
+    }
+
+    return info;
+}
+
+void framebuffer_impl_lock(Framebuffer *fb) {
+    mtx_lock(&fb->lock);
+}
+
+void framebuffer_impl_unlock(Framebuffer *fb) {
+    mtx_unlock(&fb->lock);
+}
+
+u8* framebuffer_impl_get_bytes(Framebuffer *fb) {
+    u8* bytes = nullptr;
+
+    switch (fb->type) {
+        case FRAMEBUFFER_TYPE_PIXEL: {
+            bytes = fb->data.pixel_buf.bytes;
+            break;
+        }
+        default:
+            crash_msg("Unhandled framebuffer type %d\n", fb->type);
+            break;
+    }
+
+    return bytes;
 }

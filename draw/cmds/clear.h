@@ -5,17 +5,9 @@
 #ifndef ALTCORE_CLEAR_H
 #define ALTCORE_CLEAR_H
 
-#include "../../worker.h"
-#include "../framebuffer.h"
 #include "../../types.h"
-#include "../../barrier.h"
+#include "../pixels.h"
 
-void soft_renderer_clear(
-    FramebufferData fb_data,
-    rgba8888 rgba,
-    Worker* workers[],
-    i32 workers_len,
-    Barrier* sync_barrier
-);
+void cmd_soft_single_clear(u8* pixel_bytes, PixelFormat pixel_format, iVec2 size, i64 pitch_bytes, RGBA8888 rgba);
 
 #endif //ALTCORE_CLEAR_H

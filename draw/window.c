@@ -5,98 +5,59 @@
 #include "window.h"
 
 #include <assert.h>
-#include <stdatomic.h>
+#include <threads.h>
 
 #include "SDL3/SDL_init.h"
 #include <SDL3/SDL_video.h>
 
 #include "../debug.h"
 #include "../memory.h"
-#include "../worker.h"
-
-constexpr i32 kMaxSwapchainBuffers = 3;
-
-typedef enum SWAPCHAIN_BUFFER_STATE_E {
-#ifndef X_SWAPCHAIN_BUFFER_STATES
-#define X_SWAPCHAIN_BUFFER_STATES \
-    X(FREE) \
-    X(RENDERING_TO) \
-    X(WAITING_TO_PRESENT) \
-    X(INVALIDATED) \
-    X(PRESENTING) \
-    X(COUNT)
-#endif
-#ifndef X
-#define X(state) \
-    SWAPCHAIN_BUFFER_STATE_##state,
-#endif
-    X_SWAPCHAIN_BUFFER_STATES
-#undef X
-} SwapchainBufferState;
-
-struct SWAPCHAIN_BUFFER_T {
-    SDL_Surface *surface;
-    _Atomic SwapchainBufferState state;
-};
+#include "framebuffer.h"
+#include "framebuffer_impl.h"
+#include "pixels_impl.h"
 
 struct WINDOW_HANDLE_T {
     SDL_Window *window;
     SDL_WindowID id;
     iVec2 window_size;
     SDL_Surface *window_surface;
-
-    struct {
-        SwapchainBuffer bufs[kMaxSwapchainBuffers];
-        i32 count;
-        Worker *presenter;
-
-        i32 next_free_idx;
-    } swapchain;
 };
 
-static bool g_window_system_initd = false;
-static i32 g_num_windows = 0;
-
 typedef struct {
-    WindowHandle *window_handle;
-    SwapchainBuffer *swapchain_buf;
-} SwapchainPresentTaskArg;
+    WindowHandle** data;
+    i32 len;
+    i32 cap;
+    mtx_t lock;
+} ActiveWindowHandles;
 
-static void swapchain_present_task(void *arg) {
-    SwapchainPresentTaskArg *task_arg = arg;
-    SwapchainBuffer *swapchain_buf = task_arg->swapchain_buf;
+ActiveWindowHandles g_active_window_handles = {};
 
-    SwapchainBufferState state = SWAPCHAIN_BUFFER_STATE_COUNT;
+constexpr i32 kDefaultActiveWindowHandlesCap = 4;
 
-    while (
-        state != SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT
-        && state != SWAPCHAIN_BUFFER_STATE_INVALIDATED
-    ) {
-        state = swapchain_buf->state;
-    }
+static void init_g_active_window_handles() {
+    g_active_window_handles.cap = kDefaultActiveWindowHandlesCap;
+    g_active_window_handles.data = alt_calloc(
+        g_active_window_handles.cap,
+        sizeof(*g_active_window_handles.data)
+    );
+    g_active_window_handles.len = 0;
+    mtx_init(&g_active_window_handles.lock, mtx_plain);
+}
 
-    if (state == SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT) {
-        atomic_store(&swapchain_buf->state, SWAPCHAIN_BUFFER_STATE_PRESENTING);
-
-        bool success = SDL_BlitSurface(
-            swapchain_buf->surface,
-            nullptr,
-            task_arg->window_handle->window_surface,
-            nullptr
-        );
-        assert(success);
-        SDL_UpdateWindowSurface(task_arg->window_handle->window);
-    }
-
-    atomic_store(&swapchain_buf->state, SWAPCHAIN_BUFFER_STATE_FREE);
-
-    alt_free(task_arg);
+static void uninit_g_active_window_handles() {
+    mtx_lock(&g_active_window_handles.lock);
+    g_active_window_handles.len = 0;
+    g_active_window_handles.cap = 0;
+    alt_free(g_active_window_handles.data);
+    g_active_window_handles.data = nullptr;
+    mtx_unlock(&g_active_window_handles.lock);
+    mtx_destroy(&g_active_window_handles.lock);
 }
 
 void window_get_display_infos(DisplayInfos *out) {
-    if (!g_window_system_initd) {
+    if (!g_active_window_handles.data) {
         SDL_InitSubSystem(SDL_INIT_VIDEO);
-        g_window_system_initd = true;
+        init_g_active_window_handles();
     }
 
     int num_displays;
@@ -131,9 +92,9 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
     WindowHandle *handle = alt_malloc(sizeof(WindowHandle));
     *handle = (WindowHandle){};
 
-    if (!g_window_system_initd) {
+    if (!g_active_window_handles.data) {
         SDL_InitSubSystem(SDL_INIT_VIDEO);
-        g_window_system_initd = true;
+        init_g_active_window_handles();
     }
 
     int num_displays;
@@ -214,8 +175,6 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
     SDL_DestroyProperties(props);
     SDL_free(displays);
 
-    g_num_windows++;
-
     handle->id = SDL_GetWindowID(handle->window);
 
     if (disable_vsync) {
@@ -228,109 +187,41 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
     handle->window_surface = SDL_GetWindowSurface(handle->window);
     SDL_UpdateWindowSurface(handle->window);
 
-    switch (info->swapchain_mode) {
-        case SWAPCHAIN_MODE_DOUBLE_BUFFERED: {
-            handle->swapchain.count = 2;
-            break;
-        }
-        case SWAPCHAIN_MODE_TRIPLE_BUFFERED: {
-            handle->swapchain.count = 3;
-            break;
-        }
-        default:
-            assert(0 && "Unhandled swapchain mode");
-            break;
+    mtx_lock(&g_active_window_handles.lock);
+
+    if (g_active_window_handles.len >= g_active_window_handles.cap) {
+        i32 new_cap = g_active_window_handles.cap * 2;
+        WindowHandle** new_data = alt_calloc(new_cap, sizeof(*new_data));
+        assert(new_data);
+        memcpy(new_data, g_active_window_handles.data, sizeof(*new_data) * g_active_window_handles.len);
+        alt_free(g_active_window_handles.data);
+        g_active_window_handles.data = new_data;
     }
 
-    for (i32 swapchain_idx = 0; swapchain_idx < handle->swapchain.count; swapchain_idx++) {
-        handle->swapchain.bufs[swapchain_idx].surface = SDL_CreateSurface(
-            handle->window_surface->w,
-            handle->window_surface->h,
-            handle->window_surface->format
-        );
+    g_active_window_handles.data[g_active_window_handles.len++] = handle;
 
-        assert(handle->swapchain.bufs[swapchain_idx].surface);
-
-        handle->swapchain.bufs[swapchain_idx].state = SWAPCHAIN_BUFFER_STATE_FREE;
-    }
-
-    handle->swapchain.next_free_idx = 0;
-
-    WorkerCreateInfo presenter_info = {
-        .task_q_cap = kMaxSwapchainBuffers,
-    };
-    handle->swapchain.presenter = worker_create(&presenter_info);
+    mtx_unlock(&g_active_window_handles.lock);
 
     return handle;
 }
 
 void window_destroy(WindowHandle *handle) {
-    assert(g_window_system_initd);
+    assert(g_active_window_handles.data);
 
-    worker_destroy(handle->swapchain.presenter);
-    handle->swapchain.presenter = nullptr;
-
-    for (i32 swapchain_idx = 0; swapchain_idx < handle->swapchain.count; swapchain_idx++) {
-        SwapchainBuffer *buf = &handle->swapchain.bufs[swapchain_idx];
-        SDL_DestroySurface(buf->surface);
-    }
-
-    handle->swapchain.count = 0;
+    mtx_lock(&g_active_window_handles.lock);
 
     SDL_DestroyWindow(handle->window);
 
     alt_free(handle);
 
-    g_num_windows--;
+    g_active_window_handles.data[--g_active_window_handles.len] = nullptr;
 
-    if (!g_num_windows) {
+    mtx_unlock(&g_active_window_handles.lock);
+
+    if (g_active_window_handles.len <= 0) {
+        uninit_g_active_window_handles();
         SDL_QuitSubSystem(SDL_INIT_VIDEO);
-        g_window_system_initd = false;
     }
-}
-
-i32 window_get_swapchain_bufs_count(const WindowHandle *handle) {
-    return handle->swapchain.count;
-}
-
-SwapchainBuffer *window_get_free_swapchain_buf(WindowHandle *handle) {
-    SwapchainBuffer *buf = &handle->swapchain.bufs[handle->swapchain.next_free_idx];
-
-    SwapchainBufferState state = SWAPCHAIN_BUFFER_STATE_COUNT;
-
-    while (state != SWAPCHAIN_BUFFER_STATE_FREE) {
-        state = atomic_load(&buf->state);
-    }
-
-    SDL_LockSurface(buf->surface);
-    atomic_store(&buf->state, SWAPCHAIN_BUFFER_STATE_RENDERING_TO);
-
-    i32 next_free_idx = handle->swapchain.next_free_idx;
-    handle->swapchain.next_free_idx = (next_free_idx + 1) % handle->swapchain.count;
-
-    return buf;
-}
-
-void window_present_swapchain_buf(WindowHandle *handle, SwapchainBuffer *buf) {
-    i32 buf_idx = (i32) (buf - handle->swapchain.bufs);
-    assert(buf_idx >= 0 && buf_idx < handle->swapchain.count);
-
-    SDL_UnlockSurface(buf->surface);
-    atomic_store(&buf->state, SWAPCHAIN_BUFFER_STATE_WAITING_TO_PRESENT);
-
-    SwapchainPresentTaskArg *task_arg = alt_malloc(sizeof(SwapchainPresentTaskArg));
-
-    *task_arg = (SwapchainPresentTaskArg){
-        .window_handle = handle,
-        .swapchain_buf = buf,
-    };
-
-    Task task = {
-        .fn_ptr = swapchain_present_task,
-        .arg = task_arg,
-    };
-
-    worker_push_task(handle->swapchain.presenter, &task);
 }
 
 bool window_resize(WindowHandle *handle, iVec2 new_size) {
@@ -350,58 +241,52 @@ bool window_resize(WindowHandle *handle, iVec2 new_size) {
     handle->window_surface = SDL_GetWindowSurface(handle->window);
     SDL_UpdateWindowSurface(handle->window);
 
-    worker_destroy(handle->swapchain.presenter);
-
-    for (i32 swapchain_idx = 0; swapchain_idx < handle->swapchain.count; swapchain_idx++) {
-        SwapchainBuffer *swapchain_buf = &handle->swapchain.bufs[swapchain_idx];
-        SDL_DestroySurface(swapchain_buf->surface);
-
-        swapchain_buf->surface = SDL_CreateSurface(
-            handle->window_surface->w,
-            handle->window_surface->h,
-            handle->window_surface->format
-        );
-
-        assert(swapchain_buf->surface);
-
-        atomic_store(&swapchain_buf->state, SWAPCHAIN_BUFFER_STATE_FREE);
-    }
-
-    WorkerCreateInfo presenter_info = {
-        .task_q_cap = kMaxSwapchainBuffers,
-    };
-    handle->swapchain.presenter = worker_create(&presenter_info);
-
     return success;
 }
 
-bool window_matches_id(WindowHandle *handle, WindowHandleId id) {
-    return handle->id == (SDL_WindowID) id;
-}
+WindowHandle *window_impl_get_handle_from_id(SDL_WindowID id) {
+    WindowHandle *matching_handle = nullptr;
 
-FramebufferData swapchain_buf_get_data(SwapchainBuffer *buf) {
-    FramebufferData data = {};
+    for (i32 handle_idx = 0; handle_idx < g_active_window_handles.len; handle_idx++) {
+        WindowHandle *handle = g_active_window_handles.data[handle_idx];
 
-    switch (buf->surface->format) {
-        case SDL_PIXELFORMAT_ARGB8888:
-        case SDL_PIXELFORMAT_XRGB8888: {
-            data.format = PIXEL_FORMAT_ARGB_8888;
+        if (handle->id == id) {
+            matching_handle = handle;
             break;
         }
-        case SDL_PIXELFORMAT_RGBX8888:
-        case SDL_PIXELFORMAT_RGBA8888: {
-            data.format = PIXEL_FORMAT_RGBA_8888;
-            break;
-        }
-        default:
-            crash_msg("Unhandled swapchain buf format");
-            break;
     }
 
-    data.pixels = buf->surface->pixels;
-    data.size.x = buf->surface->w;
-    data.size.y = buf->surface->h;
-    data.pitch_bytes = buf->surface->pitch;
+    return matching_handle;
+}
 
-    return data;
+void window_impl_update_surfaces() {
+    mtx_lock(&g_active_window_handles.lock);
+    for (i32 window_idx = 0; window_idx < g_active_window_handles.len; window_idx++) {
+        // Needs to be called on the main thread
+        SDL_UpdateWindowSurface(g_active_window_handles.data[window_idx]->window);
+    }
+    mtx_unlock(&g_active_window_handles.lock);
+}
+
+void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf) {
+    mtx_lock(&g_active_window_handles.lock);
+
+    FramebufferInfo info = framebuffer_get_info(buf);
+    assert(info.type == FRAMEBUFFER_TYPE_PIXEL);
+
+    u8* bytes = framebuffer_impl_get_bytes(buf);
+
+    SDL_Surface* surface = SDL_CreateSurfaceFrom(
+        info.data.pixel_buf.size.x,
+        info.data.pixel_buf.size.y,
+        pixels_impl_get_format(info.data.pixel_buf.format),
+        bytes,
+        (i32)info.data.pixel_buf.pitch_bytes
+    );
+
+    SDL_BlitSurface(surface, nullptr, handle->window_surface, nullptr);
+
+    SDL_DestroySurface(surface);
+
+    mtx_unlock(&g_active_window_handles.lock);
 }

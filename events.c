@@ -8,6 +8,8 @@
 
 #include "memory.h"
 #include "SDL3/SDL_init.h"
+#include "draw/window.h"
+#include "draw/window_impl.h"
 
 static bool g_events_initd = false;
 static EventSourceFlags g_event_source_flags = 0;
@@ -41,6 +43,8 @@ void events_init(const EventInitInfo *info) {
 }
 
 void events_poll() {
+    window_impl_update_surfaces();
+
     g_events_q.count = g_events_q.head_idx = 0;
 
     SDL_Event event;
@@ -65,12 +69,12 @@ void events_poll() {
                             event.window.data1,
                             event.window.data2,
                         };
-                        we.data.resize.window_id = event.window.windowID;
+                        we.data.resize.window = window_impl_get_handle_from_id(event.window.windowID);
                         break;
                     }
                     case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
                         we.type = WINDOW_EVENT_CLOSE;
-                        we.data.close.window_id = event.window.windowID;
+                        we.data.close.window = window_impl_get_handle_from_id(event.window.windowID);
                         break;
                     }
                     default:

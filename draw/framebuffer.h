@@ -11,17 +11,53 @@
 struct FRAMEBUFFER_T;
 typedef struct FRAMEBUFFER_T Framebuffer;
 
-struct SWAPCHAIN_BUFFER_T;
+typedef enum FRAMEBUFFER_TYPE_E {
+#ifndef X_FRAMEBUFFER_TYPES
+#define X_FRAMEBUFFER_TYPES \
+    X(PIXEL) \
+    X(VERTEX) \
+    X(INDEX) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(type) \
+    FRAMEBUFFER_TYPE_##type,
+#endif
+    X_FRAMEBUFFER_TYPES
+#undef X
+} FramebufferType;
 
-typedef struct FRAMEBUFFER_DATA_T {
+typedef struct PIXEL_BUFFER_CREATE_INFO_T {
     PixelFormat format;
-    u8 *pixels;
     iVec2 size;
-    i32 pitch_bytes;
-} FramebufferData;
+} PixelBufferCreateInfo;
 
-FramebufferData framebuffer_get_data(Framebuffer* framebuffer);
+typedef struct FRAMEBUFFER_CREATE_INFO_T {
+    FramebufferType type;
 
-void framebuffer_data_set_pixel(FramebufferData fb_data, i32 x, i32 y, rgba8888 rgba);
+    union {
+        PixelBufferCreateInfo pixel_buf;
+    } data;
+} FramebufferCreateInfo;
+
+typedef struct PIXEL_BUFFER_INFO_T {
+    PixelFormat format;
+    iVec2 size;
+    i64 pitch_bytes;
+} PixelBufferInfo;
+
+typedef struct FRAMEBUFFER_INFO_T {
+    FramebufferType type;
+
+    union {
+        PixelBufferInfo pixel_buf;
+    } data;
+} FramebufferInfo;
+
+Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info);
+
+void framebuffer_destroy(Framebuffer *fb);
+
+FramebufferInfo framebuffer_get_info(Framebuffer *fb);
 
 #endif //ALTCORE_FRAMEBUFFER_H

@@ -44,6 +44,7 @@ add_library(${PROJECT_NAME} STATIC
         draw/window.c
         draw/framebuffer.c
         draw/renderer.c
+        draw/pixels.c
         draw/cmds/clear.c
         draw/cmds/present.c
 )

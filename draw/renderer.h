@@ -12,7 +12,23 @@
 struct RENDERER_T;
 typedef struct RENDERER_T Renderer;
 
+typedef enum RENDERER_TYPE_E {
+#ifndef X_RENDERER_TYPES
+#define X_RENDERER_TYPES \
+    X(SOFTWARE_SINGLE_THREAD) \
+    X(SOFTWARE_MULTI_THREAD) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(type) \
+    RENDERER_TYPE_##type,
+#endif
+    X_RENDERER_TYPES
+#undef X
+} RendererType;
+
 typedef struct RENDERER_CREATE_INFO_T {
+    RendererType type;
 } RendererCreateInfo;
 
 typedef enum RENDER_CMD_TYPE_E {
@@ -46,13 +62,13 @@ typedef enum RENDER_BUFFER_TYPE_E {
 } RenderBufferType;
 
 typedef struct RENDER_CMD_CLEAR_T {
-    FramebufferData fb_data;
-    rgba8888 rgba;
+    Framebuffer *framebuffer;
+    RGBA8888 rgba;
 } RenderCmdClear;
 
 typedef struct RENDER_CMD_PRESENT_T {
-    WindowHandle* window;
-    SwapchainBuffer *swapchain_buf;
+    WindowHandle *window;
+    Framebuffer *framebuffer;
 } RenderCmdPresent;
 
 typedef struct RENDER_CMD_T {

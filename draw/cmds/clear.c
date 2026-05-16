@@ -7,77 +7,51 @@
 #include "../../memory.h"
 #include "../../debug.h"
 
-typedef struct SOFT_RENDERER_CLEAR_TASK_ARG_T {
-    FramebufferData fb_data;
-    i32 y_offset;
-    i32 rows_per_worker;
-    i32 num_remainder_rows;
-    rgba8888 rgba;
-    Barrier *sync_barrier;
-} SoftRendererClearTaskArg;
+typedef union CLEAR_COLOR_U {
+    RGBA8888 rgba;
+    ARGB8888 argb;
+} ClearColor;
 
-static void soft_renderer_clear_task(void *arg) {
-    SoftRendererClearTaskArg *clear_arg = arg;
+void cmd_soft_single_clear(u8* pixel_bytes, PixelFormat pixel_format, iVec2 size, i64 pitch_bytes, RGBA8888 rgba) {
+    i32 pixel_size = (i32)pixels_get_size(pixel_format);
 
-    FramebufferData fb_data = clear_arg->fb_data;
-
-    for (
-        i32 row_idx = clear_arg->y_offset;
-        row_idx < fb_data.size.y;
-        row_idx += clear_arg->rows_per_worker
-    ) {
-        for (i32 col_idx = 0; col_idx < fb_data.size.x; col_idx++) {
-            framebuffer_data_set_pixel(fb_data, col_idx, row_idx, clear_arg->rgba);
+    ClearColor clear_color = {};
+    switch (pixel_format) {
+        case PIXEL_FORMAT_RGBA_8888: {
+            clear_color.rgba = rgba;
+            break;
         }
+        case PIXEL_FORMAT_ARGB_8888: {
+            clear_color.argb.a = rgba.a;
+            clear_color.argb.r = rgba.r;
+            clear_color.argb.g = rgba.g;
+            clear_color.argb.b = rgba.b;
+            break;
+        }
+        default:
+            crash_msg("Unhandled pixel format %d\n", pixel_format);
+            break;
     }
 
-    // If worker has been assigned to clear the remainder
-    if (clear_arg->num_remainder_rows > 0) {
-        for (
-            i32 row_idx = fb_data.size.y - clear_arg->num_remainder_rows;
-            row_idx < fb_data.size.y;
-            row_idx++
-        ) {
-            for (i32 col_idx = 0; col_idx < clear_arg->fb_data.size.x; col_idx++) {
-                framebuffer_data_set_pixel(fb_data, col_idx, row_idx, clear_arg->rgba);
+    for (i32 y_idx = 0; y_idx < size.y; y_idx++) {
+        for (i32 x_idx = 0; x_idx < size.x; x_idx++) {
+            u8* pixel_start = pixel_bytes + (y_idx * pitch_bytes + x_idx * pixel_size);
+
+            switch (pixel_format) {
+                case PIXEL_FORMAT_RGBA_8888: {
+                    RGBA8888* pixel = (RGBA8888*)pixel_start;
+                    *pixel = clear_color.rgba;
+                    break;
+                }
+                case PIXEL_FORMAT_ARGB_8888: {
+                    ARGB8888* pixel = (ARGB8888*)pixel_start;
+                    *pixel = clear_color.argb;
+                    break;
+                }
+                default:
+                    crash_msg("Unhandled pixel format %d\n", pixel_format);
+                    break;
             }
         }
-    }
-
-    barrier_wait(clear_arg->sync_barrier);
-
-    alt_free(clear_arg);
-}
-
-void soft_renderer_clear(
-    FramebufferData fb_data,
-    rgba8888 rgba,
-    Worker *workers[],
-    i32 workers_len,
-    Barrier *sync_barrier
-) {
-    i32 rows_per_worker = fb_data.size.y / workers_len;
-    i32 rows_remainder = fb_data.size.y % workers_len;
-
-    for (i32 worker_idx = 0; worker_idx < workers_len; worker_idx++) {
-        SoftRendererClearTaskArg *arg = alt_malloc(sizeof(*arg));
-        *arg = (SoftRendererClearTaskArg){
-            .fb_data = fb_data,
-            .y_offset = worker_idx,
-            .rows_per_worker = rows_per_worker,
-            .rgba = rgba,
-            .sync_barrier = sync_barrier,
-        };
-
-        if (worker_idx == workers_len - 1) {
-            arg->num_remainder_rows = rows_remainder;
-        }
-
-        Task clear_task = {
-            .fn_ptr = soft_renderer_clear_task,
-            .arg = arg,
-        };
-
-        worker_push_task(workers[worker_idx], &clear_task);
     }
 }
