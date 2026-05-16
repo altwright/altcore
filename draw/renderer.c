@@ -79,15 +79,26 @@ Renderer *renderer_create(const RendererCreateInfo *create_info) {
 }
 
 void renderer_destroy(Renderer *renderer) {
-    for (i32 thread_idx = 0; thread_idx < renderer->data.software_multi_thread.rendering_threads_count; thread_idx++) {
-        worker_destroy(renderer->data.software_multi_thread.rendering_threads[thread_idx]);
+    switch (renderer->type) {
+        case RENDERER_TYPE_SOFTWARE_SINGLE_THREAD: {
+            break;
+        }
+        case RENDERER_TYPE_SOFTWARE_MULTI_THREAD: {
+            for (i32 thread_idx = 0; thread_idx < renderer->data.software_multi_thread.rendering_threads_count; thread_idx++) {
+                worker_destroy(renderer->data.software_multi_thread.rendering_threads[thread_idx]);
+            }
+
+            barrier_destroy(renderer->data.software_multi_thread.sync_barrier);
+
+            alt_free(renderer->data.software_multi_thread.rendering_threads);
+            renderer->data.software_multi_thread.rendering_threads = nullptr;
+            renderer->data.software_multi_thread.rendering_threads_count = 0;
+            break;
+        }
+        default:
+            crash_msg("Unhandled renderer type %d\n", renderer->type);
+            break;
     }
-
-    barrier_destroy(renderer->data.software_multi_thread.sync_barrier);
-
-    alt_free(renderer->data.software_multi_thread.rendering_threads);
-    renderer->data.software_multi_thread.rendering_threads = nullptr;
-    renderer->data.software_multi_thread.rendering_threads_count = 0;
 
     alt_free(renderer);
 }
