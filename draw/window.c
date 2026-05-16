@@ -244,6 +244,13 @@ bool window_resize(WindowHandle *handle, iVec2 new_size) {
     return success;
 }
 
+WindowHandleInfo window_get_info(WindowHandle* handle) {
+    WindowHandleInfo info = {
+    };
+
+    return info;
+}
+
 WindowHandle *window_impl_get_handle_from_id(SDL_WindowID id) {
     WindowHandle *matching_handle = nullptr;
 
@@ -279,7 +286,7 @@ void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf) {
     SDL_Surface* surface = SDL_CreateSurfaceFrom(
         info.data.pixel_buf.size.x,
         info.data.pixel_buf.size.y,
-        pixels_impl_get_format(info.data.pixel_buf.format),
+        pixels_impl_to_sdl_format(info.data.pixel_buf.format),
         bytes,
         (i32)info.data.pixel_buf.pitch_bytes
     );

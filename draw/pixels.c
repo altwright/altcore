@@ -6,7 +6,7 @@
 #include "pixels_impl.h"
 #include "../debug.h"
 
-i64 pixels_size(PixelFormat pixel_format) {
+i64 pixels_get_size(PixelFormat pixel_format) {
     i64 pixel_size = 0;
 
     switch (pixel_format) {
@@ -26,7 +26,7 @@ i64 pixels_size(PixelFormat pixel_format) {
     return pixel_size;
 }
 
-SDL_PixelFormat pixels_impl_get_format(PixelFormat format) {
+SDL_PixelFormat pixels_impl_to_sdl_format(PixelFormat format) {
     SDL_PixelFormat sdl_format = {};
 
     switch (format) {
@@ -44,4 +44,25 @@ SDL_PixelFormat pixels_impl_get_format(PixelFormat format) {
     }
 
     return sdl_format;
+}
+
+PixelFormat pixels_impl_from_sdl_format(SDL_PixelFormat sdl_format) {
+    PixelFormat pixel_format = PIXEL_FORMAT_COUNT;
+
+    switch (sdl_format) {
+        case SDL_PIXELFORMAT_RGBA8888: {
+            pixel_format = PIXEL_FORMAT_RGBA_8888;
+            break;
+        }
+        case SDL_PIXELFORMAT_ARGB8888:
+        case SDL_PIXELFORMAT_XRGB8888: {
+            pixel_format = PIXEL_FORMAT_ARGB_8888;
+            break;
+        }
+        default:
+            crash_msg("Unhandled SDL pixel format %d\n", sdl_format);
+            break;
+    }
+
+    return pixel_format;
 }
