@@ -121,6 +121,8 @@ void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer *cmd_buf) {
                         break;
                 }
             }
+
+            break;
         }
         default:
             crash_msg("Unhandled renderer type");
