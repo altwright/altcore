@@ -117,7 +117,7 @@ void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer *cmd_buf) {
                             fb_info.data.pixel_buf.format,
                             fb_info.data.pixel_buf.size,
                             fb_info.data.pixel_buf.pitch_bytes,
-                            cmd->data.clear.rgba
+                            cmd->data.clear.color
                         );
                         break;
                     }

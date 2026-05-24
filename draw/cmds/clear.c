@@ -12,7 +12,7 @@ typedef union CLEAR_COLOR_U {
     ARGB8888 argb;
 } ClearColor;
 
-void cmd_soft_single_clear(u8* pixel_bytes, PixelFormat pixel_format, iVec2 size, i64 pitch_bytes, RGBA8888 rgba) {
+void cmd_soft_single_clear(u8* pixel_bytes, PixelFormat pixel_format, i32x2 size, i64 pitch_bytes, RGBA8888 rgba) {
     i32 pixel_size = (i32)pixels_get_size(pixel_format);
 
     ClearColor clear_color = {};

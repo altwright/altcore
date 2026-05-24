@@ -29,7 +29,7 @@ typedef enum FRAMEBUFFER_TYPE_E {
 
 typedef struct PIXEL_BUFFER_CREATE_INFO_T {
     PixelFormat format;
-    iVec2 size;
+    i32x2 size;
 } PixelBufferCreateInfo;
 
 typedef struct FRAMEBUFFER_CREATE_INFO_T {
@@ -42,7 +42,7 @@ typedef struct FRAMEBUFFER_CREATE_INFO_T {
 
 typedef struct PIXEL_BUFFER_INFO_T {
     PixelFormat format;
-    iVec2 size;
+    i32x2 size;
     i64 pitch_bytes;
 } PixelBufferInfo;
 

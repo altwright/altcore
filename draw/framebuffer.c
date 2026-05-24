@@ -15,7 +15,8 @@
 typedef struct PIXEL_BUFFER_T {
     PixelFormat format;
     u8 *bytes;
-    iVec2 size;
+    i32x2 size;
+    i32x4 scissor;
 } PixelBuffer;
 
 struct FRAMEBUFFER_T {
@@ -23,8 +24,6 @@ struct FRAMEBUFFER_T {
     union {
         PixelBuffer pixel_buf;
     } data;
-
-    mtx_t lock;
 };
 
 Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info) {
@@ -40,6 +39,12 @@ Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info) {
                 fb->data.pixel_buf.size.x * fb->data.pixel_buf.size.y,
                 pixels_get_size(create_info->data.pixel_buf.format)
             );
+            fb->data.pixel_buf.scissor = (i32x4) {
+                .start_x = 0,
+                .start_y = 0,
+                .width = create_info->data.pixel_buf.size.width,
+                .height = create_info->data.pixel_buf.size.height
+            };
             assert(fb->data.pixel_buf.bytes);
             break;
         }
@@ -47,8 +52,6 @@ Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info) {
             crash_msg("Unhandled framebuffer type %d\n", create_info->type);
             break;
     }
-
-    mtx_init(&fb->lock, mtx_plain);
 
     return fb;
 }
@@ -63,8 +66,6 @@ void framebuffer_destroy(Framebuffer *fb) {
             crash_msg("Unhandled framebuffer type %d\n", fb->type);
             break;
     }
-
-    mtx_destroy(&fb->lock);
 
     alt_free(fb);
 }
@@ -86,14 +87,6 @@ FramebufferInfo framebuffer_get_info(Framebuffer *fb) {
     }
 
     return info;
-}
-
-void framebuffer_impl_lock(Framebuffer *fb) {
-    mtx_lock(&fb->lock);
-}
-
-void framebuffer_impl_unlock(Framebuffer *fb) {
-    mtx_unlock(&fb->lock);
 }
 
 u8* framebuffer_impl_get_bytes(Framebuffer *fb) {

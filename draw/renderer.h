@@ -8,6 +8,7 @@
 #include "../types.h"
 #include "framebuffer.h"
 #include "window.h"
+#include "fonts.h"
 
 struct RENDERER_T;
 typedef struct RENDERER_T Renderer;
@@ -35,6 +36,10 @@ typedef enum RENDER_CMD_TYPE_E {
 #ifndef X_RENDER_CMD_TYPES
 #define X_RENDER_CMD_TYPES \
     X(CLEAR) \
+    X(DRAW_RECT) \
+    X(BLIT) \
+    X(DRAW_TEXT) \
+    X(SCISSOR) \
     X(PRESENT) \
     X(COUNT)
 #endif
@@ -63,8 +68,52 @@ typedef enum RENDER_BUFFER_TYPE_E {
 
 typedef struct RENDER_CMD_CLEAR_T {
     Framebuffer *framebuffer;
-    RGBA8888 rgba;
+    RGBA8888 color;
 } RenderCmdClear;
+
+typedef struct RECT_CORNER_RADII_T {
+    f32 top_left_px, top_right_px, bottom_left_px, bottom_right_px;
+} RectCornerRadii;
+
+typedef struct RECT_BORDER_WIDTHS_T {
+    f32 left_px, right_px, top_px, bottom_px;
+} RectBorderWidths;
+
+typedef struct RENDER_CMD_DRAW_RECT_T {
+    Framebuffer *framebuffer;
+    f32x4 dst;
+    RGBA8888 bg_color;
+    RectCornerRadii corner_radii;
+    RGBA8888 border_color;
+    RectBorderWidths border_widths;
+} RenderCmdDrawRect;
+
+typedef struct RENDER_CMD_BLIT_T {
+    Framebuffer *framebuffer;
+    f32x4 dst;
+    RectCornerRadii dst_corner_radii;
+    u8 *src_pixels;
+    PixelFormat src_px_format;
+    i32x2 src_size;
+    i64 src_pitch_bytes;
+} RenderCmdBlit;
+
+typedef struct RENDER_CMD_DRAW_TEXT_T {
+    Framebuffer *framebuffer;
+    char *text;
+    i64 text_len;
+    f32x4 dst;
+    FontHandle *font;
+    RGBA8888 color;
+    i32 font_height_px;
+    i32 letter_spacing_px;
+    i32 line_height_px;
+} RenderCmdDrawText;
+
+typedef struct RENDER_CMD_SCISSOR_T {
+    Framebuffer* framebuffer;
+    f32x4 region;
+} RenderCmdScissor;
 
 typedef struct RENDER_CMD_PRESENT_T {
     WindowHandle *window;
@@ -76,6 +125,10 @@ typedef struct RENDER_CMD_T {
 
     union {
         RenderCmdClear clear;
+        RenderCmdDrawRect draw_rect;
+        RenderCmdBlit blit;
+        RenderCmdDrawText draw_text;
+        RenderCmdScissor scissor;
         RenderCmdPresent present;
     } data;
 } RenderCmd;

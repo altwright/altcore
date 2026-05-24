@@ -7,10 +7,6 @@
 
 #include "framebuffer.h"
 
-void framebuffer_impl_lock(Framebuffer *framebuffer);
-
-void framebuffer_impl_unlock(Framebuffer *framebuffer);
-
 u8* framebuffer_impl_get_bytes(Framebuffer *fb);
 
 #endif //ALTCORE_FRAMEBUFFER_IMPL_H

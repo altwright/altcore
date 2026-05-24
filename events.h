@@ -75,7 +75,7 @@ typedef enum WINDOW_EVENT_TYPE_E {
 } WindowEventType;
 
 typedef struct WINDOW_EVENT_RESIZE_T {
-    iVec2 new_size;
+    i32x2 new_size;
     WindowHandle* window;
 } WindowEventResize;
 

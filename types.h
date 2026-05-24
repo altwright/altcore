@@ -62,7 +62,7 @@ typedef struct V512_T {
     u8 data[64];
 } v512;
 
-typedef struct U_VEC2_T {
+typedef struct U32X2_T {
     union {
         struct {
             u32 x, y;
@@ -71,10 +71,14 @@ typedef struct U_VEC2_T {
         struct {
             u32 u, v;
         };
-    };
-} uVec2;
 
-typedef struct I_VEC2_T {
+        struct {
+            u32 width, height;
+        };
+    };
+} u32x2;
+
+typedef struct I32X2_T {
     union {
         struct {
             i32 x, y;
@@ -83,10 +87,14 @@ typedef struct I_VEC2_T {
         struct {
             i32 u, v;
         };
-    };
-} iVec2;
 
-typedef struct F_VEC2_T {
+        struct {
+            i32 width, height;
+        };
+    };
+} i32x2;
+
+typedef struct F32X2_T {
     union {
         struct {
             f32 x, y;
@@ -95,10 +103,14 @@ typedef struct F_VEC2_T {
         struct {
             f32 u, v;
         };
-    };
-} fVec2;
 
-typedef struct U_VEC4_T {
+        struct {
+            f32 width, height;
+        };
+    };
+} f32x2;
+
+typedef struct U32X4_T {
     union {
         struct {
             u32 x, y, z, w;
@@ -107,10 +119,14 @@ typedef struct U_VEC4_T {
         struct {
             u32 r, g, b, a;
         };
-    };
-} uVec4;
 
-typedef struct I_VEC4_T {
+        struct {
+            u32 start_x, start_y, width, height;
+        };
+    };
+} u32x4;
+
+typedef struct I32X4_T {
     union {
         struct {
             i32 x, y, z, w;
@@ -119,10 +135,14 @@ typedef struct I_VEC4_T {
         struct {
             i32 r, g, b, a;
         };
-    };
-} iVec4;
 
-typedef struct F_VEC4_T {
+        struct {
+            i32 start_x, start_y, width, height;
+        };
+    };
+} i32x4;
+
+typedef struct F32X4_T {
     union {
         struct {
             f32 x, y, z, w;
@@ -131,16 +151,12 @@ typedef struct F_VEC4_T {
         struct {
             f32 r, g, b, a;
         };
+
+        struct {
+            f32 start_x, start_y, width, height;
+        };
     };
-} fVec4;
-
-typedef struct I_RECT_T {
-    i32 x, y, w, h;
-} iRect;
-
-typedef struct F_RECT_T {
-    f32 x, y, w, h;
-} fRect;
+} f32x4;
 
 struct ARENA_T;
 
@@ -251,37 +267,45 @@ void array_sort(
     int (*sort_fn)(const void *, const void *)
 );
 
-inline f32 f32_init(float val);
+f32 f32_init(float val);
 
-inline f32 f32_add(f32 left, f32 right);
+f32 f32_add(f32 left, f32 right);
 
-inline f32 f32_sub(f32 left, f32 right);
+f32 f32_sub(f32 left, f32 right);
 
-inline f32 f32_mul(f32 left, f32 right);
+f32 f32_mul(f32 left, f32 right);
 
-inline f32 f32_div(f32 left, f32 right);
+f32 f32_div(f32 left, f32 right);
 
-inline bool f32_is_inf(f32 val);
+bool f32_is_inf(f32 val);
 
-inline f64 f64_init(double val);
+#ifndef F32
+#define F32(val) f32_init((float)(val))
+#endif
 
-inline f64 f64_add(f64 left, f64 right);
+f64 f64_init(double val);
 
-inline f64 f64_sub(f64 left, f64 right);
+f64 f64_add(f64 left, f64 right);
 
-inline f64 f64_mul(f64 left, f64 right);
+f64 f64_sub(f64 left, f64 right);
 
-inline f64 f64_div(f64 left, f64 right);
+f64 f64_mul(f64 left, f64 right);
 
-inline bool f64_is_inf(f64 val);
+f64 f64_div(f64 left, f64 right);
 
-inline void v128_add(VecElemType type, const v128 *left, const v128 *right, v128 *out);
+bool f64_is_inf(f64 val);
 
-inline void v128_sub(VecElemType type, const v128 *left, const v128 *right, v128 *out);
+#ifndef F64
+#define F64(val) f64_init((double)(val));
+#endif
 
-inline void v128_mul(VecElemType type, const v128 *left, const v128 *right, v128 *out);
+void v128_add(VecElemType type, const v128 *left, const v128 *right, v128 *out);
 
-inline void v128_div(VecElemType type, const v128 *left, const v128 *right, v128 *out);
+void v128_sub(VecElemType type, const v128 *left, const v128 *right, v128 *out);
+
+void v128_mul(VecElemType type, const v128 *left, const v128 *right, v128 *out);
+
+void v128_div(VecElemType type, const v128 *left, const v128 *right, v128 *out);
 
 typedef struct I8S_T {
     ARRAY_FIELDS(i8)

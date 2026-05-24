@@ -19,7 +19,7 @@
 struct WINDOW_HANDLE_T {
     SDL_Window *window;
     SDL_WindowID id;
-    iVec2 window_size;
+    i32x2 window_size;
     SDL_Surface *window_surface;
 };
 
@@ -224,7 +224,7 @@ void window_destroy(WindowHandle *handle) {
     }
 }
 
-bool window_resize(WindowHandle *handle, iVec2 new_size) {
+bool window_resize(WindowHandle *handle, i32x2 new_size) {
     i32 current_w, current_h;
     bool success = SDL_GetWindowSize(handle->window, &current_w, &current_h);
     assert(success);
@@ -237,7 +237,7 @@ bool window_resize(WindowHandle *handle, iVec2 new_size) {
         }
     }
 
-    handle->window_size = (iVec2){current_w, current_h};
+    handle->window_size = (i32x2){.width = current_w, .height = current_h};
     handle->window_surface = SDL_GetWindowSurface(handle->window);
 
     return success;

@@ -9,6 +9,6 @@
 
 void alt_init(i64 address_space_max_size);
 
-void alt_uninit();
+void alt_deinit();
 
 #endif //ALTCORE_INIT_H

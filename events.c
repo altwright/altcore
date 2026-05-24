@@ -65,9 +65,9 @@ void events_poll() {
                 switch (event.type) {
                     case SDL_EVENT_WINDOW_RESIZED: {
                         we.type = WINDOW_EVENT_RESIZE;
-                        we.data.resize.new_size = (iVec2){
-                            event.window.data1,
-                            event.window.data2,
+                        we.data.resize.new_size = (i32x2){
+                            .width = event.window.data1,
+                            .height = event.window.data2,
                         };
                         we.data.resize.window = window_impl_get_handle_from_id(event.window.windowID);
                         break;

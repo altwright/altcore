@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <threads.h>
 
-static bool g_end_of_defer = false;;
+static bool g_end_of_defer = false;
 static mtx_t g_lock = {};
 static bool g_initialized = false;
 

@@ -71,8 +71,8 @@ typedef enum SWAPCHAIN_MODE_E {
 
 typedef struct WINDOW_CREATE_INFO_T {
     const char* title;
-    iVec2 size;
-    iVec2 pos;
+    i32x2 size;
+    i32x2 pos;
     i32 display_idx;
     WindowMode mode;
     WindowFlags flags;
@@ -80,8 +80,8 @@ typedef struct WINDOW_CREATE_INFO_T {
 } WindowCreateInfo;
 
 typedef struct DISPLAY_INFO_T {
-    iVec2 windowed_size;
-    iVec2 fullscreen_size;
+    i32x2 windowed_size;
+    i32x2 fullscreen_size;
 } DisplayInfo;
 
 typedef struct DISPLAY_INFOS_T {
@@ -90,8 +90,8 @@ typedef struct DISPLAY_INFOS_T {
 
 typedef struct WINDOW_HANDLE_INFO_T {
     PixelFormat pixel_format;
-    iVec2 size;
-    iVec2 pos;
+    i32x2 size;
+    i32x2 pos;
 } WindowHandleInfo;
 
 void window_get_display_infos(DisplayInfos *out);
@@ -102,7 +102,7 @@ void window_destroy(WindowHandle* handle);
 
 void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf);
 
-bool window_resize(WindowHandle* handle, iVec2 new_size);
+bool window_resize(WindowHandle* handle, i32x2 new_size);
 
 WindowHandleInfo window_get_info(WindowHandle* handle);
 

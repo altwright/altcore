@@ -21,7 +21,7 @@ void alt_init(i64 address_space_max_size) {
     defer_init();
 }
 
-void alt_uninit() {
+void alt_deinit() {
     defer_uninit();
 
     SDL_malloc_func malloc_fn;

@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.30)
+set(CMAKE_C_COMPILER gcc)
 project(altcore C)
 
 set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(HEADER_FILEPATHS
         types.h
@@ -15,10 +17,13 @@ set(HEADER_FILEPATHS
         worker.h
         events.h
         barrier.h
+        fs.h
         draw/pixels.h
         draw/window.h
         draw/framebuffer.h
         draw/renderer.h
+        draw/ui.h
+        draw/fonts.h
 )
 
 set(SOURCE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -41,10 +46,15 @@ add_library(${PROJECT_NAME} STATIC
         worker.c
         events.c
         barrier.c
+        fs.c
         draw/window.c
         draw/framebuffer.c
         draw/renderer.c
         draw/pixels.c
+        draw/ui.c
+        draw/ui_impl.c
+        draw/fonts.c
+        draw/fonts_impl.c
         draw/cmds/clear.c
         draw/cmds/present.c
 )
@@ -57,11 +67,20 @@ set(CGLM_SHARED OFF)
 set(CGLM_STATIC ON)
 add_subdirectory(libs/cglm-0.9.6 EXCLUDE_FROM_ALL)
 
+add_subdirectory(libs/cwalk-1.2.9 EXCLUDE_FROM_ALL)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE
         SDL3::SDL3-static
         cglm
+        cwalk
 )
 
 target_include_directories(${PROJECT_NAME} INTERFACE
         $<BUILD_INTERFACE:${GENERATED_INCLUDE_DIR}>
 )
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+        libs/clay-0.14
+)
+
+target_compile_options(${PROJECT_NAME} PRIVATE -Wmissing-braces -Werror)
