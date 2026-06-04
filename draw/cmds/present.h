@@ -7,6 +7,6 @@
 
 #include "../window.h"
 
-void cmd_soft_single_present(Framebuffer *fb, WindowHandle *window);
+void soft_cmd_present(Framebuffer *fb, WindowHandle *window);
 
 #endif //ALTCORE_PRESENT_H

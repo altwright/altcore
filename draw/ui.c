@@ -6,6 +6,8 @@
 
 #include <assert.h>
 
+#include "fonts_impl.h"
+
 static FontHandle **g_fonts = nullptr;
 static i64 g_fonts_len = 0;
 
@@ -40,6 +42,22 @@ void ui_set_fonts(FontHandle **fonts, i64 fonts_len) {
     g_fonts = fonts;
     g_fonts_len = fonts_len;
 }
+
+Clay_Dimensions ui_clay_measure_text_fn(Clay_StringSlice text, Clay_TextElementConfig* config, void* user_data) {
+    FontHandle* font = g_fonts[config->fontId];
+
+    f32x2 dim = font_measure_text_line(
+        font,
+        (string_view){.start = text.chars, .len = text.length},
+        config->fontSize,
+        config->letterSpacing
+    );
+
+    return (Clay_Dimensions){
+        .width = f32_float(dim.width),
+        .height = f32_float(dim.height),
+    };
+};
 
 Clay_Color ui_render_to_clay_color(RGBA8888 color) {
     return (Clay_Color){

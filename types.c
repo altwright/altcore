@@ -160,6 +160,20 @@ bool f32_is_inf(f32 val) {
     return memcmp(&val, &kF32Infinity, sizeof(f32)) == 0;
 }
 
+i32 f32_int(f32 val) {
+    float *fval = (float *) &val;
+    return (i32) *fval;
+}
+
+f64 f32_cast(f32 val) {
+    float *fval = (float *) &val;
+    return F64(*fval);
+}
+
+float f32_float(f32 val) {
+    return *((float *) &val);
+}
+
 f64 f64_init(double val) {
     f64 out = {};
 
@@ -223,3 +237,36 @@ f64 f64_div(f64 left, f64 right) {
 bool f64_is_inf(f64 val) {
     return memcmp(&val, &kF64Infinity, sizeof(f64)) == 0;
 }
+
+i64 f64_int(f64 val) {
+    double *dval = (double *) &val;
+    return (i64) *dval;
+}
+
+double f64_float(f64 val) {
+    return *((double *) &val);
+}
+
+f32 f64_cast(f64 val) {
+    double *dval = (double *) &val;
+    return F32(*dval);
+}
+
+i32x4 f32x4_to_i32(f32x4 vec) {
+    return (i32x4) {
+        .x = f32_int(vec.x),
+        .y = f32_int(vec.y),
+        .z = f32_int(vec.z),
+        .w = f32_int(vec.w),
+    };
+}
+
+f32x4 i32x4_to_f32(i32x4 vec) {
+    return (f32x4) {
+        .x = F32(vec.x),
+        .y = F32(vec.y),
+        .z = F32(vec.z),
+        .w = F32(vec.w),
+    };
+}
+

@@ -6,7 +6,7 @@
 
 #include "../../memory.h"
 
-void cmd_soft_single_present(
+void soft_cmd_present(
     Framebuffer* fb,
     WindowHandle* window
 ) {

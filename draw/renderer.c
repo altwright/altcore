@@ -10,10 +10,11 @@
 #include "../debug.h"
 #include "../memory.h"
 #include "../worker.h"
-#include "cmds/clear.h"
 #include "../barrier.h"
+#include "cmds/clear.h"
 #include "cmds/present.h"
-#include "framebuffer_impl.h"
+#include "cmds/draw_rect.h"
+#include "cmds/draw_text.h"
 
 struct RENDERER_T {
     RendererType type;
@@ -84,7 +85,8 @@ void renderer_destroy(Renderer *renderer) {
             break;
         }
         case RENDERER_TYPE_SOFTWARE_MULTI_THREAD: {
-            for (i32 thread_idx = 0; thread_idx < renderer->data.software_multi_thread.rendering_threads_count; thread_idx++) {
+            for (i32 thread_idx = 0; thread_idx < renderer->data.software_multi_thread.rendering_threads_count;
+                 thread_idx++) {
                 worker_destroy(renderer->data.software_multi_thread.rendering_threads[thread_idx]);
             }
 
@@ -109,22 +111,51 @@ void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer *cmd_buf) {
             ARRAY_FOR(cmd, cmd_buf) {
                 switch (cmd->type) {
                     case RENDER_CMD_TYPE_CLEAR: {
-                        FramebufferInfo fb_info = framebuffer_get_info(cmd->data.clear.framebuffer);
-                        assert(fb_info.type == FRAMEBUFFER_TYPE_PIXEL);
-                        u8* pixel_bytes = framebuffer_impl_get_bytes(cmd->data.clear.framebuffer);
-                        cmd_soft_single_clear(
-                            pixel_bytes,
-                            fb_info.data.pixel_buf.format,
-                            fb_info.data.pixel_buf.size,
-                            fb_info.data.pixel_buf.pitch_bytes,
+                        soft_cmd_clear(
+                            cmd->data.clear.framebuffer,
                             cmd->data.clear.color
                         );
                         break;
                     }
                     case RENDER_CMD_TYPE_PRESENT: {
-                        FramebufferInfo fb_info = framebuffer_get_info(cmd->data.present.framebuffer);
-                        assert(fb_info.type == FRAMEBUFFER_TYPE_PIXEL);
-                        cmd_soft_single_present(cmd->data.present.framebuffer, cmd->data.present.window);
+                        soft_cmd_present(
+                            cmd->data.present.framebuffer,
+                            cmd->data.present.window
+                        );
+                        break;
+                    }
+                    case RENDER_CMD_TYPE_DRAW_RECT: {
+                        RenderCmdDrawRect *data = &cmd->data.draw_rect;
+
+                        soft_cmd_draw_rect(
+                            data->framebuffer,
+                            f32x4_to_i32(data->dst),
+                            data->bg_color,
+                            data->corner_radii,
+                            data->border_color,
+                            data->border_widths
+                        );
+                        break;
+                    }
+                    case RENDER_CMD_TYPE_DRAW_TEXT: {
+                        RenderCmdDrawText* data = &cmd->data.draw_text;
+                        i32x4 px_buf_dst = f32x4_to_i32(data->dst);
+
+                        string_view str_view = {
+                            .start = data->text,
+                            .len = data->text_len
+                        };
+
+                        soft_cmd_draw_text(
+                            data->framebuffer,
+                            px_buf_dst,
+                            str_view,
+                            data->font,
+                            data->font_height_px,
+                            data->letter_spacing_px,
+                            data->color
+                        );
+
                         break;
                     }
                     default:

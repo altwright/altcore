@@ -30,6 +30,15 @@ typedef struct ARGB_8888_T {
     u8 b, g, r, a;
 } ARGB8888;
 
-i64 pixels_get_size(PixelFormat pixel_format);
+typedef union PIXEL_U {
+    RGBA8888 rgba;
+    ARGB8888 argb;
+} PixelColor;
+
+PixelColor pixels_convert_rgba(PixelFormat format, RGBA8888 rgba);
+
+i32 pixels_get_size(PixelFormat pixel_format);
+
+void pixels_set(u8* px_start, PixelFormat format, PixelColor px);
 
 #endif //ALTCORE_PIXELS_H

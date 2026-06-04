@@ -9,6 +9,17 @@
 
 #include "types.h"
 
+#ifndef KiB
+#define KiB (1024ULL)
+#endif
+
+#ifndef MiB
+#define MiB (KiB * KiB)
+#endif
+
+#ifndef GiB
+#define GiB (MiB * MiB)
+#endif
 
 void *alt_malloc(size_t size);
 

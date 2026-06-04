@@ -4,18 +4,19 @@
 
 #include "strings.h"
 
-#include <stdarg.h>
-#include <stdio.h>
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
+
+#define STB_SPRINTF_IMPLEMENTATION
+#include "libs/stb_sprintf.h"
 
 string str_make(Arena *arena, const char *fmt, ...) {
     va_list args_read, args_write;
     va_start(args_read);
     va_start(args_write);
 
-    i32 len = vsnprintf(nullptr, 0, fmt, args_read);
+    i32 len = stbsp_vsnprintf(nullptr, 0, fmt, args_read);
     i64 cap = (((2 * (len + 1) + 3) >> 2) << 2);
     if (cap < 32) {
         cap = 32;
@@ -29,7 +30,7 @@ string str_make(Arena *arena, const char *fmt, ...) {
 
     ARRAY_MAKE(&str);
 
-    i32 written_len = vsnprintf(str.data, len + 1, fmt, args_write);
+    i32 written_len = stbsp_vsnprintf(str.data, len + 1, fmt, args_write);
     assert(written_len == len);
 
     va_end(args_read);
@@ -43,7 +44,7 @@ void str_append(string *str, const char *fmt, ...) {
     va_start(args_read);
     va_start(args_write);
 
-    i32 len = vsnprintf(nullptr, 0, fmt, args_read);
+    i32 len = stbsp_vsnprintf(nullptr, 0, fmt, args_read);
 
     i64 new_cap = str->cap;
     while ((len + 1) > (new_cap - str->len)) {
@@ -58,7 +59,7 @@ void str_append(string *str, const char *fmt, ...) {
         str->cap = new_cap;
     }
 
-    i32 written_len = vsnprintf(str->data + str->len, len + 1, fmt, args_write);
+    i32 written_len = stbsp_vsnprintf(str->data + str->len, len + 1, fmt, args_write);
     assert(written_len == len);
 
     str->len += len;

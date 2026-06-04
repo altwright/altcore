@@ -230,6 +230,15 @@ kNullPtr[0] \
 )
 #endif
 
+#ifndef ARRAY_GET
+#define ARRAY_GET(array_ptr, idx) \
+( \
+    ((idx) >= 0) && ((idx) < (array_ptr)->len) \
+    ? &((array_ptr)->data[(idx)]) \
+    : (typeof(*((array_ptr)->data))*) kNullPtr \
+)
+#endif
+
 #ifndef ARRAY_SORT
 #define ARRAY_SORT(array_ptr, sort_fn) \
 do { \
@@ -279,6 +288,12 @@ f32 f32_div(f32 left, f32 right);
 
 bool f32_is_inf(f32 val);
 
+f64 f32_cast(f32 val);
+
+i32 f32_int(f32 val);
+
+float f32_float(f32 val);
+
 #ifndef F32
 #define F32(val) f32_init((float)(val))
 #endif
@@ -295,9 +310,19 @@ f64 f64_div(f64 left, f64 right);
 
 bool f64_is_inf(f64 val);
 
+f32 f64_cast(f64 val);
+
+i64 f64_int(f64 val);
+
+double f64_float(f64 val);
+
 #ifndef F64
-#define F64(val) f64_init((double)(val));
+#define F64(val) f64_init((double)(val))
 #endif
+
+i32x4 f32x4_to_i32(f32x4 vec);
+
+f32x4 i32x4_to_f32(i32x4 vec);
 
 void v128_add(VecElemType type, const v128 *left, const v128 *right, v128 *out);
 

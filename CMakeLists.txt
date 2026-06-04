@@ -18,6 +18,7 @@ set(HEADER_FILEPATHS
         events.h
         barrier.h
         fs.h
+        maths.h
         draw/pixels.h
         draw/window.h
         draw/framebuffer.h
@@ -47,6 +48,7 @@ add_library(${PROJECT_NAME} STATIC
         events.c
         barrier.c
         fs.c
+        maths.c
         draw/window.c
         draw/framebuffer.c
         draw/renderer.c
@@ -54,9 +56,11 @@ add_library(${PROJECT_NAME} STATIC
         draw/ui.c
         draw/ui_impl.c
         draw/fonts.c
-        draw/fonts_impl.c
         draw/cmds/clear.c
+        draw/cmds/draw_rect.c
+        draw/cmds/draw_text.c
         draw/cmds/present.c
+        draw/cmds/scissor.c
 )
 
 set(SDL_SHARED OFF)
@@ -83,4 +87,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         libs/clay-0.14
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE -Wmissing-braces -Werror)
+target_compile_options(${PROJECT_NAME} PUBLIC -Wmissing-braces)

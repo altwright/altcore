@@ -7,7 +7,11 @@
 
 #include "../../types.h"
 #include "../pixels.h"
+#include "../framebuffer.h"
 
-void cmd_soft_single_clear(u8* pixel_bytes, PixelFormat pixel_format, i32x2 size, i64 pitch_bytes, RGBA8888 rgba);
+void soft_cmd_clear(
+    Framebuffer* px_buf,
+    RGBA8888 rgba
+);
 
 #endif //ALTCORE_CLEAR_H
