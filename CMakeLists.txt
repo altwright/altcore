@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.30)
-set(CMAKE_C_COMPILER gcc)
 project(altcore C)
 
 set(CMAKE_C_STANDARD 23)
