@@ -110,6 +110,36 @@ typedef struct F32X2_T {
     };
 } f32x2;
 
+typedef struct I32X3_T {
+    union {
+        i32 data[4];
+
+        struct {
+            i32 x, y, z;
+        };
+    };
+} i32x3;
+
+typedef struct U32X3_T {
+    union {
+        u32 data[4];
+
+        struct {
+            u32 x, y, z;
+        };
+    };
+} u32x3;
+
+typedef struct F32X3_T {
+    union {
+        f32 data[4];
+
+        struct {
+            f32 x, y, z;
+        };
+    };
+} f32x3;
+
 typedef struct U32X4_T {
     union {
         struct {
