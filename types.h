@@ -269,6 +269,18 @@ kNullPtr[0] \
 )
 #endif
 
+#ifndef ARRAY_DEL
+#define ARRAY_DEL(array_ptr, idx) \
+do { \
+    array_del( \
+        (array_ptr)->data, \
+        sizeof((array_ptr)->data[0]), \
+        &((array_ptr)->len), \
+        (idx) \
+    ); \
+} while(0)
+#endif
+
 #ifndef ARRAY_SORT
 #define ARRAY_SORT(array_ptr, sort_fn) \
 do { \
@@ -297,6 +309,13 @@ void array_push(
     i64 new_elem_size,
     const void *new_elem,
     struct ARENA_T *arena
+);
+
+void array_del(
+    void *data,
+    i64 data_elem_size,
+    i64 *len,
+    i64 idx
 );
 
 void array_sort(
@@ -401,6 +420,42 @@ typedef struct F32S_T {
 typedef struct F64S_T {
     ARRAY_FIELDS(f64)
 } f64s;
+
+typedef struct I32X2S_T {
+    ARRAY_FIELDS(i32x2)
+} i32x2s;
+
+typedef struct I32X3S_T {
+    ARRAY_FIELDS(i32x3)
+} i32x3s;
+
+typedef struct I32X4S_T {
+    ARRAY_FIELDS(i32x4)
+} i32x4s;
+
+typedef struct U32X2S_T {
+    ARRAY_FIELDS(u32x2)
+} u32x2s;
+
+typedef struct U32X3S_T {
+    ARRAY_FIELDS(u32x3)
+} u32x3s;
+
+typedef struct U32X4S_T {
+    ARRAY_FIELDS(u32x4)
+} u32x4s;
+
+typedef struct F32X2S_T {
+    ARRAY_FIELDS(f32x2)
+} f32x2s;
+
+typedef struct F32X3S_T {
+    ARRAY_FIELDS(f32x3)
+} f32x3s;
+
+typedef struct F32X4S_T {
+    ARRAY_FIELDS(f32x4)
+} f32x4s;
 
 #ifndef STATIC_ARRAY_LEN
 #define STATIC_ARRAY_LEN(k_array) \

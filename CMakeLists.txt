@@ -24,6 +24,7 @@ set(HEADER_FILEPATHS
         draw/renderer.h
         draw/ui.h
         draw/fonts.h
+        ecs.h
 )
 
 set(SOURCE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -48,6 +49,7 @@ add_library(${PROJECT_NAME} STATIC
         barrier.c
         fs.c
         maths.c
+        ecs.c
         draw/window.c
         draw/framebuffer.c
         draw/renderer.c

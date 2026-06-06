@@ -74,6 +74,21 @@ void array_push(
     (*len)++;
 }
 
+void array_del(
+    void *data,
+    i64 data_elem_size,
+    i64 *len,
+    i64 idx
+) {
+    for (i64 current_idx = idx; current_idx < (*len - 1); current_idx++) {
+        u8 *current_elem_byte = (u8 *) data + (current_idx * data_elem_size);
+        u8 *next_elem_byte = current_elem_byte + data_elem_size;
+        memcpy(current_elem_byte, next_elem_byte, data_elem_size);
+    }
+
+    (*len)--;
+}
+
 void array_sort(
     void *data,
     i64 len,
@@ -253,7 +268,7 @@ f32 f64_cast(f64 val) {
 }
 
 i32x4 f32x4_to_i32(f32x4 vec) {
-    return (i32x4) {
+    return (i32x4){
         .x = f32_int(vec.x),
         .y = f32_int(vec.y),
         .z = f32_int(vec.z),
@@ -262,11 +277,10 @@ i32x4 f32x4_to_i32(f32x4 vec) {
 }
 
 f32x4 i32x4_to_f32(i32x4 vec) {
-    return (f32x4) {
+    return (f32x4){
         .x = F32(vec.x),
         .y = F32(vec.y),
         .z = F32(vec.z),
         .w = F32(vec.w),
     };
 }
-
