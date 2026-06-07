@@ -8,7 +8,7 @@
 #include "types.h"
 
 typedef struct ENTITY_ID_T {
-    i64 guid;
+    u64 guid;
 } EntityID;
 
 typedef enum ENTITY_VAR_TYPE_E {
@@ -96,9 +96,9 @@ typedef struct ENTITY_CREATE_INFO_T {
     EntityComponentFlags components;
 
     struct {
-        EntityVar *data;
+        EntityVarType *data;
         i32 len;
-    } vars;
+    } var_types;
 
     u64 priority;
 
@@ -113,7 +113,7 @@ void ecs_set_tick_fn_ptrs(EntityTickFnPtr *tick_fn_ptrs, i32 tick_fn_ptrs_len);
 
 void ecs_tick();
 
-EntityID ecs_create_entity(const EntityCreateInfo *info);
+EntityID ecs_add_entity(const EntityCreateInfo *info);
 
 i32 *ecs_get_i32_var(EntityID eid, i32 var_idx);
 
@@ -134,8 +134,6 @@ EntityID *ecs_get_eid_var(EntityID eid, i32 var_idx);
 EntityComponentFlags ecs_get_components(EntityID eid);
 
 i64 ecs_get_priority(EntityID eid);
-
-void ecs_set_priority(EntityID eid, u64 priority);
 
 f32x3 *ecs_get_entity_position(EntityID eid);
 

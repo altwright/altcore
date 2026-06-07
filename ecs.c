@@ -118,6 +118,11 @@ static void component_array_add(
     Arena **arena,
     const EntityID *new_eid
 ) {
+    /*
+     * The entity guids are monotonicly increasing, and
+     * therefore the entity component can be added to the end of
+     * the array and maintain ascending entity ID order.
+     */
 }
 
 static void component_array_del(
@@ -145,9 +150,7 @@ void ecs_init() {
 
     g_entity_map = (EntityMap){HASHMAP_TYPE_NON_STR_KEY, HASHMAP_DEL_FREQ_HIGH};
 
-    Entity default_entity = {
-        .eid = {-1}
-    };
+    Entity default_entity = {};
     HASHMAP_MAKE(&g_entity_map, &default_entity);
 
     g_entity_ptrs = (EntityPtrs){
@@ -271,11 +274,10 @@ void ecs_tick() {
     g_tick_counter++;
 }
 
-EntityID ecs_create_entity(const EntityCreateInfo *info) {
-    EntityID new_eid = {(i64)++g_entity_counter};
+EntityID ecs_add_entity(const EntityCreateInfo *info) {
+    EntityID new_eid = {++g_entity_counter};
 
-    u64 vars_size = info->vars.len * sizeof(*info->vars.data);
-
+    u64 vars_size = info->var_types.len * sizeof(EntityVar);
     Entity new_entity = {
         .eid = new_eid,
         .start_tick = g_tick_counter,
@@ -284,13 +286,53 @@ EntityID ecs_create_entity(const EntityCreateInfo *info) {
         .tick_fn_ptr_idx = info->tick_fn_ptr_idx,
         .priority = info->priority,
         .vars = {
-            .arena = arena_make((i64)vars_size),
-            .len = info->vars.len,
+            .arena = arena_make((i64) vars_size),
+            .len = info->var_types.len,
         },
     };
 
     ARRAY_MAKE(&new_entity.vars);
-    memcpy(new_entity.vars.data, info->vars.data, vars_size);
+
+    for (i32 var_idx = 0; var_idx < info->var_types.len; var_idx++) {
+        EntityVar *var = ARRAY_GET(&new_entity.vars, var_idx);
+        var->type = info->var_types.data[var_idx];
+    }
+
+    HASHMAP_PUT(&g_entity_map, &new_eid, &new_entity);
+
+    while (g_entity_ptrs.len >= g_entity_ptrs.cap) {
+        i64 new_cap = 2 * g_entity_ptrs.cap;
+        u64 elem_size = sizeof(g_entity_ptrs.data[0]);
+        u64 new_size = new_cap * elem_size;
+
+        EntityPtrs new_entity_ptrs = {
+            .arena = arena_make((i64) new_size),
+            .len = g_entity_ptrs.len,
+            .cap = new_cap,
+        };
+
+        ARRAY_MAKE(&new_entity_ptrs);
+        memcpy(new_entity_ptrs.data, g_entity_ptrs.data, g_entity_ptrs.len * elem_size);
+
+        arena_free(g_entity_ptrs.arena);
+
+        g_entity_ptrs = new_entity_ptrs;
+    }
+
+    Entity *new_entity_ptr = &(HASHMAP_GET(&g_entity_map, &new_eid)->value);
+
+    i64 new_entity_ptr_idx = 0;
+
+    for (i64 entity_ptr_idx = 0; entity_ptr_idx < g_entity_ptrs.len; entity_ptr_idx++) {
+        new_entity_ptr_idx = entity_ptr_idx;
+
+        Entity *entity_ptr = *ARRAY_GET(&g_entity_ptrs, entity_ptr_idx);
+        if ((entity_ptr->priority) > (new_entity_ptr->priority)) {
+            break;
+        }
+    }
+
+    ARRAY_PUT(&g_entity_ptrs, new_entity_ptr_idx, &new_entity_ptr);
 
     for (i32 component_idx = 0; component_idx < ENTITY_COMPONENT_INDEX_COUNT; component_idx++) {
         EntityComponentFlag component_flag = 1ULL << component_idx;
@@ -309,7 +351,7 @@ EntityID ecs_create_entity(const EntityCreateInfo *info) {
                     break;
                 }
                 default:
-                    crash_msg("Unhandled component flag add %lu\n", component_flag);
+                    crash_msg("Unhandled component index %d addition\n", component_idx);
                     break;
             }
         }

@@ -203,7 +203,7 @@ type *data;
 #ifndef ARRAY_MAKE
 #define ARRAY_MAKE(array_ptr) \
 do { \
-    array_alloc( \
+    array_make( \
         (void**)(&(array_ptr)->data), \
         &((array_ptr)->len), \
         &((array_ptr)->cap), \
@@ -269,6 +269,22 @@ kNullPtr[0] \
 )
 #endif
 
+#ifndef ARRAY_PUT
+#define ARRAY_PUT(array_ptr, idx, elem_ptr) \
+do { \
+    array_put( \
+        (void**)(&((array_ptr)->data)), \
+        sizeof((array_ptr)->data[0]), \
+        &((array_ptr)->len), \
+        &((array_ptr)->cap), \
+        (elem_ptr), \
+        sizeof((elem_ptr)[0]), \
+        (idx), \
+        (array_ptr)->arena \
+    ); \
+} while(0)
+#endif
+
 #ifndef ARRAY_DEL
 #define ARRAY_DEL(array_ptr, idx) \
 do { \
@@ -293,7 +309,7 @@ do { \
 } while(0)
 #endif
 
-void array_alloc(
+void array_make(
     void **data_ptr,
     i64 *len,
     i64 *cap,
@@ -308,6 +324,17 @@ void array_push(
     i64 data_elem_size,
     i64 new_elem_size,
     const void *new_elem,
+    struct ARENA_T *arena
+);
+
+void array_put(
+    void **data_ptr,
+    i64 data_elem_size,
+    i64* len,
+    i64* cap,
+    void *new_elem,
+    i64 new_elem_size,
+    i64 idx,
     struct ARENA_T *arena
 );
 

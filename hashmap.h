@@ -117,15 +117,15 @@ typedef enum HASHMAP_DEL_FREQ_E {
     } while(0)
 #endif
 
-#ifndef HASHMAP_GET_VAL
-#define HASHMAP_GET_VAL(hashmap_ptr, key_ptr) \
+#ifndef HASHMAP_GET
+#define HASHMAP_GET(hashmap_ptr, key_ptr) \
     ( \
         (hashmap_ptr)->type == HASHMAP_TYPE_STR_KEY ? \
-            shget((hashmap_ptr)->hash, *((char**)(key_ptr))) : \
+            shgetp_null((hashmap_ptr)->hash, *((char**)(key_ptr))) : \
             ( \
                 (hashmap_ptr)->type == HASHMAP_TYPE_NON_STR_KEY ? \
-                    hmget((hashmap_ptr)->hash, *(key_ptr)) : \
-                    *((typeof((hashmap_ptr)->hash->value)*) kNullPtr) \
+                    hmgetp_null((hashmap_ptr)->hash, *(key_ptr)) : \
+                    nullptr \
             ) \
     )
 #endif
@@ -144,9 +144,9 @@ typedef enum HASHMAP_DEL_FREQ_E {
 #endif
 
 #ifndef HASHMAP_GET_ELEM
-#define HASHMAP_GET_ELEM(hashmap_ptr, idx_ptr) \
+#define HASHMAP_GET_ELEM(hashmap_ptr, idx) \
     ( \
-        *(idx_ptr) >= 0 && *(idx_ptr) < ( \
+        (idx) >= 0 && (idx) < ( \
             (hashmap_ptr)->type == HASHMAP_TYPE_STR_KEY ? \
                 shlen((hashmap_ptr)->hash) : \
                 ( \
@@ -155,7 +155,7 @@ typedef enum HASHMAP_DEL_FREQ_E {
                         0 \
                 ) \
         ) ? \
-            (hashmap_ptr)->hash + *(idx_ptr) : \
+            (hashmap_ptr)->hash + (idx) : \
             nullptr \
     )
 #endif
