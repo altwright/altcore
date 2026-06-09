@@ -94,12 +94,11 @@ FontHandle *font_load_ttf(Filepath *path) {
     ARRAY_MAKE(&font->scale_factor_per_px_heights);
 
     for (i64 px_idx = 0; px_idx < font->scale_factor_per_px_heights.len; px_idx++) {
-        font->scale_factor_per_px_heights.data[px_idx] = F32(
-            stbtt_ScaleForPixelHeight(
-                &font->info,
-                (float) (px_idx + 1)
-            )
-        );
+        font->scale_factor_per_px_heights.data[px_idx] =
+                stbtt_ScaleForPixelHeight(
+                    &font->info,
+                    (float) (px_idx + 1)
+                );
     }
 
     stbtt_GetFontBoundingBox(
@@ -166,12 +165,12 @@ FontHandle *font_load_ttf(Filepath *path) {
         }
     }
 
-    float max_scale_factor = f32_float(*ARRAY_GET(&font->scale_factor_per_px_heights, kDefaultUpperFontSizePx - 1));
-    float max_bbox_width = max_scale_factor * (float)(font->max_bbox.x1 - font->max_bbox.x0);
-    float max_bbox_height = max_scale_factor * (float)(font->max_bbox.y1 - font->max_bbox.y0);
+    f32 max_scale_factor = *ARRAY_GET(&font->scale_factor_per_px_heights, kDefaultUpperFontSizePx - 1);
+    f32 max_bbox_width = max_scale_factor * (f32) (font->max_bbox.x1 - font->max_bbox.x0);
+    f32 max_bbox_height = max_scale_factor * (f32) (font->max_bbox.y1 - font->max_bbox.y0);
 
-    font->max_bitmap.width = (i32)max_bbox_width + 1;
-    font->max_bitmap.height = (i32)max_bbox_height + 1;
+    font->max_bitmap.width = (i32) max_bbox_width + 1;
+    font->max_bitmap.height = (i32) max_bbox_height + 1;
 
     font->max_bitmap.bytes = (u8s){font->arena, font->max_bitmap.width * font->max_bitmap.height};
     ARRAY_MAKE(&font->max_bitmap.bytes);
@@ -191,11 +190,11 @@ f32x2 font_measure_text_line(
     i32 letter_spacing_px
 ) {
     f32 scale_factor = *ARRAY_GET(&font->scale_factor_per_px_heights, height_px);
-    f32 y1 = f32_mul(scale_factor, F32(font->max_bbox.y1));
-    f32 y0 = f32_mul(scale_factor, F32(font->max_bbox.y0));
-    f32 height = f32_sub(y1, y0);
+    f32 y1 = scale_factor * (f32)font->max_bbox.y1;
+    f32 y0 = scale_factor * (f32)font->max_bbox.y0;
+    f32 height = y1 - y0;
 
-    f32 width = F32(0);
+    f32 width = 0;
 
     for (i32 c_idx = 0; c_idx < view.len; c_idx++) {
         char c = view.start[c_idx];
@@ -203,19 +202,10 @@ f32x2 font_measure_text_line(
         if (isascii(c)
             && ARRAY_GET(&font->ascii_codepoint_infos, c)->glyph_idx
         ) {
-            width = f32_add(
-                width,
-                f32_mul(
-                    scale_factor,
-                    F32(ARRAY_GET(&font->ascii_codepoint_infos, c)->advance_width_units)
-                )
-            );
+            width += scale_factor * (f32)(ARRAY_GET(&font->ascii_codepoint_infos, c)->advance_width_units);
 
             if (c_idx < view.len - 1) {
-                width = f32_add(
-                    width,
-                    F32(letter_spacing_px)
-                );
+                width += (f32)letter_spacing_px;
             }
         }
     }
@@ -232,12 +222,12 @@ stbtt_fontinfo *font_impl_get_info(FontHandle *font) {
     return &font->info;
 }
 
-float font_impl_get_scale_factor(FontHandle* font, i32 px_size) {
+float font_impl_get_scale_factor(FontHandle *font, i32 px_size) {
     assert(font && px_size > 0 && px_size <= kDefaultUpperFontSizePx);
-    return f32_float(*ARRAY_GET(&font->scale_factor_per_px_heights, px_size - 1));
+    return *ARRAY_GET(&font->scale_factor_per_px_heights, px_size - 1);
 }
 
-i32 font_impl_get_glyph_idx(FontHandle* font, const char* codepoint) {
+i32 font_impl_get_glyph_idx(FontHandle *font, const char *codepoint) {
     i32 glyph_idx = 0;
 
     if (isascii(*codepoint)) {
@@ -247,7 +237,7 @@ i32 font_impl_get_glyph_idx(FontHandle* font, const char* codepoint) {
     return glyph_idx;
 }
 
-i32 font_impl_get_left_side_bearing(FontHandle* font, const char* codepoint) {
+i32 font_impl_get_left_side_bearing(FontHandle *font, const char *codepoint) {
     i32 lsb = 0;
 
     if (isascii(*codepoint)) {
@@ -257,7 +247,7 @@ i32 font_impl_get_left_side_bearing(FontHandle* font, const char* codepoint) {
     return lsb;
 }
 
-i32 font_impl_get_advance_width(FontHandle* font, const char* codepoint) {
+i32 font_impl_get_advance_width(FontHandle *font, const char *codepoint) {
     i32 adv_width = 0;
 
     if (isascii(*codepoint)) {
@@ -267,14 +257,14 @@ i32 font_impl_get_advance_width(FontHandle* font, const char* codepoint) {
     return adv_width;
 }
 
-void font_impl_get_max_bbox(FontHandle* font, i32* x0, i32* y0, i32* x1, i32* y1) {
+void font_impl_get_max_bbox(FontHandle *font, i32 *x0, i32 *y0, i32 *x1, i32 *y1) {
     *x0 = font->max_bbox.x0;
     *y0 = font->max_bbox.y0;
     *x1 = font->max_bbox.x1;
     *y1 = font->max_bbox.y1;
 }
 
-void font_impl_get_max_bitmap(FontHandle* font, u8** bitmap_bytes, i32* bitmap_width, i32* bitmap_height) {
+void font_impl_get_max_bitmap(FontHandle *font, u8 **bitmap_bytes, i32 *bitmap_width, i32 *bitmap_height) {
     *bitmap_bytes = font->max_bitmap.bytes.data;
     *bitmap_width = font->max_bitmap.width;
     *bitmap_height = font->max_bitmap.height;

@@ -53,6 +53,7 @@ typedef enum ENTITY_COMPONENT_INDEX_E : i64 {
     X(POSITION) \
     X(ROTATION) \
     X(SCALE) \
+    X(POINT_LIGHT) \
     X(COUNT)
 #endif
 #ifndef X
@@ -88,7 +89,32 @@ typedef enum ENTITY_TICK_RETURN_CODE_E {
 #undef X
 } EntityTickReturnCode;
 
-typedef EntityTickReturnCode (*EntityTickFnPtr)(EntityID eid);
+typedef enum ENTITY_TICK_SIGNAL_E {
+#ifndef X_ENTITY_TICK_SIGNALS
+#define X_ENTITY_TICK_SIGNALS \
+    X(NONE) \
+    X(TERMINATE) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(signal) \
+    ENTITY_TICK_SIGNAL_##signal,
+#endif
+    X_ENTITY_TICK_SIGNALS
+#undef X
+} EntityTickSignal;
+
+typedef EntityTickReturnCode (*EntityTickFnPtr)(EntityID eid, EntityTickSignal signal);
+
+typedef void (*EntitySerializeFnPtr)(EntityID eid, i32 var_idx, u8 *out_serialized_var, i64 *out_serialized_var_len);
+
+typedef void (*EntityDeserializeFnPtr)(EntityID eid, i32 var_idx, u8 *in_serialized_var, i64 in_serialized_var_len);
+
+typedef struct ENTITY_FN_PTRS_T {
+    EntityTickFnPtr tick_fn_ptr;
+    EntitySerializeFnPtr serialize_fn_ptr;
+    EntityDeserializeFnPtr deserialize_fn_ptr;
+} EntityFnPtrs;
 
 typedef struct ENTITY_CREATE_INFO_T {
     const char *name;
@@ -102,14 +128,14 @@ typedef struct ENTITY_CREATE_INFO_T {
 
     u64 priority;
 
-    i32 tick_fn_ptr_idx;
+    i32 entity_type_idx;
 } EntityCreateInfo;
 
 void ecs_init();
 
 void ecs_deinit();
 
-void ecs_set_tick_fn_ptrs(EntityTickFnPtr *tick_fn_ptrs, i32 tick_fn_ptrs_len);
+void ecs_set_entity_fn_ptrs(EntityFnPtrs *fn_ptrs, i32 fn_ptrs_len);
 
 void ecs_tick();
 

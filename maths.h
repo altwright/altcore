@@ -34,28 +34,9 @@
     )
 #endif
 
-#ifndef F32_PI
-#define F32_PI F32(M_PI)
+#ifndef SATURATE
+#define SATURATE(val) \
+    CLAMP(val, 0, 1)
 #endif
-
-#ifndef F64_PI
-#define F64_PI F64(M_PI)
-#endif
-
-f32 f32_min(f32 left, f32 right);
-
-f32 f32_max(f32 left, f32 right);
-
-f32 f32_clamp(f32 val, f32 min, f32 max);
-
-f32 f32_saturate(f32 val);
-
-f64 f64_min(f64 left, f64 right);
-
-f64 f64_max(f64 left, f64 right);
-
-f64 f64_clamp(f64 val, f64 min, f64 max);
-
-f64 f64_saturate(f64 val);
 
 #endif //ALTCORE_MATHS_H

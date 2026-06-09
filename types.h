@@ -11,56 +11,14 @@ typedef int8_t i8;
 typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
-typedef _BitInt(128) i128;
 
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
-typedef unsigned _BitInt(128) u128;
 
-typedef struct F32_T {
-    u8 data[4];
-} f32;
-
-typedef struct F64_T {
-    u8 data[8];
-} f64;
-
-typedef enum VEC_TYPE {
-#ifndef X_VEC_ELEM_TYPES
-#define X_VEC_ELEM_TYPES \
-    X(U8) \
-    X(U16) \
-    X(U32) \
-    X(U64) \
-    X(I8) \
-    X(I16) \
-    X(I32) \
-    X(I64) \
-    X(F32) \
-    X(F64) \
-    X(COUNT)
-#endif
-#ifndef X
-#define X(type) \
-    VEC_ELEM_TYPE_##type,
-#endif
-    X_VEC_ELEM_TYPES
-#undef X
-} VecElemType;
-
-typedef struct V128_T {
-    u8 data[16];
-} v128;
-
-typedef struct V256_T {
-    u8 data[32];
-} v256;
-
-typedef struct V512_T {
-    u8 data[64];
-} v512;
+typedef float f32;
+typedef double f64;
 
 typedef struct U32X2_T {
     union {
@@ -330,8 +288,8 @@ void array_push(
 void array_put(
     void **data_ptr,
     i64 data_elem_size,
-    i64* len,
-    i64* cap,
+    i64 *len,
+    i64 *cap,
     void *new_elem,
     i64 new_elem_size,
     i64 idx,
@@ -351,62 +309,6 @@ void array_sort(
     i64 elem_size,
     int (*sort_fn)(const void *, const void *)
 );
-
-f32 f32_init(float val);
-
-f32 f32_add(f32 left, f32 right);
-
-f32 f32_sub(f32 left, f32 right);
-
-f32 f32_mul(f32 left, f32 right);
-
-f32 f32_div(f32 left, f32 right);
-
-bool f32_is_inf(f32 val);
-
-f64 f32_cast(f32 val);
-
-i32 f32_int(f32 val);
-
-float f32_float(f32 val);
-
-#ifndef F32
-#define F32(val) f32_init((float)(val))
-#endif
-
-f64 f64_init(double val);
-
-f64 f64_add(f64 left, f64 right);
-
-f64 f64_sub(f64 left, f64 right);
-
-f64 f64_mul(f64 left, f64 right);
-
-f64 f64_div(f64 left, f64 right);
-
-bool f64_is_inf(f64 val);
-
-f32 f64_cast(f64 val);
-
-i64 f64_int(f64 val);
-
-double f64_float(f64 val);
-
-#ifndef F64
-#define F64(val) f64_init((double)(val))
-#endif
-
-i32x4 f32x4_to_i32(f32x4 vec);
-
-f32x4 i32x4_to_f32(i32x4 vec);
-
-void v128_add(VecElemType type, const v128 *left, const v128 *right, v128 *out);
-
-void v128_sub(VecElemType type, const v128 *left, const v128 *right, v128 *out);
-
-void v128_mul(VecElemType type, const v128 *left, const v128 *right, v128 *out);
-
-void v128_div(VecElemType type, const v128 *left, const v128 *right, v128 *out);
 
 typedef struct I8S_T {
     ARRAY_FIELDS(i8)
@@ -488,5 +390,50 @@ typedef struct F32X4S_T {
 #define STATIC_ARRAY_LEN(k_array) \
     (sizeof(k_array) / sizeof(k_array[0]))
 #endif
+
+#ifndef LIST_FIELDS
+#define LIST_FIELDS(elem_type) \
+struct ARENA_T *arena; \
+i64 count; \
+i64 cap; \
+struct { \
+    i64 prev_elem_idx; \
+    i64 next_elem_idx; \
+    elem_type val; \
+} *data; \
+i64 free_elem_idx;
+#endif
+
+#ifndef LIST_MAKE
+#define LIST_MAKE(list_ptr)
+#endif
+
+#ifndef LIST_GET
+#define LIST_GET(list_ptr, idx)
+#endif
+
+#ifndef LIST_PUSH
+#define LIST_PUSH(list_ptr, new_elem_ptr)
+#endif
+
+#ifndef LIST_POP
+#define LIST_POP(list_ptr)
+#endif
+
+#ifndef LIST_PUT
+#define LIST_PUT(list_ptr, idx, new_elem_ptr)
+#endif
+
+#ifndef LIST_DEL
+#define LIST_DEL(list_ptr, idx)
+#endif
+
+#ifndef LIST_FOR
+#define LIST_FOR(elem_ptr_name, list_ptr)
+#endif
+
+i32x4 f32x4_to_i32(f32x4 vec);
+
+f32x4 i32x4_to_f32(i32x4 vec);
 
 #endif //ALTCORE_TYPES_H

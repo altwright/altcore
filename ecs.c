@@ -4,22 +4,28 @@
 
 #include "ecs.h"
 
+#include <assert.h>
+
 #include "arenas.h"
 #include "hashmap.h"
 #include "debug.h"
+#include "draw/lights.h"
 
 typedef struct ENTITY_VARS_T {
     ARRAY_FIELDS(EntityVar)
 } EntityVars;
 
+
 typedef struct ENTITY_T {
     EntityID eid;
-    u64 start_tick;
+    u64 prev_tick;
     const char *name;
     EntityComponentFlags components;
-    i32 tick_fn_ptr_idx;
+    i32 type_idx;
     EntityVars vars;
     u64 priority;
+    i32 serialize_fn_ptr_idx;
+    i32 deserialize_fn_ptr_idx;
 } Entity;
 
 typedef struct ENTITY_MAP_T {
@@ -30,9 +36,9 @@ typedef struct ENTITY_PTRS_T {
     ARRAY_FIELDS(Entity*)
 } EntityPtrs;
 
-typedef struct ENTITY_TICK_FN_PTRS_T {
-    ARRAY_FIELDS(EntityTickFnPtr)
-} EntityTickFnPtrs;
+typedef struct ENTITY_FN_PTRS_ARRAY_T {
+    ARRAY_FIELDS(EntityFnPtrs)
+} EntityFnPtrsArray;
 
 typedef struct ENTITY_IDS_T {
     ARRAY_FIELDS(EntityID)
@@ -49,43 +55,49 @@ Arena* arena;
 
 #ifndef COMPONENT_ARRAY_ADD
 #define COMPONENT_ARRAY_ADD(component_array_ptr, eid_ptr) \
-do { \
     component_array_add( \
         (void **)(&((component_array_ptr)->data)), \
-        sizeof((component_array_ptr)->data[0]), \
+        sizeof(*((component_array_ptr)->data)), \
         &((component_array_ptr)->eids), \
         &((component_array_ptr)->len), \
         &((component_array_ptr)->cap), \
         &((component_array_ptr)->arena), \
         (eid_ptr) \
-    ); \
-} while(0)
+    )
 #endif
 
 #ifndef COMPONENT_ARRAY_DEL
 #define COMPONENT_ARRAY_DEL(component_array_ptr, eid_ptr) \
-do { \
     component_array_del( \
         (component_array_ptr)->data, \
         sizeof(*((component_array_ptr)->data)), \
         (component_array_ptr)->eids, \
         &((component_array_ptr)->len), \
         (eid_ptr) \
-    ); \
-} while(0)
+    )
 #endif
 
 #ifndef COMPONENT_ARRAY_FREE
 #define COMPONENT_ARRAY_FREE(component_array_ptr) \
-do { \
     component_array_free( \
         (void **)(&((component_array_ptr)->data)), \
         &((component_array_ptr)->eids), \
         &((component_array_ptr)->len), \
         &((component_array_ptr)->cap), \
         &((component_array_ptr)->arena) \
-    ); \
-} while(0)
+    )
+#endif
+
+#ifndef COMPONENT_ARRAY_GET
+#define COMPONENT_ARRAY_GET(component_array_ptr, eid_ptr) \
+    (typeof(*((component_array_ptr)->data))) \
+    component_array_get( \
+        (component_array_ptr)->data, \
+        sizeof(*((component_array_ptr)->data)), \
+        (component_array_ptr)->eids, \
+        (component_array_ptr)->len, \
+        (eid_ptr) \
+    )
 #endif
 
 typedef struct F32X4_COMPONENTS_T {
@@ -96,16 +108,21 @@ typedef struct F32X3_COMPONENTS_T {
     COMPONENT_ARRAY_FIELDS(f32x3)
 } F32x3Components;
 
+typedef struct POINT_LIGHT_COMPONENTS_T {
+    COMPONENT_ARRAY_FIELDS(PointLight)
+} PointLightComponents;
+
 static bool g_initialized = false;
 static u64 g_tick_counter = 0;
 static u64 g_entity_counter = 0;
 static EntityMap g_entity_map = {};
 static EntityPtrs g_entity_ptrs = {};
-static EntityTickFnPtrs g_entity_tick_fn_ptrs = {};
+static EntityFnPtrsArray g_entity_fn_ptrs_array = {};
 
 static F32x3Components g_positions = {};
 static F32x4Components g_rotations = {};
 static F32x3Components g_scales = {};
+static PointLightComponents g_point_lights = {};
 
 constexpr i64 kDefaultEntitiesCapacity = 256;
 
@@ -119,10 +136,79 @@ static void component_array_add(
     const EntityID *new_eid
 ) {
     /*
-     * The entity guids are monotonicly increasing, and
+     * The entity guids are monotonically increasing, and
      * therefore the entity component can be added to the end of
      * the array and maintain ascending entity ID order.
      */
+
+    while (*len >= *cap) {
+        i64 new_cap = 2 * (*cap);
+        if (new_cap <= 0) {
+            new_cap = kDefaultEntitiesCapacity;
+        }
+
+        Arena *new_arena = arena_make(new_cap * (i64) (data_elem_size + sizeof(EntityID)));
+        void *new_data = arena_alloc(new_arena, new_cap * (i64) data_elem_size);
+        EntityID *new_eids = arena_alloc(new_arena, new_cap * (i64) sizeof(EntityID));
+
+        if (*arena) {
+            memcpy(new_data, *data, (*len) * data_elem_size);
+            memcpy(new_eids, *eids, (*len) * sizeof(EntityID));
+        }
+
+        arena_free(*arena);
+
+        *arena = new_arena;
+        *data = new_data;
+        *eids = new_eids;
+        *cap = new_cap;
+    }
+
+    memset((u8 *) (*data) + (*len) * data_elem_size, 0, data_elem_size);
+    memcpy((*eids) + (*len), new_eid, sizeof(EntityID));
+
+    (*len)++;
+
+    if ((*len) >= 2) {
+        u64 second_last_guid = (*eids)[(*len) - 2].guid;
+        u64 last_guid = (*eids)[(*len) - 1].guid;
+
+        if (second_last_guid >= last_guid) {
+            crash_msg("New eid %lu is not greater than last eid %lu\n", last_guid, second_last_guid);
+        }
+    }
+}
+
+static void *component_array_get(
+    void *data,
+    u64 data_elem_size,
+    EntityID *eids,
+    i64 len,
+    const EntityID *eid
+) {
+    u8 *elem_start = nullptr;
+
+    u64 search_guid = eid->guid;
+
+    i64 start_idx = 0;
+    i64 end_idx = len;
+
+    while (start_idx < end_idx) {
+        i64 middle_idx = start_idx + (end_idx - start_idx) / 2;
+
+        u64 middle_guid = eids[middle_idx].guid;
+
+        if (middle_guid < search_guid) {
+            start_idx = middle_idx + 1;
+        } else if (middle_guid > search_guid) {
+            end_idx = middle_idx - 1;
+        } else {
+            elem_start = (u8 *) data + (middle_idx * data_elem_size);
+            break;
+        }
+    }
+
+    return elem_start;
 }
 
 static void component_array_del(
@@ -132,6 +218,23 @@ static void component_array_del(
     i64 *len,
     const EntityID *del_eid
 ) {
+    void *del_elem = component_array_get(data, data_elem_size, eids, *len, del_eid);
+    if (!del_elem) {
+        return;
+    }
+
+    i64 del_elem_idx = ((u8 *) del_elem - (u8 *) data) / (i64) data_elem_size;
+
+    for (i64 current_elem_idx = del_elem_idx; current_elem_idx < (*len) - 1; current_elem_idx++) {
+        u8 *current_elem = (u8 *) data + (current_elem_idx * data_elem_size);
+        u8 *next_elem = current_elem + data_elem_size;
+
+        memcpy(current_elem, next_elem, data_elem_size);
+
+        memcpy(&eids[current_elem_idx], &eids[current_elem_idx + 1], sizeof(*eids));
+    }
+
+    (*len)--;
 }
 
 static void component_array_free(
@@ -141,7 +244,12 @@ static void component_array_free(
     i64 *cap,
     Arena **arena
 ) {
+    arena_free(*arena);
+    *data = nullptr;
+    *eids = nullptr;
+    *len = *cap = 0;
 }
+
 
 void ecs_init() {
     if (g_initialized) {
@@ -186,6 +294,9 @@ void ecs_deinit() {
                 COMPONENT_ARRAY_FREE(&g_scales);
                 break;
             }
+            case ENTITY_COMPONENT_INDEX_POINT_LIGHT: {
+                COMPONENT_ARRAY_FREE(&g_point_lights);
+            }
             default:
                 crash_msg("Unhandled component type index %d deinit\n", component_idx);
                 break;
@@ -201,20 +312,20 @@ void ecs_deinit() {
     g_initialized = false;
 }
 
-void ecs_set_tick_fn_ptrs(EntityTickFnPtr *tick_fn_ptrs, i32 tick_fn_ptrs_len) {
-    if (g_entity_tick_fn_ptrs.arena) {
-        arena_free(g_entity_tick_fn_ptrs.arena);
+void ecs_set_entity_fn_ptrs(EntityFnPtrs *fn_ptrs, i32 fn_ptrs_len) {
+    if (g_entity_fn_ptrs_array.arena) {
+        arena_free(g_entity_fn_ptrs_array.arena);
     }
 
-    i64 array_size = tick_fn_ptrs_len * (i64) sizeof(*g_entity_tick_fn_ptrs.data);
-    g_entity_tick_fn_ptrs = (EntityTickFnPtrs){
+    i64 array_size = fn_ptrs_len * (i64) sizeof(*g_entity_fn_ptrs_array.data);
+    g_entity_fn_ptrs_array = (EntityFnPtrsArray){
         .arena = arena_make(array_size),
-        .len = tick_fn_ptrs_len
+        .len = fn_ptrs_len,
     };
 
-    ARRAY_MAKE(&g_entity_tick_fn_ptrs);
+    ARRAY_MAKE(&g_entity_fn_ptrs_array);
 
-    memcpy(g_entity_tick_fn_ptrs.data, tick_fn_ptrs, array_size);
+    memcpy(g_entity_fn_ptrs_array.data, fn_ptrs, array_size);
 }
 
 void ecs_tick() {
@@ -225,10 +336,12 @@ void ecs_tick() {
     for (i64 entity_idx = 0; entity_idx < g_entity_ptrs.len; entity_idx++) {
         Entity *entity = *ARRAY_GET(&g_entity_ptrs, entity_idx);
 
-        if (entity->tick_fn_ptr_idx >= 0) {
-            EntityTickFnPtr entity_tick_fn_ptr = *ARRAY_GET(&g_entity_tick_fn_ptrs, entity->tick_fn_ptr_idx);
+        if (entity->type_idx >= 0 && entity->prev_tick < g_tick_counter) {
+            entity->prev_tick = g_tick_counter;
 
-            EntityTickReturnCode code = entity_tick_fn_ptr(entity->eid);
+            EntityTickFnPtr entity_tick_fn_ptr = ARRAY_GET(&g_entity_fn_ptrs_array, entity->type_idx)->tick_fn_ptr;
+
+            EntityTickReturnCode code = entity_tick_fn_ptr(entity->eid, ENTITY_TICK_SIGNAL_NONE);
 
             switch (code) {
                 case ENTITY_TICK_RETURN_CODE_EXIT: {
@@ -249,6 +362,10 @@ void ecs_tick() {
                                 }
                                 case ENTITY_COMPONENT_FLAG_SCALE: {
                                     COMPONENT_ARRAY_DEL(&g_scales, &eid);
+                                    break;
+                                }
+                                case ENTITY_COMPONENT_FLAG_POINT_LIGHT: {
+                                    COMPONENT_ARRAY_DEL(&g_point_lights, &eid);
                                     break;
                                 }
                                 default:
@@ -280,10 +397,10 @@ EntityID ecs_add_entity(const EntityCreateInfo *info) {
     u64 vars_size = info->var_types.len * sizeof(EntityVar);
     Entity new_entity = {
         .eid = new_eid,
-        .start_tick = g_tick_counter,
+        .prev_tick = 0,
         .name = info->name,
         .components = info->components,
-        .tick_fn_ptr_idx = info->tick_fn_ptr_idx,
+        .type_idx = info->entity_type_idx,
         .priority = info->priority,
         .vars = {
             .arena = arena_make((i64) vars_size),
@@ -348,6 +465,10 @@ EntityID ecs_add_entity(const EntityCreateInfo *info) {
                 }
                 case ENTITY_COMPONENT_FLAG_SCALE: {
                     COMPONENT_ARRAY_ADD(&g_scales, &new_eid);
+                    break;
+                }
+                case ENTITY_COMPONENT_FLAG_POINT_LIGHT: {
+                    COMPONENT_ARRAY_ADD(&g_point_lights, &new_eid);
                     break;
                 }
                 default:

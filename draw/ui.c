@@ -22,19 +22,19 @@ static RGBA8888 clay_to_render_color(Clay_Color clay_color) {
 
 static RectCornerRadii clay_to_render_corner_radii(Clay_CornerRadius clay_radii) {
     return (RectCornerRadii){
-        .top_left_px = f32_init(clay_radii.topLeft),
-        .top_right_px = f32_init(clay_radii.topRight),
-        .bottom_left_px = f32_init(clay_radii.bottomLeft),
-        .bottom_right_px = f32_init(clay_radii.bottomRight)
+        .top_left_px = clay_radii.topLeft,
+        .top_right_px = clay_radii.topRight,
+        .bottom_left_px = clay_radii.bottomLeft,
+        .bottom_right_px = clay_radii.bottomRight
     };
 }
 
 static f32x4 clay_to_render_rect(Clay_BoundingBox box) {
     return (f32x4){
-        .start_x = f32_init(box.x),
-        .start_y = f32_init(box.y),
-        .width = f32_init(box.width),
-        .height = f32_init(box.height),
+        .start_x = box.x,
+        .start_y = box.y,
+        .width = box.width,
+        .height = box.height,
     };
 }
 
@@ -54,8 +54,8 @@ Clay_Dimensions ui_clay_measure_text_fn(Clay_StringSlice text, Clay_TextElementC
     );
 
     return (Clay_Dimensions){
-        .width = f32_float(dim.width),
-        .height = f32_float(dim.height),
+        .width = dim.width,
+        .height = dim.height,
     };
 };
 
@@ -106,10 +106,10 @@ void ui_clay_to_render_cmds(
                 );
 
                 border_cmd.data.draw_rect.border_widths = (RectBorderWidths){
-                    .left_px = f32_init(clay_cmd->renderData.border.width.left),
-                    .right_px = f32_init(clay_cmd->renderData.border.width.right),
-                    .top_px = f32_init(clay_cmd->renderData.border.width.top),
-                    .bottom_px = f32_init(clay_cmd->renderData.border.width.bottom),
+                    .left_px = clay_cmd->renderData.border.width.left,
+                    .right_px = clay_cmd->renderData.border.width.right,
+                    .top_px = clay_cmd->renderData.border.width.top,
+                    .bottom_px = clay_cmd->renderData.border.width.bottom,
                 };
 
                 border_cmd.data.draw_rect.corner_radii = clay_to_render_corner_radii(
@@ -162,10 +162,10 @@ void ui_clay_to_render_cmds(
                 assert(fb_info.type == FRAMEBUFFER_TYPE_PIXEL);
 
                 scissor_cmd.data.scissor.region = (f32x4) {
-                    .start_x = F32(0),
-                    .start_y = F32(0),
-                    .width = F32(fb_info.data.pixel_buf.size.width),
-                    .height = F32(fb_info.data.pixel_buf.size.height),
+                    .start_x = 0,
+                    .start_y = 0,
+                    .width = (f32)fb_info.data.pixel_buf.size.width,
+                    .height = (f32)fb_info.data.pixel_buf.size.height,
                 };
 
                 ARRAY_PUSH(render_cmds, &scissor_cmd);
