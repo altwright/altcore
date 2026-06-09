@@ -4,28 +4,22 @@
 
 #include "ecs.h"
 
-#include <assert.h>
-
 #include "arenas.h"
 #include "hashmap.h"
 #include "debug.h"
-#include "draw/lights.h"
 
 typedef struct ENTITY_VARS_T {
     ARRAY_FIELDS(EntityVar)
 } EntityVars;
-
 
 typedef struct ENTITY_T {
     EntityID eid;
     u64 prev_tick;
     const char *name;
     EntityComponentFlags components;
-    i32 type_idx;
+    i32 fn_ptrs_idx;
     EntityVars vars;
     u64 priority;
-    i32 serialize_fn_ptr_idx;
-    i32 deserialize_fn_ptr_idx;
 } Entity;
 
 typedef struct ENTITY_MAP_T {
@@ -336,10 +330,10 @@ void ecs_tick() {
     for (i64 entity_idx = 0; entity_idx < g_entity_ptrs.len; entity_idx++) {
         Entity *entity = *ARRAY_GET(&g_entity_ptrs, entity_idx);
 
-        if (entity->type_idx >= 0 && entity->prev_tick < g_tick_counter) {
+        if (entity->fn_ptrs_idx >= 0 && entity->prev_tick < g_tick_counter) {
             entity->prev_tick = g_tick_counter;
 
-            EntityTickFnPtr entity_tick_fn_ptr = ARRAY_GET(&g_entity_fn_ptrs_array, entity->type_idx)->tick_fn_ptr;
+            EntityTickFnPtr entity_tick_fn_ptr = ARRAY_GET(&g_entity_fn_ptrs_array, entity->fn_ptrs_idx)->tick_fn_ptr;
 
             EntityTickReturnCode code = entity_tick_fn_ptr(entity->eid, ENTITY_TICK_SIGNAL_NONE);
 
@@ -400,7 +394,7 @@ EntityID ecs_add_entity(const EntityCreateInfo *info) {
         .prev_tick = 0,
         .name = info->name,
         .components = info->components,
-        .type_idx = info->entity_type_idx,
+        .fn_ptrs_idx = info->entity_type_idx,
         .priority = info->priority,
         .vars = {
             .arena = arena_make((i64) vars_size),

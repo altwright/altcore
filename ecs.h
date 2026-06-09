@@ -6,6 +6,7 @@
 #define ALTCORE_ECS_H
 
 #include "types.h"
+#include "draw/lights.h"
 
 typedef struct ENTITY_ID_T {
     u64 guid;
