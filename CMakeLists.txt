@@ -32,38 +32,38 @@ set(HEADER_FILEPATHS
 set(SOURCE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(GENERATED_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 
-foreach(HEADER_FILEPATH ${HEADER_FILEPATHS})
+foreach (HEADER_FILEPATH ${HEADER_FILEPATHS})
     get_filename_component(DEST_DIR ${HEADER_FILEPATH} DIRECTORY)
     file(COPY ${SOURCE_INCLUDE_DIR}/${HEADER_FILEPATH} DESTINATION ${GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/${DEST_DIR})
-endforeach()
+endforeach ()
 
 add_library(${PROJECT_NAME}
-    types.c
-    arenas.c
-    strings.c
-    defer.c
-    memory.c
-    hashmap.c
-    debug.c
-    init.c
-    worker.c
-    events.c
-    barrier.c
-    fs.c
-    maths.c
-    ecs.c
-    draw/window.c
-    draw/framebuffer.c
-    draw/renderer.c
-    draw/pixels.c
-    draw/ui.c
-    draw/ui_impl.c
-    draw/fonts.c
-    draw/cmds/clear.c
-    draw/cmds/draw_rect.c
-    draw/cmds/draw_text.c
-    draw/cmds/present.c
-    draw/cmds/scissor.c
+        types.c
+        arenas.c
+        strings.c
+        defer.c
+        memory.c
+        hashmap.c
+        debug.c
+        init.c
+        worker.c
+        events.c
+        barrier.c
+        fs.c
+        maths.c
+        ecs.c
+        draw/window.c
+        draw/framebuffer.c
+        draw/renderer.c
+        draw/pixels.c
+        draw/ui.c
+        draw/ui_impl.c
+        draw/fonts.c
+        draw/cmds/clear.c
+        draw/cmds/draw_rect.c
+        draw/cmds/draw_text.c
+        draw/cmds/present.c
+        draw/cmds/scissor.c
 )
 
 add_subdirectory(libs/SDL3-3.4.4 EXCLUDE_FROM_ALL)
