@@ -26,6 +26,7 @@ set(HEADER_FILEPATHS
         draw/renderer.h
         draw/ui.h
         draw/fonts.h
+        draw/lights.h
         ecs.h
 )
 
