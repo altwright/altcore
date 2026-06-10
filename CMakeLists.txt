@@ -4,6 +4,8 @@ project(altcore C)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+option(ALTCORE_SHARED_LIB "Build as a shared library" OFF)
+
 set(HEADER_FILEPATHS
         types.h
         arenas.h
@@ -35,34 +37,44 @@ foreach(HEADER_FILEPATH ${HEADER_FILEPATHS})
     file(COPY ${SOURCE_INCLUDE_DIR}/${HEADER_FILEPATH} DESTINATION ${GENERATED_INCLUDE_DIR}/${PROJECT_NAME}/${DEST_DIR})
 endforeach()
 
-add_library(${PROJECT_NAME} STATIC
-        types.c
-        arenas.c
-        strings.c
-        defer.c
-        memory.c
-        hashmap.c
-        debug.c
-        init.c
-        worker.c
-        events.c
-        barrier.c
-        fs.c
-        maths.c
-        ecs.c
-        draw/window.c
-        draw/framebuffer.c
-        draw/renderer.c
-        draw/pixels.c
-        draw/ui.c
-        draw/ui_impl.c
-        draw/fonts.c
-        draw/cmds/clear.c
-        draw/cmds/draw_rect.c
-        draw/cmds/draw_text.c
-        draw/cmds/present.c
-        draw/cmds/scissor.c
+set(SOURCE_FILEPATHS
+    types.c
+    arenas.c
+    strings.c
+    defer.c
+    memory.c
+    hashmap.c
+    debug.c
+    init.c
+    worker.c
+    events.c
+    barrier.c
+    fs.c
+    maths.c
+    ecs.c
+    draw/window.c
+    draw/framebuffer.c
+    draw/renderer.c
+    draw/pixels.c
+    draw/ui.c
+    draw/ui_impl.c
+    draw/fonts.c
+    draw/cmds/clear.c
+    draw/cmds/draw_rect.c
+    draw/cmds/draw_text.c
+    draw/cmds/present.c
+    draw/cmds/scissor.c
 )
+
+if (ALTCORE_SHARED_LIB)
+    add_library(${PROJECT_NAME} SHARED
+        ${SOURCE_FILEPATHS}
+    )
+else()
+    add_library(${PROJECT_NAME} STATIC
+        ${SOURCE_FILEPATHS}
+    )
+endif()
 
 set(SDL_SHARED OFF)
 set(SDL_STATIC ON)
