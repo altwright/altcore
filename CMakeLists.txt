@@ -70,18 +70,26 @@ if (ALTCORE_SHARED_LIB)
     add_library(${PROJECT_NAME} SHARED
         ${SOURCE_FILEPATHS}
     )
+
+    set(SDL_SHARED ON)
+    set(SDL_STATIC OFF)
+
+    set(CGLM_SHARED ON)
+    set(CGLM_STATIC OFF)
 else()
     add_library(${PROJECT_NAME} STATIC
         ${SOURCE_FILEPATHS}
     )
+
+    set(SDL_SHARED OFF)
+    set(SDL_STATIC ON)
+
+    set(CGLM_SHARED OFF)
+    set(CGLM_STATIC ON)
 endif()
 
-set(SDL_SHARED OFF)
-set(SDL_STATIC ON)
 add_subdirectory(libs/SDL3-3.4.4 EXCLUDE_FROM_ALL)
 
-set(CGLM_SHARED OFF)
-set(CGLM_STATIC ON)
 add_subdirectory(libs/cglm-0.9.6 EXCLUDE_FROM_ALL)
 
 add_subdirectory(libs/cwalk-1.2.9 EXCLUDE_FROM_ALL)
