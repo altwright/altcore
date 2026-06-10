@@ -54,6 +54,7 @@ typedef enum ENTITY_COMPONENT_INDEX_E : i64 {
     X(POSITION) \
     X(ROTATION) \
     X(SCALE) \
+    X(TRANSFORM_3D) \
     X(POINT_LIGHT) \
     X(COUNT)
 #endif
@@ -142,6 +143,8 @@ void ecs_tick();
 
 EntityID ecs_add_entity(const EntityCreateInfo *info);
 
+bool ecs_entity_exists(EntityID eid);
+
 i32 *ecs_get_i32_var(EntityID eid, i32 var_idx);
 
 u32 *ecs_get_u32_var(EntityID eid, i32 var_idx);
@@ -160,7 +163,7 @@ EntityID *ecs_get_eid_var(EntityID eid, i32 var_idx);
 
 EntityComponentFlags ecs_get_components(EntityID eid);
 
-i64 ecs_get_priority(EntityID eid);
+u64 ecs_get_priority(EntityID eid);
 
 f32x3 *ecs_get_entity_position(EntityID eid);
 
@@ -168,10 +171,10 @@ f32x4 *ecs_get_entity_rotation(EntityID eid);
 
 f32x3 *ecs_get_entity_scale(EntityID eid);
 
-i32 ecs_get_positions(f32x3 **positions, EntityID **eids, i32 *len);
+void ecs_get_positions(f32x3 **positions, EntityID **eids, i32 *len);
 
-i32 ecs_get_rotations(f32x4 **rotations, EntityID **eids, i32 *len);
+void ecs_get_rotations(f32x4 **rotations, EntityID **eids, i32 *len);
 
-i32 ecs_get_scales(f32x3 **scales, EntityID **eids, i32 *len);
+void ecs_get_scales(f32x3 **scales, EntityID **eids, i32 *len);
 
 #endif //ALTCORE_ECS_H

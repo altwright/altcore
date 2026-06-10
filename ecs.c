@@ -7,6 +7,7 @@
 #include "arenas.h"
 #include "hashmap.h"
 #include "debug.h"
+#include "maths.h"
 
 typedef struct ENTITY_VARS_T {
     ARRAY_FIELDS(EntityVar)
@@ -84,7 +85,7 @@ Arena* arena;
 
 #ifndef COMPONENT_ARRAY_GET
 #define COMPONENT_ARRAY_GET(component_array_ptr, eid_ptr) \
-    (typeof(*((component_array_ptr)->data))) \
+    (typeof(*((component_array_ptr)->data))*) \
     component_array_get( \
         (component_array_ptr)->data, \
         sizeof(*((component_array_ptr)->data)), \
@@ -102,8 +103,12 @@ typedef struct F32X3_COMPONENTS_T {
     COMPONENT_ARRAY_FIELDS(f32x3)
 } F32x3Components;
 
+typedef struct F32X44_COMPONENTS_T {
+    COMPONENT_ARRAY_FIELDS(f32x44)
+} F32x44Components;
+
 typedef struct POINT_LIGHT_COMPONENTS_T {
-    COMPONENT_ARRAY_FIELDS(PointLight)
+    COMPONENT_ARRAY_FIELDS(PointLightComponent)
 } PointLightComponents;
 
 static bool g_initialized = false;
@@ -116,6 +121,7 @@ static EntityFnPtrsArray g_entity_fn_ptrs_array = {};
 static F32x3Components g_positions = {};
 static F32x4Components g_rotations = {};
 static F32x3Components g_scales = {};
+static F32x44Components g_transform_3ds = {};
 static PointLightComponents g_point_lights = {};
 
 constexpr i64 kDefaultEntitiesCapacity = 256;
@@ -288,6 +294,10 @@ void ecs_deinit() {
                 COMPONENT_ARRAY_FREE(&g_scales);
                 break;
             }
+            case ENTITY_COMPONENT_INDEX_TRANSFORM_3D: {
+                COMPONENT_ARRAY_FREE(&g_transform_3ds);
+                break;
+            }
             case ENTITY_COMPONENT_INDEX_POINT_LIGHT: {
                 COMPONENT_ARRAY_FREE(&g_point_lights);
             }
@@ -360,6 +370,10 @@ void ecs_tick() {
                                 }
                                 case ENTITY_COMPONENT_FLAG_POINT_LIGHT: {
                                     COMPONENT_ARRAY_DEL(&g_point_lights, &eid);
+                                    break;
+                                }
+                                case ENTITY_COMPONENT_FLAG_TRANSFORM_3D: {
+                                    COMPONENT_ARRAY_DEL(&g_transform_3ds, &eid);
                                     break;
                                 }
                                 default:
@@ -461,6 +475,10 @@ EntityID ecs_add_entity(const EntityCreateInfo *info) {
                     COMPONENT_ARRAY_ADD(&g_scales, &new_eid);
                     break;
                 }
+                case ENTITY_COMPONENT_FLAG_TRANSFORM_3D: {
+                    COMPONENT_ARRAY_ADD(&g_transform_3ds, &new_eid);
+                    break;
+                }
                 case ENTITY_COMPONENT_FLAG_POINT_LIGHT: {
                     COMPONENT_ARRAY_ADD(&g_point_lights, &new_eid);
                     break;
@@ -473,4 +491,151 @@ EntityID ecs_add_entity(const EntityCreateInfo *info) {
     }
 
     return new_eid;
+}
+
+bool ecs_entity_exists(EntityID eid) {
+    return HASHMAP_GET(&g_entity_map, &eid);
+}
+
+static void *get_entity_var(EntityID eid, i32 var_idx, EntityVarType var_type) {
+    void *var_ptr = nullptr;
+
+    auto entity_pair = HASHMAP_GET(&g_entity_map, &eid);
+    if (entity_pair) {
+        Entity *entity = &entity_pair->value;
+        if (var_idx >= 0 && var_idx < entity->vars.len) {
+            EntityVar *var_elem = ARRAY_GET(&entity->vars, var_idx);
+            if (var_type == var_elem->type) {
+                switch (var_type) {
+                    case ENTITY_VAR_TYPE_I32: {
+                        var_ptr = &var_elem->data.i32_val;
+                        break;
+                    }
+                    case ENTITY_VAR_TYPE_U32: {
+                        var_ptr = &var_elem->data.u32_val;
+                        break;
+                    }
+                    case ENTITY_VAR_TYPE_F32: {
+                        var_ptr = &var_elem->data.f32_val;
+                        break;
+                    }
+                    case ENTITY_VAR_TYPE_I64: {
+                        var_ptr = &var_elem->data.i64_val;
+                        break;
+                    }
+                    case ENTITY_VAR_TYPE_U64: {
+                        var_ptr = &var_elem->data.u64_val;
+                        break;
+                    }
+                    case ENTITY_VAR_TYPE_F64: {
+                        var_ptr = &var_elem->data.f64_val;
+                        break;
+                    }
+                    case ENTITY_VAR_TYPE_PTR: {
+                        var_ptr = &var_elem->data.ptr_val;
+                        break;
+                    }
+                    case ENTITY_VAR_TYPE_EID: {
+                        var_ptr = &var_elem->data.eid_val;
+                        break;
+                    }
+                    default:
+                        crash_msg("Unhandled entity var type %d\n", var_type);
+                        break;
+                }
+            }
+        }
+    }
+
+    return var_ptr;
+}
+
+i32 *ecs_get_i32_var(EntityID eid, i32 var_idx) {
+    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_I32);
+}
+
+u32 *ecs_get_u32_var(EntityID eid, i32 var_idx) {
+    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_U32);
+}
+
+f32 *ecs_get_f32_var(EntityID eid, i32 var_idx) {
+    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_F32);
+}
+
+i64 *ecs_get_i64_var(EntityID eid, i32 var_idx) {
+    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_I64);
+}
+
+u64 *ecs_get_u64_var(EntityID eid, i32 var_idx) {
+    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_U64);
+}
+
+f64 *ecs_get_f64_var(EntityID eid, i32 var_idx) {
+    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_F64);
+}
+
+void **ecs_get_ptr_var(EntityID eid, i32 var_idx) {
+    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_PTR);
+}
+
+EntityID *ecs_get_eid_var(EntityID eid, i32 var_idx) {
+    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_EID);
+}
+
+EntityComponentFlags ecs_get_components(EntityID eid) {
+    EntityComponentFlags flags = 0;
+
+    auto entity_pair = HASHMAP_GET(&g_entity_map, &eid);
+    if (entity_pair) {
+        flags = entity_pair->value.components;
+    }
+
+    return flags;
+}
+
+u64 ecs_get_priority(EntityID eid) {
+    u64 priority = UINT64_MAX;
+
+    auto entity_pair = HASHMAP_GET(&g_entity_map, &eid);
+    if (entity_pair) {
+        priority = entity_pair->value.priority;
+    }
+
+    return priority;
+}
+
+f32x3 *ecs_get_entity_position(EntityID eid) {
+    return COMPONENT_ARRAY_GET(&g_positions, &eid);
+}
+
+f32x4 *ecs_get_entity_rotation(EntityID eid) {
+    return COMPONENT_ARRAY_GET(&g_rotations, &eid);
+}
+
+f32x3 *ecs_get_entity_scale(EntityID eid) {
+    return COMPONENT_ARRAY_GET(&g_scales, &eid);
+}
+
+void ecs_get_positions(f32x3 **positions, EntityID **eids, i32 *len) {
+    if (positions && eids && len) {
+        *len = (i32)g_positions.len;
+        *positions = g_positions.data;
+        *eids = g_positions.eids;
+    }
+}
+
+void ecs_get_rotations(f32x4 **rotations, EntityID **eids, i32 *len) {
+    if (rotations && eids && len) {
+        *len = (i32)g_rotations.len;
+        *rotations = g_rotations.data;
+        *eids = g_rotations.eids;
+    }
+}
+
+void ecs_get_scales(f32x3 **scales, EntityID **eids, i32 *len) {
+    if (scales && eids && len) {
+        *len = (i32)g_scales.len;
+        *scales = g_scales.data;
+        *eids = g_scales.eids;
+    }
 }

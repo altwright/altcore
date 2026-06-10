@@ -8,6 +8,7 @@
 #include <math.h>
 
 #include "types.h"
+#include "cglm/struct/mat4.h"
 
 #ifndef MIN
 #define MIN(left, right) \
@@ -38,5 +39,14 @@
 #define SATURATE(val) \
     CLAMP(val, 0, 1)
 #endif
+
+typedef struct F32X44_T {
+    union {
+        mat4s mat;
+        mat4 data;
+    };
+} f32x44;
+
+f32x44 f32x44_identity();
 
 #endif //ALTCORE_MATHS_H
