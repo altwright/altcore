@@ -95,7 +95,7 @@ add_subdirectory(libs/cglm-0.9.6 EXCLUDE_FROM_ALL)
 add_subdirectory(libs/cwalk-1.2.9 EXCLUDE_FROM_ALL)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-        SDL3::SDL3-static
+        SDL3::SDL3
         cglm
         cwalk
 )
