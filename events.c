@@ -86,6 +86,12 @@ void events_poll() {
                 e.data.window = we;
                 break;
             }
+            case SDL_EVENT_KEY_DOWN:
+            case SDL_EVENT_KEY_UP: {
+
+                e.source = EVENT_SOURCE_KEYBOARD;
+                break;
+            }
             default:
                 handled = false;
                 break;

@@ -34,7 +34,7 @@ typedef enum EVENT_SOURCE_FLAG_E : u64 {
 #undef X
 } EventSourceFlag;
 
-typedef u64 EventSourceFlags;
+typedef EventSourceFlag EventSourceFlags;
 
 typedef struct EVENT_INIT_INFO_T {
     EventSourceFlags sources;
