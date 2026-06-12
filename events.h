@@ -76,15 +76,16 @@ typedef enum WINDOW_EVENT_TYPE_E {
 
 typedef struct WINDOW_EVENT_RESIZE_T {
     i32x2 new_size;
-    WindowHandle* window;
+    WindowHandle *window;
 } WindowEventResize;
 
 typedef struct WINDOW_EVENT_CLOSE_T {
-    WindowHandle* window;
+    WindowHandle *window;
 } WindowEventClose;
 
 typedef struct WINDOW_EVENT_T {
     WindowEventType type;
+
     union {
         WindowEventResize resize;
         WindowEventClose close;
@@ -106,8 +107,117 @@ typedef enum KEYBOARD_EVENT_TYPE_E {
 #undef X
 } KeyboardEventType;
 
+typedef enum KEYBOARD_KEY_E {
+#ifndef X_KEYBOARD_KEYS
+#define X_KEYBOARD_KEYS \
+    /* Function keys */ \
+    X(ESCAPE)        \
+    X(F1)            \
+    X(F2)            \
+    X(F3)            \
+    X(F4)            \
+    X(F5)            \
+    X(F6)            \
+    X(F7)            \
+    X(F8)            \
+    X(F9)            \
+    X(F10)           \
+    X(F11)           \
+    X(F12)           \
+    /* Number row */ \
+    X(BACKTICK)      \
+    X(NUM_1)         \
+    X(NUM_2)         \
+    X(NUM_3)         \
+    X(NUM_4)         \
+    X(NUM_5)         \
+    X(NUM_6)         \
+    X(NUM_7)         \
+    X(NUM_8)         \
+    X(NUM_9)         \
+    X(NUM_0)         \
+    X(MINUS)         \
+    X(EQUALS)        \
+    X(BACKSPACE)     \
+    /* Top alphabetic row */ \
+    X(TAB)           \
+    X(Q)             \
+    X(W)             \
+    X(E)             \
+    X(R)             \
+    X(T)             \
+    X(Y)             \
+    X(U)             \
+    X(I)             \
+    X(O)             \
+    X(P)             \
+    X(LEFT_BRACKET)  \
+    X(RIGHT_BRACKET) \
+    X(BACKSLASH)     \
+    /* Home row */ \
+    X(CAPS_LOCK)     \
+    X(A)             \
+    X(S)             \
+    X(D)             \
+    X(F)             \
+    X(G)             \
+    X(H)             \
+    X(J)             \
+    X(K)             \
+    X(L)             \
+    X(SEMICOLON)     \
+    X(APOSTROPHE)    \
+    X(ENTER)         \
+    /* Bottom alphabetic row */ \
+    X(LEFT_SHIFT)    \
+    X(Z)             \
+    X(X_KEY)         \
+    X(C)             \
+    X(V)             \
+    X(B)             \
+    X(N)             \
+    X(M)             \
+    X(COMMA)         \
+    X(PERIOD)        \
+    X(SLASH)         \
+    X(RIGHT_SHIFT)   \
+    /* Bottom row */ \
+    X(LEFT_CTRL)     \
+    X(LEFT_CMD)      \
+    X(LEFT_ALT)      \
+    X(SPACE)         \
+    X(RIGHT_ALT)     \
+    X(RIGHT_CMD)     \
+    X(MENU)          \
+    X(RIGHT_CTRL)    \
+    /* Navigation cluster */ \
+    X(PRINT_SCREEN)  \
+    X(SCROLL_LOCK)   \
+    X(PAUSE)         \
+    X(INSERT)        \
+    X(HOME)          \
+    X(PAGE_UP)       \
+    X(DELETE_KEY)    \
+    X(END)           \
+    X(PAGE_DOWN)     \
+    /* Arrow keys */ \
+    X(ARROW_UP)      \
+    X(ARROW_LEFT)    \
+    X(ARROW_DOWN)    \
+    X(ARROW_RIGHT) \
+    X(COUNT)
+#endif
+#ifndef X
+#define X(key) \
+    KEYBOARD_KEY_##key,
+#endif
+    X_KEYBOARD_KEYS
+#undef X
+} KeyboardKey;
+
 typedef struct KEYBOARD_EVENT_T {
     KeyboardEventType type;
+    KeyboardKey key;
 } KeyboardEvent;
 
 typedef enum MOUSE_EVENT_TYPE_E {
@@ -132,6 +242,7 @@ typedef struct MOUSE_EVENT_T {
 
 typedef struct EVENT_T {
     EventSource source;
+
     union {
         SystemEvent system;
         WindowEvent window;
@@ -144,13 +255,13 @@ typedef struct EVENTS_T {
     ARRAY_FIELDS(Event)
 } Events;
 
-void events_init(const EventInitInfo* info);
+void events_init(const EventInitInfo *info);
 
 void events_poll();
 
 // Returns the number of events remaining in the queue
 // since last poll, after they have been copied into array
-i32 events_get(Events* array);
+i32 events_get(Events *array);
 
 void events_uninit();
 
