@@ -9,8 +9,16 @@
 #include "debug.h"
 #include "maths.h"
 
+constexpr i64 kEntityVarsFixedLen = 4;
+
 typedef struct ENTITY_VARS_T {
-    ARRAY_FIELDS(EntityVar)
+    union {
+        struct {
+            ARRAY_FIELDS(EntityVar)
+        };
+
+        EntityVar fixed[kEntityVarsFixedLen];
+    };
 } EntityVars;
 
 typedef struct ENTITY_T {
@@ -18,8 +26,9 @@ typedef struct ENTITY_T {
     u64 prev_tick;
     const char *name;
     EntityComponentFlags components;
-    i32 fn_ptrs_idx;
+    i64 fn_ptrs_idx;
     EntityVars vars;
+    i64 vars_len; // Duplicated in vars.len
     u64 priority;
 } Entity;
 
@@ -48,9 +57,9 @@ i64 cap; \
 Arena* arena;
 #endif
 
-#ifndef COMPONENT_ARRAY_ADD
-#define COMPONENT_ARRAY_ADD(component_array_ptr, eid_ptr) \
-    component_array_add( \
+#ifndef COMPONENT_ARRAY_PUT
+#define COMPONENT_ARRAY_PUT(component_array_ptr, eid_ptr) \
+    component_array_put( \
         (void **)(&((component_array_ptr)->data)), \
         sizeof(*((component_array_ptr)->data)), \
         &((component_array_ptr)->eids), \
@@ -58,7 +67,7 @@ Arena* arena;
         &((component_array_ptr)->cap), \
         &((component_array_ptr)->arena), \
         (eid_ptr) \
-    )
+    );
 #endif
 
 #ifndef COMPONENT_ARRAY_DEL
@@ -126,57 +135,73 @@ static PointLightComponents g_point_lights = {};
 
 constexpr i64 kDefaultEntitiesCapacity = 256;
 
-static void component_array_add(
-    void **data,
+static void component_array_extend(
+    void **data_ptr,
     u64 data_elem_size,
-    EntityID **eids,
+    EntityID **eids_ptr,
+    i64 len,
+    i64 *cap,
+    Arena **arena_ptr
+) {
+    i64 new_cap = 2 * (*cap);
+    if (new_cap <= 0) {
+        new_cap = kDefaultEntitiesCapacity;
+    }
+
+    Arena *new_arena = arena_make(new_cap * (i64) (data_elem_size + sizeof(EntityID)));
+    EntityID *new_eids = arena_alloc(new_arena, new_cap * (i64) sizeof(EntityID));
+    void *new_data = arena_alloc(new_arena, new_cap * (i64) data_elem_size);
+
+    if (*arena_ptr) {
+        memcpy(new_data, *data_ptr, len * data_elem_size);
+        memcpy(new_eids, *eids_ptr, len * sizeof(EntityID));
+    }
+
+    arena_free(*arena_ptr);
+
+    *arena_ptr = new_arena;
+    *data_ptr = new_data;
+    *eids_ptr = new_eids;
+    *cap = new_cap;
+}
+
+static void component_array_put(
+    void **data_ptr,
+    u64 data_elem_size,
+    EntityID **eids_ptr,
     i64 *len,
     i64 *cap,
-    Arena **arena,
+    Arena **arena_ptr,
     const EntityID *new_eid
 ) {
-    /*
-     * The entity guids are monotonically increasing, and
-     * therefore the entity component can be added to the end of
-     * the array and maintain ascending entity ID order.
-     */
-
     while (*len >= *cap) {
-        i64 new_cap = 2 * (*cap);
-        if (new_cap <= 0) {
-            new_cap = kDefaultEntitiesCapacity;
-        }
-
-        Arena *new_arena = arena_make(new_cap * (i64) (data_elem_size + sizeof(EntityID)));
-        void *new_data = arena_alloc(new_arena, new_cap * (i64) data_elem_size);
-        EntityID *new_eids = arena_alloc(new_arena, new_cap * (i64) sizeof(EntityID));
-
-        if (*arena) {
-            memcpy(new_data, *data, (*len) * data_elem_size);
-            memcpy(new_eids, *eids, (*len) * sizeof(EntityID));
-        }
-
-        arena_free(*arena);
-
-        *arena = new_arena;
-        *data = new_data;
-        *eids = new_eids;
-        *cap = new_cap;
+        component_array_extend(data_ptr, data_elem_size, eids_ptr, *len, cap, arena_ptr);
     }
 
-    memset((u8 *) (*data) + (*len) * data_elem_size, 0, data_elem_size);
-    memcpy((*eids) + (*len), new_eid, sizeof(EntityID));
+    i64 put_idx = 0;
+
+    for (i64 current_idx = *len - 1; current_idx >= 0; current_idx--) {
+        EntityID *current_eid = *eids_ptr + current_idx;
+        if (current_eid->guid < new_eid->guid) {
+            put_idx = current_idx + 1;
+            break;
+        }
+    }
+
+    for (i64 current_idx = *len; current_idx > put_idx; current_idx--) {
+        EntityID *current_eid = *eids_ptr + current_idx;
+        EntityID *prev_eid = current_eid - 1;
+        memcpy(current_eid, prev_eid, sizeof(EntityID));
+
+        u8 *current_data_start = ((u8 *) *data_ptr) + current_idx * data_elem_size;
+        u8 *prev_data_start = current_data_start - data_elem_size;
+        memcpy(current_data_start, prev_data_start, data_elem_size);
+    }
+
+    memcpy((*eids_ptr) + put_idx, new_eid, sizeof(EntityID));
+    memset((u8 *) (*data_ptr) + put_idx * data_elem_size, 0, data_elem_size);
 
     (*len)++;
-
-    if ((*len) >= 2) {
-        u64 second_last_guid = (*eids)[(*len) - 2].guid;
-        u64 last_guid = (*eids)[(*len) - 1].guid;
-
-        if (second_last_guid >= last_guid) {
-            crash_msg("New eid %lu is not greater than last eid %lu\n", last_guid, second_last_guid);
-        }
-    }
 }
 
 static void *component_array_get(
@@ -250,6 +275,61 @@ static void component_array_free(
     *len = *cap = 0;
 }
 
+static void entity_add_component(EntityID eid, EntityComponentFlag flag) {
+    switch (flag) {
+        case ENTITY_COMPONENT_FLAG_POSITION: {
+            COMPONENT_ARRAY_PUT(&g_positions, &eid);
+            break;
+        }
+        case ENTITY_COMPONENT_FLAG_ROTATION: {
+            COMPONENT_ARRAY_PUT(&g_rotations, &eid);
+            break;
+        }
+        case ENTITY_COMPONENT_FLAG_SCALE: {
+            COMPONENT_ARRAY_PUT(&g_scales, &eid);
+            break;
+        }
+        case ENTITY_COMPONENT_FLAG_TRANSFORM_3D: {
+            COMPONENT_ARRAY_PUT(&g_transform_3ds, &eid);
+            break;
+        }
+        case ENTITY_COMPONENT_FLAG_POINT_LIGHT: {
+            COMPONENT_ARRAY_PUT(&g_point_lights, &eid);
+            break;
+        }
+        default:
+            crash_msg("Unhandled component flag %lu addition\n", flag);
+            break;
+    }
+}
+
+static void entity_del_component(EntityID eid, EntityComponentFlag flag) {
+    switch (flag) {
+        case ENTITY_COMPONENT_FLAG_POSITION: {
+            COMPONENT_ARRAY_DEL(&g_positions, &eid);
+            break;
+        }
+        case ENTITY_COMPONENT_FLAG_ROTATION: {
+            COMPONENT_ARRAY_DEL(&g_rotations, &eid);
+            break;
+        }
+        case ENTITY_COMPONENT_FLAG_SCALE: {
+            COMPONENT_ARRAY_DEL(&g_scales, &eid);
+            break;
+        }
+        case ENTITY_COMPONENT_FLAG_POINT_LIGHT: {
+            COMPONENT_ARRAY_DEL(&g_point_lights, &eid);
+            break;
+        }
+        case ENTITY_COMPONENT_FLAG_TRANSFORM_3D: {
+            COMPONENT_ARRAY_DEL(&g_transform_3ds, &eid);
+            break;
+        }
+        default:
+            crash_msg("Unhandled component flag %lu deletion\n", flag);
+            break;
+    }
+}
 
 void ecs_init() {
     if (g_initialized) {
@@ -349,44 +429,23 @@ void ecs_tick() {
 
             switch (code) {
                 case ENTITY_TICK_RETURN_CODE_EXIT: {
-                    EntityID eid = entity->eid;
                     EntityComponentFlags components = entity->components;
 
                     for (i64 component_idx = 0; component_idx < ENTITY_COMPONENT_INDEX_COUNT; component_idx++) {
                         EntityComponentFlag component_flag = 1ULL << component_idx;
                         if (components & component_flag) {
-                            switch (component_flag) {
-                                case ENTITY_COMPONENT_FLAG_POSITION: {
-                                    COMPONENT_ARRAY_DEL(&g_positions, &eid);
-                                    break;
-                                }
-                                case ENTITY_COMPONENT_FLAG_ROTATION: {
-                                    COMPONENT_ARRAY_DEL(&g_rotations, &eid);
-                                    break;
-                                }
-                                case ENTITY_COMPONENT_FLAG_SCALE: {
-                                    COMPONENT_ARRAY_DEL(&g_scales, &eid);
-                                    break;
-                                }
-                                case ENTITY_COMPONENT_FLAG_POINT_LIGHT: {
-                                    COMPONENT_ARRAY_DEL(&g_point_lights, &eid);
-                                    break;
-                                }
-                                case ENTITY_COMPONENT_FLAG_TRANSFORM_3D: {
-                                    COMPONENT_ARRAY_DEL(&g_transform_3ds, &eid);
-                                    break;
-                                }
-                                default:
-                                    crash_msg("Unhandled component type %lu deletion\n", component_flag);
-                                    break;
-                            }
+                            entity_del_component(entity->eid, component_flag);
                         }
+                    }
+
+                    if (entity->vars_len > kEntityVarsFixedLen) {
+                        arena_free(entity->vars.arena);
                     }
 
                     ARRAY_DEL(&g_entity_ptrs, entity_idx);
                     entity_idx--;
 
-                    HASHMAP_DEL(&g_entity_map, &eid);
+                    HASHMAP_DEL(&g_entity_map, &entity->eid);
 
                     break;
                 }
@@ -399,6 +458,7 @@ void ecs_tick() {
     g_tick_counter++;
 }
 
+
 EntityID ecs_add_entity(const EntityCreateInfo *info) {
     EntityID new_eid = {++g_entity_counter};
 
@@ -410,16 +470,26 @@ EntityID ecs_add_entity(const EntityCreateInfo *info) {
         .components = info->components,
         .fn_ptrs_idx = info->entity_type_idx,
         .priority = info->priority,
-        .vars = {
-            .arena = arena_make((i64) vars_size),
-            .len = info->var_types.len,
-        },
+        .vars_len = info->var_types.len,
     };
 
-    ARRAY_MAKE(&new_entity.vars);
+    if (new_entity.vars_len <= kEntityVarsFixedLen) {
+        memset(new_entity.vars.fixed, 0, sizeof(new_entity.vars.fixed));
+    } else {
+        new_entity.vars = (EntityVars){
+            .arena = arena_make((i64) vars_size),
+            .len = info->var_types.len,
+        };
+        ARRAY_MAKE(&new_entity.vars);
+    }
 
     for (i32 var_idx = 0; var_idx < info->var_types.len; var_idx++) {
-        EntityVar *var = ARRAY_GET(&new_entity.vars, var_idx);
+        EntityVar *var = nullptr;
+        if (new_entity.vars_len <= kEntityVarsFixedLen) {
+            var = &new_entity.vars.fixed[var_idx];
+        } else {
+            var = ARRAY_GET(&new_entity.vars, var_idx);
+        }
         var->type = info->var_types.data[var_idx];
     }
 
@@ -462,31 +532,7 @@ EntityID ecs_add_entity(const EntityCreateInfo *info) {
     for (i32 component_idx = 0; component_idx < ENTITY_COMPONENT_INDEX_COUNT; component_idx++) {
         EntityComponentFlag component_flag = 1ULL << component_idx;
         if (info->components & component_flag) {
-            switch (component_flag) {
-                case ENTITY_COMPONENT_FLAG_POSITION: {
-                    COMPONENT_ARRAY_ADD(&g_positions, &new_eid);
-                    break;
-                }
-                case ENTITY_COMPONENT_FLAG_ROTATION: {
-                    COMPONENT_ARRAY_ADD(&g_rotations, &new_eid);
-                    break;
-                }
-                case ENTITY_COMPONENT_FLAG_SCALE: {
-                    COMPONENT_ARRAY_ADD(&g_scales, &new_eid);
-                    break;
-                }
-                case ENTITY_COMPONENT_FLAG_TRANSFORM_3D: {
-                    COMPONENT_ARRAY_ADD(&g_transform_3ds, &new_eid);
-                    break;
-                }
-                case ENTITY_COMPONENT_FLAG_POINT_LIGHT: {
-                    COMPONENT_ARRAY_ADD(&g_point_lights, &new_eid);
-                    break;
-                }
-                default:
-                    crash_msg("Unhandled component index %d addition\n", component_idx);
-                    break;
-            }
+            entity_add_component(new_eid, component_flag);
         }
     }
 
@@ -503,46 +549,52 @@ static void *get_entity_var(EntityID eid, i32 var_idx, EntityVarType var_type) {
     auto entity_pair = HASHMAP_GET(&g_entity_map, &eid);
     if (entity_pair) {
         Entity *entity = &entity_pair->value;
-        if (var_idx >= 0 && var_idx < entity->vars.len) {
-            EntityVar *var_elem = ARRAY_GET(&entity->vars, var_idx);
-            if (var_type == var_elem->type) {
-                switch (var_type) {
-                    case ENTITY_VAR_TYPE_I32: {
-                        var_ptr = &var_elem->data.i32_val;
-                        break;
-                    }
-                    case ENTITY_VAR_TYPE_U32: {
-                        var_ptr = &var_elem->data.u32_val;
-                        break;
-                    }
-                    case ENTITY_VAR_TYPE_F32: {
-                        var_ptr = &var_elem->data.f32_val;
-                        break;
-                    }
-                    case ENTITY_VAR_TYPE_I64: {
-                        var_ptr = &var_elem->data.i64_val;
-                        break;
-                    }
-                    case ENTITY_VAR_TYPE_U64: {
-                        var_ptr = &var_elem->data.u64_val;
-                        break;
-                    }
-                    case ENTITY_VAR_TYPE_F64: {
-                        var_ptr = &var_elem->data.f64_val;
-                        break;
-                    }
-                    case ENTITY_VAR_TYPE_PTR: {
-                        var_ptr = &var_elem->data.ptr_val;
-                        break;
-                    }
-                    case ENTITY_VAR_TYPE_EID: {
-                        var_ptr = &var_elem->data.eid_val;
-                        break;
-                    }
-                    default:
-                        crash_msg("Unhandled entity var type %d\n", var_type);
-                        break;
+        assert(var_idx >= 0 && var_idx < entity->vars_len);
+
+        EntityVar *var_elem = nullptr;
+        if (entity->vars_len <= kEntityVarsFixedLen) {
+            var_elem = &entity->vars.fixed[var_idx];
+        } else {
+            var_elem = ARRAY_GET(&entity->vars, var_idx);
+        }
+
+        if (var_type == var_elem->type) {
+            switch (var_type) {
+                case ENTITY_VAR_TYPE_I32: {
+                    var_ptr = &var_elem->data.i32_val;
+                    break;
                 }
+                case ENTITY_VAR_TYPE_U32: {
+                    var_ptr = &var_elem->data.u32_val;
+                    break;
+                }
+                case ENTITY_VAR_TYPE_F32: {
+                    var_ptr = &var_elem->data.f32_val;
+                    break;
+                }
+                case ENTITY_VAR_TYPE_I64: {
+                    var_ptr = &var_elem->data.i64_val;
+                    break;
+                }
+                case ENTITY_VAR_TYPE_U64: {
+                    var_ptr = &var_elem->data.u64_val;
+                    break;
+                }
+                case ENTITY_VAR_TYPE_F64: {
+                    var_ptr = &var_elem->data.f64_val;
+                    break;
+                }
+                case ENTITY_VAR_TYPE_PTR: {
+                    var_ptr = &var_elem->data.ptr_val;
+                    break;
+                }
+                case ENTITY_VAR_TYPE_EID: {
+                    var_ptr = &var_elem->data.eid_val;
+                    break;
+                }
+                default:
+                    crash_msg("Unhandled entity var type %d\n", var_type);
+                    break;
             }
         }
     }
@@ -593,6 +645,22 @@ EntityComponentFlags ecs_get_components(EntityID eid) {
     return flags;
 }
 
+void ecs_set_components(EntityID eid, EntityComponentFlags component_flags) {
+    EntityComponentFlags current_flags = ecs_get_components(eid);
+    EntityComponentFlags flags_diff = current_flags ^ component_flags;
+
+    for (i32 component_idx = 0; component_idx < ENTITY_COMPONENT_INDEX_COUNT; component_idx++) {
+        EntityComponentFlag component_flag = 1ULL << component_idx;
+        if (flags_diff & component_flag) {
+            if (component_flag & current_flags) {
+                entity_del_component(eid, component_flag);
+            } else {
+                entity_add_component(eid, component_flag);
+            }
+        }
+    }
+}
+
 u64 ecs_get_priority(EntityID eid) {
     u64 priority = UINT64_MAX;
 
@@ -618,7 +686,7 @@ f32x3 *ecs_get_entity_scale(EntityID eid) {
 
 void ecs_get_positions(f32x3 **positions, EntityID **eids, i32 *len) {
     if (positions && eids && len) {
-        *len = (i32)g_positions.len;
+        *len = (i32) g_positions.len;
         *positions = g_positions.data;
         *eids = g_positions.eids;
     }
@@ -626,7 +694,7 @@ void ecs_get_positions(f32x3 **positions, EntityID **eids, i32 *len) {
 
 void ecs_get_rotations(f32x4 **rotations, EntityID **eids, i32 *len) {
     if (rotations && eids && len) {
-        *len = (i32)g_rotations.len;
+        *len = (i32) g_rotations.len;
         *rotations = g_rotations.data;
         *eids = g_rotations.eids;
     }
@@ -634,7 +702,7 @@ void ecs_get_rotations(f32x4 **rotations, EntityID **eids, i32 *len) {
 
 void ecs_get_scales(f32x3 **scales, EntityID **eids, i32 *len) {
     if (scales && eids && len) {
-        *len = (i32)g_scales.len;
+        *len = (i32) g_scales.len;
         *scales = g_scales.data;
         *eids = g_scales.eids;
     }

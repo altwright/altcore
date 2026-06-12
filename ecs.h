@@ -75,7 +75,7 @@ typedef enum ENTITY_COMPONENT_FLAG_E : u64 {
 #undef X
 } EntityComponentFlag;
 
-typedef u64 EntityComponentFlags;
+typedef EntityComponentFlag EntityComponentFlags;
 
 typedef enum ENTITY_TICK_RETURN_CODE_E {
 #ifndef X_ENTITY_TICK_RETURN_CODES
@@ -162,6 +162,8 @@ void **ecs_get_ptr_var(EntityID eid, i32 var_idx);
 EntityID *ecs_get_eid_var(EntityID eid, i32 var_idx);
 
 EntityComponentFlags ecs_get_components(EntityID eid);
+
+void ecs_set_components(EntityID eid, EntityComponentFlags component_flags);
 
 u64 ecs_get_priority(EntityID eid);
 

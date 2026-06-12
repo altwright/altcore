@@ -223,7 +223,7 @@ kNullPtr[0] \
 ( \
     ((idx) >= 0) && ((idx) < (array_ptr)->len) \
     ? &((array_ptr)->data[(idx)]) \
-    : (typeof(*((array_ptr)->data))*) kNullPtr \
+    : nullptr \
 )
 #endif
 
