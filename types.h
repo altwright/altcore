@@ -160,15 +160,13 @@ type *data;
 
 #ifndef ARRAY_MAKE
 #define ARRAY_MAKE(array_ptr) \
-do { \
     array_make( \
         (void**)(&(array_ptr)->data), \
         &((array_ptr)->len), \
         &((array_ptr)->cap), \
         sizeof(*((array_ptr)->data)), \
         (array_ptr)->arena \
-    ); \
-} while(0)
+    );
 #endif
 
 #ifndef ARRAY_EMPTY
@@ -196,7 +194,6 @@ for ( \
 
 #ifndef ARRAY_PUSH
 #define ARRAY_PUSH(array_ptr, elem_ptr) \
-do { \
     array_push( \
         (void**)(&((array_ptr)->data)), \
         &((array_ptr)->len), \
@@ -205,8 +202,7 @@ do { \
         sizeof(*(elem_ptr)), \
         (const void*)(elem_ptr), \
         (array_ptr)->arena \
-    ); \
-} while(0)
+    );
 #endif
 
 #ifndef ARRAY_POP
@@ -229,7 +225,6 @@ kNullPtr[0] \
 
 #ifndef ARRAY_PUT
 #define ARRAY_PUT(array_ptr, idx, elem_ptr) \
-do { \
     array_put( \
         (void**)(&((array_ptr)->data)), \
         sizeof((array_ptr)->data[0]), \
@@ -239,20 +234,17 @@ do { \
         sizeof((elem_ptr)[0]), \
         (idx), \
         (array_ptr)->arena \
-    ); \
-} while(0)
+    );
 #endif
 
 #ifndef ARRAY_DEL
 #define ARRAY_DEL(array_ptr, idx) \
-do { \
     array_del( \
         (array_ptr)->data, \
         sizeof((array_ptr)->data[0]), \
         &((array_ptr)->len), \
         (idx) \
-    ); \
-} while(0)
+    );
 #endif
 
 #ifndef ARRAY_SORT

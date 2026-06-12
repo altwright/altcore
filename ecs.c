@@ -9,16 +9,8 @@
 #include "debug.h"
 #include "maths.h"
 
-constexpr i64 kEntityVarsFixedLen = 4;
-
 typedef struct ENTITY_VARS_T {
-    union {
-        struct {
-            ARRAY_FIELDS(EntityVar)
-        };
-
-        EntityVar fixed[kEntityVarsFixedLen];
-    };
+    ARRAY_FIELDS(EntityVar)
 } EntityVars;
 
 typedef struct ENTITY_T {
@@ -28,7 +20,6 @@ typedef struct ENTITY_T {
     EntityComponentFlags components;
     i64 fn_ptrs_idx;
     EntityVars vars;
-    i64 vars_len; // Duplicated in vars.len
     u64 priority;
 } Entity;
 
@@ -438,7 +429,7 @@ void ecs_tick() {
                         }
                     }
 
-                    if (entity->vars_len > kEntityVarsFixedLen) {
+                    if (entity->vars.arena) {
                         arena_free(entity->vars.arena);
                     }
 
@@ -470,12 +461,9 @@ EntityID ecs_add_entity(const EntityCreateInfo *info) {
         .components = info->components,
         .fn_ptrs_idx = info->entity_type_idx,
         .priority = info->priority,
-        .vars_len = info->var_types.len,
     };
 
-    if (new_entity.vars_len <= kEntityVarsFixedLen) {
-        memset(new_entity.vars.fixed, 0, sizeof(new_entity.vars.fixed));
-    } else {
+    if (info->var_types.len > 0) {
         new_entity.vars = (EntityVars){
             .arena = arena_make((i64) vars_size),
             .len = info->var_types.len,
@@ -484,12 +472,7 @@ EntityID ecs_add_entity(const EntityCreateInfo *info) {
     }
 
     for (i32 var_idx = 0; var_idx < info->var_types.len; var_idx++) {
-        EntityVar *var = nullptr;
-        if (new_entity.vars_len <= kEntityVarsFixedLen) {
-            var = &new_entity.vars.fixed[var_idx];
-        } else {
-            var = ARRAY_GET(&new_entity.vars, var_idx);
-        }
+        EntityVar *var = ARRAY_GET(&new_entity.vars, var_idx);
         var->type = info->var_types.data[var_idx];
     }
 
@@ -549,14 +532,8 @@ static void *get_entity_var(EntityID eid, i32 var_idx, EntityVarType var_type) {
     auto entity_pair = HASHMAP_GET(&g_entity_map, &eid);
     if (entity_pair) {
         Entity *entity = &entity_pair->value;
-        assert(var_idx >= 0 && var_idx < entity->vars_len);
 
-        EntityVar *var_elem = nullptr;
-        if (entity->vars_len <= kEntityVarsFixedLen) {
-            var_elem = &entity->vars.fixed[var_idx];
-        } else {
-            var_elem = ARRAY_GET(&entity->vars, var_idx);
-        }
+        EntityVar *var_elem = ARRAY_GET(&entity->vars, var_idx);
 
         if (var_type == var_elem->type) {
             switch (var_type) {
