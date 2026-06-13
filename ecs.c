@@ -260,7 +260,9 @@ static void component_array_free(
     i64 *cap,
     Arena **arena
 ) {
-    arena_free(*arena);
+    if (*arena) {
+        arena_free(*arena);
+    }
     *data = nullptr;
     *eids = nullptr;
     *len = *cap = 0;
@@ -371,6 +373,7 @@ void ecs_deinit() {
             }
             case ENTITY_COMPONENT_INDEX_POINT_LIGHT: {
                 COMPONENT_ARRAY_FREE(&g_point_lights);
+                break;
             }
             default:
                 crash_msg("Unhandled component type index %d deinit\n", component_idx);

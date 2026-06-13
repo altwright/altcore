@@ -11,6 +11,7 @@
 #include "arenas.h"
 
 void *kNullPtr = nullptr;
+constexpr i64 kMinArrayCapacity = 8;
 
 void array_make(
     void **data_ptr,
@@ -27,8 +28,8 @@ void array_make(
         *cap = *len;
     }
 
-    if (*cap <= 0) {
-        *cap = 8;
+    if (*cap <= kMinArrayCapacity) {
+        *cap = kMinArrayCapacity;
     }
 
     *data_ptr = arena_alloc(arena, (*cap) * elem_size);

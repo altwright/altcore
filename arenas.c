@@ -21,6 +21,7 @@ struct ARENA_T {
 
 Arena* arena_make(i64 initial_cap) {
     Arena* arena = alt_malloc(sizeof(*arena));
+    *arena = (Arena){};
 
     assert(initial_cap > 0);
 
