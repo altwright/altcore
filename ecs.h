@@ -91,22 +91,7 @@ typedef enum ENTITY_TICK_RETURN_CODE_E {
 #undef X
 } EntityTickReturnCode;
 
-typedef enum ENTITY_TICK_SIGNAL_E {
-#ifndef X_ENTITY_TICK_SIGNALS
-#define X_ENTITY_TICK_SIGNALS \
-    X(NONE) \
-    X(TERMINATE) \
-    X(COUNT)
-#endif
-#ifndef X
-#define X(signal) \
-    ENTITY_TICK_SIGNAL_##signal,
-#endif
-    X_ENTITY_TICK_SIGNALS
-#undef X
-} EntityTickSignal;
-
-typedef EntityTickReturnCode (*EntityTickFnPtr)(EntityID eid, EntityTickSignal signal);
+typedef EntityTickReturnCode (*EntityTickFnPtr)(EntityID eid);
 
 typedef void (*EntitySerializeFnPtr)(EntityID eid, i32 var_idx, u8 *out_serialized_var, i64 *out_serialized_var_len);
 

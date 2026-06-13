@@ -419,7 +419,7 @@ void ecs_tick() {
 
             EntityTickFnPtr entity_tick_fn_ptr = ARRAY_GET(&g_entity_fn_ptrs_array, entity->fn_ptrs_idx)->tick_fn_ptr;
 
-            EntityTickReturnCode code = entity_tick_fn_ptr(entity->eid, ENTITY_TICK_SIGNAL_NONE);
+            EntityTickReturnCode code = entity_tick_fn_ptr(entity->eid);
 
             switch (code) {
                 case ENTITY_TICK_RETURN_CODE_EXIT: {
