@@ -89,7 +89,7 @@ void array_put(
     struct ARENA_T *arena
 ) {
     assert(data_elem_size == new_elem_size);
-    assert(idx < *len);
+    assert(idx <= *len); // Can be inserted at the end of the array
 
     while (*len >= *cap) {
         array_expand(data_ptr, data_elem_size, len, cap, arena);
@@ -97,10 +97,10 @@ void array_put(
 
     u8* data = *data_ptr;
 
-    for (i64 current_idx = *len - 1; current_idx >= idx; current_idx--) {
+    for (i64 current_idx = *len; current_idx > idx; current_idx--) {
         u8* current_elem = data + (current_idx * data_elem_size);
-        u8* next_elem = data + ((current_idx + 1) * data_elem_size);
-        memcpy(next_elem, current_elem, data_elem_size);
+        u8* prev_elem = current_elem - data_elem_size;
+        memcpy(current_elem, prev_elem, data_elem_size);
     }
 
     memcpy(data + (idx * data_elem_size), new_elem, data_elem_size);
