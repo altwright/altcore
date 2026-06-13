@@ -125,12 +125,12 @@ typedef struct ENTITY_CREATE_INFO_T {
 
     struct {
         EntityVarType *data;
-        i32 len;
+        i64 len;
     } var_types;
 
     u64 priority;
 
-    i32 entity_type_idx;
+    i64 entity_type_idx;
 } EntityCreateInfo;
 
 void ecs_init();
