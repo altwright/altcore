@@ -263,6 +263,6 @@ void events_poll();
 // since last poll, after they have been copied into array
 i32 events_get(Events *array);
 
-void events_uninit();
+void events_deinit();
 
 #endif //ALTCORE_EVENTS_H

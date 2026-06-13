@@ -327,7 +327,7 @@ i32 events_get(Events *array) {
     return g_events_q.count;
 }
 
-void events_uninit() {
+void events_deinit() {
     if (!g_events_initd) {
         return;
     }
