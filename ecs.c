@@ -95,6 +95,10 @@ Arena* arena;
     )
 #endif
 
+typedef struct F32X2_COMPONENTS_T {
+    COMPONENT_ARRAY_FIELDS(f32x2)
+} F32x2Components;
+
 typedef struct F32X4_COMPONENTS_T {
     COMPONENT_ARRAY_FIELDS(f32x4)
 } F32x4Components;
@@ -121,10 +125,41 @@ static EntityFnPtrsArray g_entity_fn_ptrs_array = {};
 static F32x3Components g_positions = {};
 static F32x4Components g_rotations = {};
 static F32x3Components g_scales = {};
-static F32x44Components g_transform_3ds = {};
-static PointLightComponents g_point_lights = {};
+static F32x2Components g_rect_2ds = {};
 
 constexpr i64 kDefaultEntitiesCapacity = 256;
+
+static void *component_array_get(
+    void *data,
+    u64 data_elem_size,
+    EntityID *eids,
+    i64 len,
+    const EntityID *eid
+) {
+    u8 *elem_start = nullptr;
+
+    u64 search_guid = eid->guid;
+
+    i64 start_idx = 0;
+    i64 end_idx = len;
+
+    while (start_idx < end_idx) {
+        i64 middle_idx = start_idx + (end_idx - start_idx) / 2;
+
+        u64 middle_guid = eids[middle_idx].guid;
+
+        if (middle_guid < search_guid) {
+            start_idx = middle_idx + 1;
+        } else if (middle_guid > search_guid) {
+            end_idx = middle_idx - 1;
+        } else {
+            elem_start = (u8 *) data + (middle_idx * data_elem_size);
+            break;
+        }
+    }
+
+    return elem_start;
+}
 
 static void component_array_extend(
     void **data_ptr,
@@ -165,6 +200,11 @@ static void component_array_put(
     Arena **arena_ptr,
     const EntityID *new_eid
 ) {
+    void *del_elem = component_array_get(*data_ptr, data_elem_size, *eids_ptr, *len, new_eid);
+    if (del_elem) {
+        return;
+    }
+
     while (*len >= *cap) {
         component_array_extend(data_ptr, data_elem_size, eids_ptr, *len, cap, arena_ptr);
     }
@@ -195,37 +235,6 @@ static void component_array_put(
     (*len)++;
 }
 
-static void *component_array_get(
-    void *data,
-    u64 data_elem_size,
-    EntityID *eids,
-    i64 len,
-    const EntityID *eid
-) {
-    u8 *elem_start = nullptr;
-
-    u64 search_guid = eid->guid;
-
-    i64 start_idx = 0;
-    i64 end_idx = len;
-
-    while (start_idx < end_idx) {
-        i64 middle_idx = start_idx + (end_idx - start_idx) / 2;
-
-        u64 middle_guid = eids[middle_idx].guid;
-
-        if (middle_guid < search_guid) {
-            start_idx = middle_idx + 1;
-        } else if (middle_guid > search_guid) {
-            end_idx = middle_idx - 1;
-        } else {
-            elem_start = (u8 *) data + (middle_idx * data_elem_size);
-            break;
-        }
-    }
-
-    return elem_start;
-}
 
 static void component_array_del(
     void *data,
@@ -282,12 +291,8 @@ static void entity_add_component(EntityID eid, EntityComponentFlag flag) {
             COMPONENT_ARRAY_PUT(&g_scales, &eid);
             break;
         }
-        case ENTITY_COMPONENT_FLAG_TRANSFORM_3D: {
-            COMPONENT_ARRAY_PUT(&g_transform_3ds, &eid);
-            break;
-        }
-        case ENTITY_COMPONENT_FLAG_POINT_LIGHT: {
-            COMPONENT_ARRAY_PUT(&g_point_lights, &eid);
+        case ENTITY_COMPONENT_FLAG_RECT_2D: {
+            COMPONENT_ARRAY_PUT(&g_rect_2ds, &eid);
             break;
         }
         default:
@@ -310,12 +315,8 @@ static void entity_del_component(EntityID eid, EntityComponentFlag flag) {
             COMPONENT_ARRAY_DEL(&g_scales, &eid);
             break;
         }
-        case ENTITY_COMPONENT_FLAG_POINT_LIGHT: {
-            COMPONENT_ARRAY_DEL(&g_point_lights, &eid);
-            break;
-        }
-        case ENTITY_COMPONENT_FLAG_TRANSFORM_3D: {
-            COMPONENT_ARRAY_DEL(&g_transform_3ds, &eid);
+        case ENTITY_COMPONENT_FLAG_RECT_2D: {
+            COMPONENT_ARRAY_DEL(&g_rect_2ds, &eid);
             break;
         }
         default:
@@ -367,12 +368,8 @@ void ecs_deinit() {
                 COMPONENT_ARRAY_FREE(&g_scales);
                 break;
             }
-            case ENTITY_COMPONENT_INDEX_TRANSFORM_3D: {
-                COMPONENT_ARRAY_FREE(&g_transform_3ds);
-                break;
-            }
-            case ENTITY_COMPONENT_INDEX_POINT_LIGHT: {
-                COMPONENT_ARRAY_FREE(&g_point_lights);
+            case ENTITY_COMPONENT_INDEX_RECT_2D: {
+                COMPONENT_ARRAY_FREE(&g_rect_2ds);
                 break;
             }
             default:
@@ -411,6 +408,8 @@ void ecs_tick() {
         return;
     }
 
+    g_tick_counter++;
+
     for (i64 entity_idx = 0; entity_idx < g_entity_ptrs.len; entity_idx++) {
         Entity *entity = *ARRAY_GET(&g_entity_ptrs, entity_idx);
 
@@ -448,12 +447,9 @@ void ecs_tick() {
             }
         }
     }
-
-    g_tick_counter++;
 }
 
-
-EntityID ecs_add_entity(const EntityCreateInfo *info) {
+EntityID ecs_create_entity(const EntityCreateInfo *info) {
     EntityID new_eid = {++g_entity_counter};
 
     u64 vars_size = info->var_types.len * sizeof(EntityVar);
@@ -505,12 +501,12 @@ EntityID ecs_add_entity(const EntityCreateInfo *info) {
     i64 new_entity_ptr_idx = 0;
 
     for (i64 entity_ptr_idx = 0; entity_ptr_idx < g_entity_ptrs.len; entity_ptr_idx++) {
-        new_entity_ptr_idx = entity_ptr_idx;
-
         Entity *entity_ptr = *ARRAY_GET(&g_entity_ptrs, entity_ptr_idx);
         if ((entity_ptr->priority) > (new_entity_ptr->priority)) {
             break;
         }
+
+        new_entity_ptr_idx = entity_ptr_idx + 1;
     }
 
     ARRAY_PUT(&g_entity_ptrs, new_entity_ptr_idx, &new_entity_ptr);
@@ -664,6 +660,10 @@ f32x3 *ecs_get_entity_scale(EntityID eid) {
     return COMPONENT_ARRAY_GET(&g_scales, &eid);
 }
 
+f32x2 *ecs_get_entity_rect_2d(EntityID eid) {
+    return COMPONENT_ARRAY_GET(&g_rect_2ds, &eid);
+}
+
 void ecs_get_positions(f32x3 **positions, EntityID **eids, i32 *len) {
     if (positions && eids && len) {
         *len = (i32) g_positions.len;
@@ -685,5 +685,13 @@ void ecs_get_scales(f32x3 **scales, EntityID **eids, i32 *len) {
         *len = (i32) g_scales.len;
         *scales = g_scales.data;
         *eids = g_scales.eids;
+    }
+}
+
+void ecs_get_rect_2ds(f32x2 **rect_2ds, EntityID **eids, i32 *len) {
+    if (rect_2ds && eids && len) {
+        *len = (i32) g_rect_2ds.len;
+        *rect_2ds = g_rect_2ds.data;
+        *eids = g_rect_2ds.eids;
     }
 }
