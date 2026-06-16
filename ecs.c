@@ -111,9 +111,9 @@ typedef struct F32X44_COMPONENTS_T {
     COMPONENT_ARRAY_FIELDS(f32x44)
 } F32x44Components;
 
-typedef struct POINT_LIGHT_COMPONENTS_T {
-    COMPONENT_ARRAY_FIELDS(PointLightComponent)
-} PointLightComponents;
+typedef struct RECT_2D_COMPONENTS_T {
+    COMPONENT_ARRAY_FIELDS(Rect2DComponent)
+} Rect2DComponents;
 
 static bool g_initialized = false;
 static u64 g_tick_counter = 0;
@@ -125,7 +125,7 @@ static EntityFnPtrsArray g_entity_fn_ptrs_array = {};
 static F32x3Components g_positions = {};
 static F32x4Components g_rotations = {};
 static F32x3Components g_scales = {};
-static F32x2Components g_rect_2ds = {};
+static Rect2DComponents g_rect_2ds = {};
 
 constexpr i64 kDefaultEntitiesCapacity = 256;
 
@@ -181,9 +181,8 @@ static void component_array_extend(
     if (*arena_ptr) {
         memcpy(new_data, *data_ptr, len * data_elem_size);
         memcpy(new_eids, *eids_ptr, len * sizeof(EntityID));
+        arena_free(*arena_ptr);
     }
-
-    arena_free(*arena_ptr);
 
     *arena_ptr = new_arena;
     *data_ptr = new_data;
@@ -648,19 +647,19 @@ u64 ecs_get_priority(EntityID eid) {
     return priority;
 }
 
-f32x3 *ecs_get_entity_position(EntityID eid) {
+f32x3 *ecs_get_position(EntityID eid) {
     return COMPONENT_ARRAY_GET(&g_positions, &eid);
 }
 
-f32x4 *ecs_get_entity_rotation(EntityID eid) {
+f32x4 *ecs_get_rotation(EntityID eid) {
     return COMPONENT_ARRAY_GET(&g_rotations, &eid);
 }
 
-f32x3 *ecs_get_entity_scale(EntityID eid) {
+f32x3 *ecs_get_scale(EntityID eid) {
     return COMPONENT_ARRAY_GET(&g_scales, &eid);
 }
 
-f32x2 *ecs_get_entity_rect_2d(EntityID eid) {
+Rect2DComponent *ecs_get_rect_2d(EntityID eid) {
     return COMPONENT_ARRAY_GET(&g_rect_2ds, &eid);
 }
 
@@ -688,7 +687,7 @@ void ecs_get_scales(f32x3 **scales, EntityID **eids, i32 *len) {
     }
 }
 
-void ecs_get_rect_2ds(f32x2 **rect_2ds, EntityID **eids, i32 *len) {
+void ecs_get_rect_2ds(Rect2DComponent **rect_2ds, EntityID **eids, i32 *len) {
     if (rect_2ds && eids && len) {
         *len = (i32) g_rect_2ds.len;
         *rect_2ds = g_rect_2ds.data;

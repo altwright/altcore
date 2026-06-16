@@ -117,6 +117,11 @@ typedef struct ENTITY_CREATE_INFO_T {
     i64 entity_type_idx;
 } EntityCreateInfo;
 
+typedef struct RECT_2D_COMPONENT_T {
+    f32x2 size;
+    RGBA8888 color;
+} Rect2DComponent;
+
 void ecs_init();
 
 void ecs_deinit();
@@ -151,13 +156,13 @@ void ecs_set_components(EntityID eid, EntityComponentFlags component_flags);
 
 u64 ecs_get_priority(EntityID eid);
 
-f32x3 *ecs_get_entity_position(EntityID eid);
+f32x3 *ecs_get_position(EntityID eid);
 
-f32x4 *ecs_get_entity_rotation(EntityID eid);
+f32x4 *ecs_get_rotation(EntityID eid);
 
-f32x3 *ecs_get_entity_scale(EntityID eid);
+f32x3 *ecs_get_scale(EntityID eid);
 
-f32x2 *ecs_get_entity_rect_2d(EntityID eid);
+Rect2DComponent *ecs_get_rect_2d(EntityID eid);
 
 void ecs_get_positions(f32x3 **positions, EntityID **eids, i32 *len);
 
@@ -165,6 +170,6 @@ void ecs_get_rotations(f32x4 **rotations, EntityID **eids, i32 *len);
 
 void ecs_get_scales(f32x3 **scales, EntityID **eids, i32 *len);
 
-void ecs_get_rect_2ds(f32x2 **rect_2ds, EntityID **eids, i32 *len);
+void ecs_get_rect_2ds(Rect2DComponent **rect_2ds, EntityID **eids, i32 *len);
 
 #endif //ALTCORE_ECS_H
