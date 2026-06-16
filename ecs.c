@@ -41,8 +41,8 @@ typedef struct ENTITY_IDS_T {
 
 #ifndef COMPONENT_ARRAY_FIELDS
 #define COMPONENT_ARRAY_FIELDS(component_type) \
-component_type* data; \
 EntityID* eids; \
+component_type* data; \
 i64 len; \
 i64 cap; \
 Arena* arena;
