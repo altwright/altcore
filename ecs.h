@@ -98,8 +98,8 @@ typedef void (*EntityDeserializeFnPtr)(EntityID eid, i32 var_idx, u8 *in_seriali
 
 typedef struct ENTITY_FN_PTRS_T {
     EntityTickFnPtr tick_fn_ptr;
-    EntitySerializeFnPtr serialize_fn_ptr;
-    EntityDeserializeFnPtr deserialize_fn_ptr;
+    EntitySerializeFnPtr serial_fn_ptr;
+    EntityDeserializeFnPtr deserial_fn_ptr;
 } EntityFnPtrs;
 
 typedef struct ENTITY_CREATE_INFO_T {
