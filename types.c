@@ -129,8 +129,10 @@ void array_sort(
     i64 elem_size,
     int (*sort_fn)(const void *, const void *)
 ) {
-    assert(data && len > 0 && elem_size > 0 && sort_fn);
-    qsort(data, len, elem_size, sort_fn);
+    if (len > 1)
+    {
+        qsort(data, len, elem_size, sort_fn);
+    }
 }
 
 i32x4 f32x4_to_i32(f32x4 vec) {
