@@ -76,7 +76,6 @@ typedef struct WINDOW_CREATE_INFO_T {
     i32 display_idx;
     WindowMode mode;
     WindowFlags flags;
-    SwapchainMode swapchain_mode;
 } WindowCreateInfo;
 
 typedef struct DISPLAY_INFO_T {

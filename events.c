@@ -23,7 +23,7 @@ typedef struct EVENTS_QUEUE_T {
 
 static EventsQueue g_events_q = {};
 
-void events_init(const EventInitInfo *info) {
+void events_init(const EventsInitInfo *info) {
     if (g_events_initd) {
         return;
     }
@@ -43,8 +43,6 @@ void events_init(const EventInitInfo *info) {
 }
 
 void events_poll() {
-    window_impl_update_surfaces();
-
     g_events_q.count = g_events_q.head_idx = 0;
 
     SDL_Event event;

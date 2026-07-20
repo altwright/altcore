@@ -296,6 +296,8 @@ void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf) {
 
     SDL_BlitSurface(surface, nullptr, handle->window_surface, nullptr);
 
+    SDL_UpdateWindowSurface(handle->window);
+
     SDL_DestroySurface(surface);
 
     mtx_unlock(&g_active_window_handles.lock);

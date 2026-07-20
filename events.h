@@ -36,10 +36,10 @@ typedef enum EVENT_SOURCE_FLAG_E : u64 {
 
 typedef EventSourceFlag EventSourceFlags;
 
-typedef struct EVENT_INIT_INFO_T {
+typedef struct EVENTS_INIT_INFO_T {
     EventSourceFlags sources;
     i32 event_q_max_cap;
-} EventInitInfo;
+} EventsInitInfo;
 
 typedef enum SYSTEM_EVENT_TYPE_E {
 #ifndef X_SYSTEM_EVENT_TYPES
@@ -255,7 +255,7 @@ typedef struct EVENTS_T {
     ARRAY_FIELDS(Event)
 } Events;
 
-void events_init(const EventInitInfo *info);
+void events_init(const EventsInitInfo *info);
 
 void events_poll();
 

@@ -10,6 +10,4 @@
 
 WindowHandle* window_impl_get_handle_from_id(SDL_WindowID id);
 
-void window_impl_update_surfaces();
-
 #endif //ALTCORE_WINDOW_IMPL_H

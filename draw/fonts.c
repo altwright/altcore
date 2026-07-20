@@ -78,7 +78,7 @@ FontHandle *font_load_ttf(Filepath *path) {
 
     FontHandle *font = alt_malloc(sizeof(*font));
 
-    font->arena = arena_make(512 * KiB);
+    font->arena = arena_make(512 * KIBIBYTE);
 
     font->ttf = fs_file_to_buf(font->arena, file);
 
