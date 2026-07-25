@@ -378,8 +378,8 @@ typedef struct F32X4S_T {
     ARRAY_FIELDS(f32x4)
 } f32x4s;
 
-#ifndef STATIC_ARRAY_LEN
-#define STATIC_ARRAY_LEN(k_array) \
+#ifndef FIXED_LEN
+#define FIXED_LEN(k_array) \
     (sizeof(k_array) / sizeof(k_array[0]))
 #endif
 
