@@ -15,8 +15,8 @@ typedef enum FRAMEBUFFER_TYPE_E {
 #ifndef X_FRAMEBUFFER_TYPES
 #define X_FRAMEBUFFER_TYPES \
     X(PIXEL) \
-    X(VERTEX) \
-    X(INDEX) \
+    X(DEPTH) \
+    X(STENCIL) \
     X(COUNT)
 #endif
 #ifndef X

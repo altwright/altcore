@@ -535,18 +535,6 @@ static void *get_entity_var(EntityID eid, i32 var_idx, EntityVarType var_type) {
 
         if (var_type == var_elem->type) {
             switch (var_type) {
-                case ENTITY_VAR_TYPE_I32: {
-                    var_ptr = &var_elem->data.i32_val;
-                    break;
-                }
-                case ENTITY_VAR_TYPE_U32: {
-                    var_ptr = &var_elem->data.u32_val;
-                    break;
-                }
-                case ENTITY_VAR_TYPE_F32: {
-                    var_ptr = &var_elem->data.f32_val;
-                    break;
-                }
                 case ENTITY_VAR_TYPE_I64: {
                     var_ptr = &var_elem->data.i64_val;
                     break;
@@ -575,18 +563,6 @@ static void *get_entity_var(EntityID eid, i32 var_idx, EntityVarType var_type) {
     }
 
     return var_ptr;
-}
-
-i32 *ecs_get_i32_var(EntityID eid, i32 var_idx) {
-    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_I32);
-}
-
-u32 *ecs_get_u32_var(EntityID eid, i32 var_idx) {
-    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_U32);
-}
-
-f32 *ecs_get_f32_var(EntityID eid, i32 var_idx) {
-    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_F32);
 }
 
 i64 *ecs_get_i64_var(EntityID eid, i32 var_idx) {

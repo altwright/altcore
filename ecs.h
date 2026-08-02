@@ -15,9 +15,6 @@ typedef struct ENTITY_ID_T {
 typedef enum ENTITY_VAR_TYPE_E {
 #ifndef X_ENTITY_VAR_TYPES
 #define X_ENTITY_VAR_TYPES \
-    X(I32) \
-    X(U32) \
-    X(F32) \
     X(I64) \
     X(U64) \
     X(F64) \
@@ -133,12 +130,6 @@ void ecs_tick();
 EntityID ecs_create_entity(const EntityCreateInfo *info);
 
 bool ecs_entity_exists(EntityID eid);
-
-i32 *ecs_get_i32_var(EntityID eid, i32 var_idx);
-
-u32 *ecs_get_u32_var(EntityID eid, i32 var_idx);
-
-f32 *ecs_get_f32_var(EntityID eid, i32 var_idx);
 
 i64 *ecs_get_i64_var(EntityID eid, i32 var_idx);
 
