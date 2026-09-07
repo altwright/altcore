@@ -146,6 +146,15 @@ typedef struct F32X4_T {
     };
 } f32x4;
 
+typedef struct U64X2_T {
+    union {
+        struct {
+            u64 lower;
+            u64 upper;
+        };
+    };
+} u64x2;
+
 struct ARENA_T;
 
 extern void *kNullPtr;
@@ -427,5 +436,19 @@ i64 free_elem_idx;
 i32x4 f32x4_to_i32(f32x4 vec);
 
 f32x4 i32x4_to_f32(i32x4 vec);
+
+void u64x2_bit_set(u64x2 *bits, i32 bit_idx);
+
+void u64x2_bit_unset(u64x2 *bits, i32 bit_idx);
+
+bool u64x2_bit_is_set(u64x2 bits, i32 bit_idx);
+
+u64x2 u64x2_bits_and(u64x2 left, u64x2 right);
+
+u64x2 u64x2_bits_or(u64x2 left, u64x2 right);
+
+u64x2 u64x2_bits_not(u64x2 bits);
+
+bool u64x2_equal(u64x2 left, u64x2 right);
 
 #endif //ALTCORE_TYPES_H

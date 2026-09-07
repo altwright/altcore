@@ -152,3 +152,64 @@ f32x4 i32x4_to_f32(i32x4 vec) {
         .w = (f32)(vec.w),
     };
 }
+
+void u64x2_bit_set(u64x2 *bits, i32 bit_idx) {
+    if (bit_idx < 0 || bit_idx >= 128) {
+        return;
+    }
+
+    if (bit_idx < 64) {
+        bits->lower |= 1ULL << bit_idx;
+    } else {
+        bits->upper |= 1ULL << (bit_idx - 64);
+    }
+}
+
+void u64x2_bit_unset(u64x2 *bits, i32 bit_idx) {
+    if (bit_idx < 0 || bit_idx >= 128) {
+        return;
+    }
+
+    if (bit_idx < 64) {
+        bits->lower &= ~(1ULL << bit_idx);
+    } else {
+        bits->upper &= ~(1ULL << (bit_idx - 64));
+    }
+}
+
+bool u64x2_bit_is_set(u64x2 bits, i32 bit_idx) {
+    if (bit_idx < 0 || bit_idx >= 128) {
+        return false;
+    }
+
+    if (bit_idx < 64) {
+        return bits.lower & (1ULL << bit_idx);
+    } else {
+        return bits.upper & (1ULL << (bit_idx - 64));
+    }
+}
+
+u64x2 u64x2_bits_and(u64x2 left, u64x2 right) {
+    return (u64x2) {
+        .lower = (left.lower & right.lower),
+        .upper = (left.upper & right.upper),
+    };
+}
+
+u64x2 u64x2_bits_or(u64x2 left, u64x2 right) {
+    return (u64x2) {
+        .lower = (left.lower | right.lower),
+        .upper = (left.upper | right.upper),
+    };
+}
+
+u64x2 u64x2_bits_not(u64x2 bits) {
+    return (u64x2) {
+        .lower = ~bits.lower,
+        .upper = ~bits.upper,
+    };
+}
+
+bool u64x2_equal(u64x2 left, u64x2 right) {
+    return (left.lower == right.lower) && (left.upper == right.upper);
+}
