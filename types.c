@@ -95,11 +95,11 @@ void array_put(
         array_expand(data_ptr, data_elem_size, len, cap, arena);
     }
 
-    u8* data = *data_ptr;
+    u8 *data = *data_ptr;
 
     for (i64 current_idx = *len; current_idx > idx; current_idx--) {
-        u8* current_elem = data + (current_idx * data_elem_size);
-        u8* prev_elem = current_elem - data_elem_size;
+        u8 *current_elem = data + (current_idx * data_elem_size);
+        u8 *prev_elem = current_elem - data_elem_size;
         memcpy(current_elem, prev_elem, data_elem_size);
     }
 
@@ -129,27 +129,26 @@ void array_sort(
     i64 elem_size,
     int (*sort_fn)(const void *, const void *)
 ) {
-    if (len > 1)
-    {
+    if (len > 1) {
         qsort(data, len, elem_size, sort_fn);
     }
 }
 
 i32x4 f32x4_to_i32(f32x4 vec) {
     return (i32x4){
-        .x = (i32)(vec.x),
-        .y = (i32)(vec.y),
-        .z = (i32)(vec.z),
-        .w = (i32)(vec.w),
+        .x = (i32) (vec.x),
+        .y = (i32) (vec.y),
+        .z = (i32) (vec.z),
+        .w = (i32) (vec.w),
     };
 }
 
 f32x4 i32x4_to_f32(i32x4 vec) {
     return (f32x4){
-        .x = (f32)(vec.x),
-        .y = (f32)(vec.y),
-        .z = (f32)(vec.z),
-        .w = (f32)(vec.w),
+        .x = (f32) (vec.x),
+        .y = (f32) (vec.y),
+        .z = (f32) (vec.z),
+        .w = (f32) (vec.w),
     };
 }
 
@@ -190,21 +189,21 @@ bool u64x2_bit_is_set(u64x2 bits, i32 bit_idx) {
 }
 
 u64x2 u64x2_bits_and(u64x2 left, u64x2 right) {
-    return (u64x2) {
+    return (u64x2){
         .lower = (left.lower & right.lower),
         .upper = (left.upper & right.upper),
     };
 }
 
 u64x2 u64x2_bits_or(u64x2 left, u64x2 right) {
-    return (u64x2) {
+    return (u64x2){
         .lower = (left.lower | right.lower),
         .upper = (left.upper | right.upper),
     };
 }
 
 u64x2 u64x2_bits_not(u64x2 bits) {
-    return (u64x2) {
+    return (u64x2){
         .lower = ~bits.lower,
         .upper = ~bits.upper,
     };
@@ -212,4 +211,63 @@ u64x2 u64x2_bits_not(u64x2 bits) {
 
 bool u64x2_equal(u64x2 left, u64x2 right) {
     return (left.lower == right.lower) && (left.upper == right.upper);
+}
+
+void queue_make(
+    struct ARENA_T *arena,
+    i64 *cap,
+    i64 *count,
+    i64 *head,
+    void **data,
+    u64 elem_size
+) {
+    if (*count < 0) {
+        *count = 0;
+    }
+
+    if (*cap < 0) {
+        *cap = 0;
+    }
+
+    if (*cap < *count) {
+        *cap = *count;
+    }
+
+    *head = 0;
+
+    *data = arena_alloc(arena, (*cap) * (i64) elem_size);
+    memset(*data, 0, (*count) * elem_size);
+}
+
+static void queue_expand(
+    struct ARENA_T *arena,
+    i64 *cap,
+    void** data,
+    u64 elem_size
+) {
+    i64 new_cap = 2 * (*cap);
+    void* new_data = arena_alloc(arena, new_cap * (i64)elem_size);
+    memcpy(new_data, *data, (*cap) * elem_size);
+    *data = new_data;
+    *cap = new_cap;
+}
+
+void queue_push_back(
+    struct ARENA_T *arena,
+    i64 *cap,
+    i64 *count,
+    i64 *head,
+    void **data,
+    u64 elem_size,
+    void *new_elem_ptr
+) {
+    while (*count >= *cap) {
+        queue_expand(arena, cap, data, elem_size);
+    }
+
+    i64 new_elem_idx = (*head + *count) % (*cap);
+    u8* new_elem_bytes = (u8*)(*data) + (new_elem_idx * elem_size);
+    memcpy(new_elem_bytes, new_elem_ptr, elem_size);
+
+    (*count)++;
 }

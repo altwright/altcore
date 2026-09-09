@@ -7,7 +7,11 @@
 
 #include "types.h"
 
-void alt_init(i64 address_space_max_size);
+typedef struct ALT_INIT_INFO_T {
+    i64 max_address_space_size;
+} AltInitInfo;
+
+void alt_init(const AltInitInfo* init_info);
 
 void alt_deinit();
 

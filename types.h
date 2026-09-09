@@ -433,6 +433,68 @@ i64 free_elem_idx;
 #define LIST_FOR(elem_ptr_name, list_ptr)
 #endif
 
+#ifndef QUEUE_FIELDS
+#define QUEUE_FIELDS(type) \
+    struct ARENA_T *arena; \
+    i64 cap; \
+    i64 count; \
+    i64 head; \
+    type *data;
+#endif
+
+#ifndef QUEUE_MAKE
+#define QUEUE_MAKE(q_ptr) \
+    do { \
+        queue_make( \
+            (q_ptr)->arena, \
+            &(q_ptr)->cap, \
+            &(q_ptr)->count, \
+            &(q_ptr)->head, \
+            (void **) &(q_ptr)->data, \
+            sizeof(*((q_ptr)->data)) \
+        ); \
+    } while(0)
+#endif
+
+#ifndef QUEUE_PUSH_BACK
+#define QUEUE_PUSH_BACK(q_ptr, elem_ptr) \
+    do { \
+        queue_push_back( \
+            (q_ptr)->arena, \
+            &(q_ptr)->cap, \
+            &(q_ptr)->count, \
+            &(q_ptr)->head, \
+            (void **) &(q_ptr)->data, \
+            sizeof(*((q_ptr)->data)), \
+            (elem_ptr) \
+        ); \
+    } while(0)
+#endif
+
+#ifndef QUEUE_POP_FRONT
+#define QUEUE_POP_FRONT(q_ptr) \
+    (q_ptr)->data[(q_ptr)->head]; (q_ptr)->head++; (q_ptr)->head %= (q_ptr)->cap; (q_ptr)->count--
+#endif
+
+void queue_make(
+    struct ARENA_T *arena,
+    i64 *cap,
+    i64 *count,
+    i64 *head,
+    void **data,
+    u64 elem_size
+);
+
+void queue_push_back(
+    struct ARENA_T *arena,
+    i64 *cap,
+    i64 *count,
+    i64 *head,
+    void **data,
+    u64 elem_size,
+    void *new_elem_ptr
+);
+
 i32x4 f32x4_to_i32(f32x4 vec);
 
 f32x4 i32x4_to_f32(i32x4 vec);

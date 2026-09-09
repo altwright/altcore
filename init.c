@@ -11,18 +11,21 @@
 
 #include "memory.h"
 #include "defer.h"
+#include "clock.h"
 
-void alt_init(i64 address_space_max_size) {
-    dlmalloc_set_footprint_limit(address_space_max_size);
+void alt_init(const AltInitInfo* info) {
+    dlmalloc_set_footprint_limit(info->max_address_space_size);
 
     bool success = SDL_SetMemoryFunctions(alt_malloc, alt_calloc, alt_realloc, alt_free);
     assert(success);
 
+    clock_init();
     defer_init();
 }
 
 void alt_deinit() {
     defer_uninit();
+    clock_deinit();
 
     SDL_malloc_func malloc_fn;
     SDL_calloc_func calloc_fn;

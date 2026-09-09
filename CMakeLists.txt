@@ -20,6 +20,8 @@ set(HEADER_FILEPATHS
         barrier.h
         fs.h
         maths.h
+        ecs.h
+        clock.h
         draw/pixels.h
         draw/window.h
         draw/framebuffer.h
@@ -27,7 +29,6 @@ set(HEADER_FILEPATHS
         draw/ui.h
         draw/fonts.h
         draw/lights.h
-        ecs.h
 )
 
 set(SOURCE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -53,6 +54,7 @@ add_library(${PROJECT_NAME}
         fs.c
         maths.c
         ecs.c
+        clock.c
         draw/window.c
         draw/framebuffer.c
         draw/renderer.c
@@ -76,8 +78,11 @@ add_subdirectory(libs/cwalk-1.2.9 EXCLUDE_FROM_ALL)
 target_link_libraries(${PROJECT_NAME} PRIVATE
         m
         SDL3::SDL3
-        cglm
         cwalk
+)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+        cglm
 )
 
 target_include_directories(${PROJECT_NAME} INTERFACE
