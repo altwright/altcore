@@ -58,6 +58,6 @@ Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info);
 
 void framebuffer_destroy(Framebuffer *fb);
 
-FramebufferInfo framebuffer_get_info(Framebuffer *fb);
+FramebufferInfo framebuffer_get_info(const Framebuffer *fb);
 
 #endif //ALTCORE_FRAMEBUFFER_H

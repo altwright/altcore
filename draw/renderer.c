@@ -105,10 +105,10 @@ void renderer_destroy(Renderer *renderer) {
     alt_free(renderer);
 }
 
-void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer *cmd_buf) {
+void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
     switch (renderer->type) {
         case RENDERER_TYPE_SOFTWARE_SINGLE_THREAD: {
-            ARRAY_FOR(cmd, cmd_buf) {
+            ARRAY_FOR(cmd, cmds) {
                 switch (cmd->type) {
                     case RENDER_CMD_TYPE_CLEAR: {
                         soft_cmd_clear(
@@ -172,7 +172,7 @@ void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer *cmd_buf) {
     }
 }
 
-void renderer_wait_until_idle(Renderer *renderer) {
+void renderer_idle(Renderer *renderer) {
     switch (renderer->type) {
         case RENDERER_TYPE_SOFTWARE_SINGLE_THREAD: {
             break;

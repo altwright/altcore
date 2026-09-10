@@ -133,16 +133,16 @@ typedef struct RENDER_CMD_T {
     } data;
 } RenderCmd;
 
-typedef struct RENDER_CMD_BUFFER_T {
+typedef struct RENDER_CMDS_T {
     ARRAY_FIELDS(RenderCmd)
-} RenderCmdBuffer;
+} RenderCmds;
 
 Renderer *renderer_create(const RendererCreateInfo *create_info);
 
-void renderer_execute_cmd_buf(Renderer *renderer, RenderCmdBuffer *cmd_buf);
+void renderer_execute(Renderer *renderer, RenderCmds *cmds);
 
 void renderer_destroy(Renderer *renderer);
 
-void renderer_wait_until_idle(Renderer *renderer);
+void renderer_idle(Renderer *renderer);
 
 #endif //ALTCORE_RENDERER_H

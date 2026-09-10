@@ -8,16 +8,30 @@
 #include "clay.h"
 #include "renderer.h"
 
+typedef struct UI_CONTEXT_T UiContext;
+
+typedef struct UI_CREATE_INFO_T {
+    i64 memory_cap;
+    Clay_ErrorHandler err_handler;
+    const Framebuffer *initial_canvas;
+} UiCreateInfo;
+
+typedef struct UI_BEGIN_LAYOUT_INFO_T {
+    Framebuffer *canvas;
+    f32x2 pointer_pos;
+    bool pointer_pressed;
+    f32x2 scroll_delta;
+    f32 frame_elapsed_time_s;
+} UiBeginLayoutInfo;
+
 void ui_set_fonts(FontHandle **fonts, i64 fonts_len);
 
-Clay_Dimensions ui_clay_measure_text_fn(Clay_StringSlice text, Clay_TextElementConfig* config, void* user_data);
+UiContext *ui_create(const UiCreateInfo *create_info);
 
-Clay_Color ui_render_to_clay_color(RGBA8888 color);
+void ui_destroy(UiContext *ui);
 
-void ui_clay_to_render_cmds(
-    Framebuffer *canvas,
-    RenderCmdBuffer *render_cmds,
-    const Clay_RenderCommandArray *clay_cmds
-);
+void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info);
+
+RenderCmds ui_end_layout(Arena *arena, UiContext *ui);
 
 #endif //ALTCORE_UI_H
