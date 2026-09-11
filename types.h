@@ -143,6 +143,14 @@ typedef struct F32X4_T {
         struct {
             f32 start_x, start_y, width, height;
         };
+
+        struct {
+            f32 left, right, top, bottom;
+        };
+
+        struct {
+            f32 data[4];
+        };
     };
 } f32x4;
 

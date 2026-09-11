@@ -62,7 +62,7 @@ Clay_Dimensions ui_clay_measure_text_fn(Clay_StringSlice text, Clay_TextElementC
     };
 };
 
-Clay_Color ui_clay_color(RGBA8888 color) {
+Clay_Color ui_color(RGBA8888 color) {
     return (Clay_Color){
         .r = color.r,
         .g = color.g,
@@ -264,5 +264,40 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
         }
     }
 
+    ui->current_canvas = nullptr;
+
     return render_cmds;
+}
+
+Clay_Padding ui_padding(UiContext *ui, f32x4 padding_pct) {
+    Clay_Padding clay_padding = {};
+
+    if (!ui->current_canvas) {
+        return clay_padding;
+    }
+
+    FramebufferInfo canvas_info = framebuffer_get_info(ui->current_canvas);
+    if (canvas_info.type != FRAMEBUFFER_TYPE_PIXEL) {
+        return clay_padding;
+    }
+
+    i32x2 canvas_size = canvas_info.data.pixel_buf.size;
+    clay_padding.left = (u16)((f32)canvas_size.width * padding_pct.left);
+    clay_padding.right = (u16)((f32)canvas_size.width * padding_pct.right);
+    clay_padding.top = (u16)((f32)canvas_size.height * padding_pct.top);
+    clay_padding.bottom = (u16)((f32)canvas_size.height * padding_pct.bottom);
+
+    return clay_padding;
+}
+
+Clay_Padding ui_padding_all(UiContext *ui, f32 padding_pct) {
+    return ui_padding(
+        ui,
+        (f32x4){
+            .left = padding_pct,
+            .right = padding_pct,
+            .top = padding_pct,
+            .bottom = padding_pct
+        }
+    );
 }
