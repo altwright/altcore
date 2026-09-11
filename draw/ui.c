@@ -62,7 +62,7 @@ Clay_Dimensions ui_clay_measure_text_fn(Clay_StringSlice text, Clay_TextElementC
     };
 };
 
-Clay_Color ui_render_to_clay_color(RGBA8888 color) {
+Clay_Color ui_clay_color(RGBA8888 color) {
     return (Clay_Color){
         .r = color.r,
         .g = color.g,
@@ -128,6 +128,8 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
             .height = (f32) canvas_size.height
         }
     );
+
+    ui->current_canvas = layout_info->canvas;
 
     Clay_SetPointerState(
         (Clay_Vector2){

@@ -34,4 +34,6 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info);
 
 RenderCmds ui_end_layout(Arena *arena, UiContext *ui);
 
+Clay_Color ui_clay_color(RGBA8888 color);
+
 #endif //ALTCORE_UI_H
