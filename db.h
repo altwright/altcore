@@ -10,8 +10,8 @@
 
 typedef enum DB_MOUNT_E : u32 {
 #define X_DB_MOUNTS \
-    X(READ_ONLY) \
-    X(READ_WRITE) \
+    X(RO) \
+    X(RW) \
     X(COUNT)
 #define X(mount) \
     DB_MOUNT_##mount,
@@ -19,23 +19,23 @@ typedef enum DB_MOUNT_E : u32 {
 } DbMount;
 
 typedef struct DB_FOLDER_T {
-    char **nested_path;
-    u64 nested_path_len;
+    const char **nested_path;
+    i64 nested_path_len;
 } DbFolder;
 
 typedef struct DB_READ_INFO_T {
     DbMount mount;
     DbFolder folder;
-    char *filename;
+    const char *filename;
 } DbReadInfo;
 
 typedef struct DB_WRITE_INFO_T {
     DbFolder folder;
-    char *filename;
+    const char *filename;
 
     struct {
         const u8 *data;
-        u64 len;
+        i64 len;
     } bytes;
 } DbWriteInfo;
 
@@ -53,7 +53,7 @@ void db_write(const DbWriteInfo *info);
 
 DbReadStream *db_read_open(const DbReadInfo *info);
 
-u64 db_read_stream(DbReadStream *stream, u8 *out_bytes, u64 out_bytes_len);
+u64 db_read_next(DbReadStream *stream, u8 *out_bytes, u64 out_bytes_len);
 
 void db_read_close(DbReadStream *stream);
 
@@ -64,7 +64,7 @@ void db_read_close(DbReadStream *stream);
  */
 DbWriteStream *db_write_open(const DbWriteInfo *info);
 
-u64 db_write_stream(DbWriteStream *stream, const u8 *in_bytes, u64 in_bytes_len);
+u64 db_write_next(DbWriteStream *stream, const u8 *in_bytes, u64 in_bytes_len);
 
 void db_write_close(DbWriteStream *stream);
 

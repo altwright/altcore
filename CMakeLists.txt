@@ -53,6 +53,7 @@ add_library(${PROJECT_NAME}
         maths.c
         ecs.c
         clock.c
+        db.c
         draw/window.c
         draw/framebuffer.c
         draw/renderer.c
