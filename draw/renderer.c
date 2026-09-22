@@ -129,7 +129,7 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
 
                         soft_cmd_draw_rect(
                             data->framebuffer,
-                            f32x4_to_i32(data->dst),
+                            ftoi32x4(data->dst),
                             data->bg_color,
                             data->corner_radii,
                             data->border_color,
@@ -139,7 +139,7 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                     }
                     case RENDER_CMD_TYPE_DRAW_TEXT: {
                         RenderCmdDrawText* data = &cmd->data.draw_text;
-                        i32x4 px_buf_dst = f32x4_to_i32(data->dst);
+                        i32x4 px_buf_dst = ftoi32x4(data->dst);
 
                         string_view str_view = {
                             .start = data->text,

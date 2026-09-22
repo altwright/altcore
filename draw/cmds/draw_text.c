@@ -6,8 +6,8 @@
 
 #include <assert.h>
 
-#include "../fonts_impl.h"
-#include "../framebuffer_impl.h"
+#include "../fonts.impl.h"
+#include "../framebuffer.impl.h"
 
 void soft_cmd_draw_text(
     Framebuffer *px_buf,
@@ -33,15 +33,10 @@ void soft_cmd_draw_text(
 
     i32x2 cursor = {.x = 0, .y = -max_y0};
 
-    u8 *max_bitmap_bytes;
-    i32 max_bitmap_width, max_bitmap_height;
-
-    font_impl_get_max_bitmap(font, &max_bitmap_bytes, &max_bitmap_width, &max_bitmap_height);
-
     for (i32 c_idx = 0; c_idx < text.len; c_idx++) {
-        char c = text.start[c_idx];
+        const char *c = &text.start[c_idx];
 
-        i32 glyph_idx = font_impl_get_glyph_idx(font, &c);
+        i32 glyph_idx = font_impl_get_glyph_idx(font, c);
         if (glyph_idx <= 0) {
             continue;
         }
@@ -61,28 +56,35 @@ void soft_cmd_draw_text(
         i32 bitmap_width = x1 - x0;
         i32 bitmap_height = y1 - y0;
 
-        i32 lsb = (i32) (scale_factor * (float) font_impl_get_left_side_bearing(font, &c));
+        if (!font_impl_codepoint_bitmap_exists(font, c, font_size_px)) {
+            font_impl_create_codepoint_bitmap(font, c, font_size_px, bitmap_width, bitmap_height);
+        }
 
-        cursor.x += lsb;
+        u8 *bitmap_bytes = nullptr;
+        font_impl_get_codepoint_bitmap(font, c, font_size_px, &bitmap_bytes, &bitmap_width, &bitmap_height);
 
         stbtt_MakeGlyphBitmap(
             font_info,
-            max_bitmap_bytes,
+            bitmap_bytes,
             bitmap_width,
             bitmap_height,
-            max_bitmap_width,
+            bitmap_width,
             scale_factor,
             scale_factor,
             glyph_idx
         );
+
+        i32 lsb = (i32) (scale_factor * (float) font_impl_get_left_side_bearing(font, c));
+        cursor.x += lsb;
 
         PixelFormat px_format = px_buf_info.data.pixel_buf.format;
         i32 px_size = pixels_get_size(px_format);
 
         for (i32 bitmap_row_idx = 0; bitmap_row_idx < bitmap_height; bitmap_row_idx++) {
             for (i32 bitmap_col_idx = 0; bitmap_col_idx < bitmap_width; bitmap_col_idx++) {
-                u8 bitmap_byte = max_bitmap_bytes[bitmap_row_idx * max_bitmap_width + bitmap_col_idx];
-                if (!bitmap_byte) {
+                u8 bitmap_byte = bitmap_bytes[bitmap_row_idx * bitmap_width + bitmap_col_idx];
+
+                if (bitmap_byte == 0) {
                     continue;
                 }
 
@@ -103,7 +105,7 @@ void soft_cmd_draw_text(
             }
         }
 
-        i32 advance_width = (i32) (scale_factor * (float) font_impl_get_advance_width(font, &c));
+        i32 advance_width = (i32) (scale_factor * (float) font_impl_get_advance_width(font, c));
 
         cursor.x += advance_width;
         cursor.x += letter_spacing_px;

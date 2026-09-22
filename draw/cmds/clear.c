@@ -6,7 +6,7 @@
 
 #include <assert.h>
 #include "../../memory.h"
-#include "../framebuffer_impl.h"
+#include "../framebuffer.impl.h"
 
 void soft_cmd_clear(
     Framebuffer *px_buf,

@@ -18,7 +18,6 @@ set(HEADER_FILEPATHS
         worker.h
         events.h
         barrier.h
-        fs.h
         maths.h
         ecs.h
         clock.h
@@ -51,7 +50,6 @@ add_library(${PROJECT_NAME}
         worker.c
         events.c
         barrier.c
-        fs.c
         maths.c
         ecs.c
         clock.c
@@ -93,4 +91,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         libs/clay-0.14
 )
 
-target_compile_options(${PROJECT_NAME} PUBLIC -Wmissing-braces)
+target_compile_options(${PROJECT_NAME} PUBLIC -Wmissing-braces -Wenum-conversion)

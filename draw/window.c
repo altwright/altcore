@@ -13,8 +13,8 @@
 #include "../debug.h"
 #include "../memory.h"
 #include "framebuffer.h"
-#include "framebuffer_impl.h"
-#include "pixels_impl.h"
+#include "framebuffer.impl.h"
+#include "pixels.impl.h"
 
 struct WINDOW_HANDLE_T {
     SDL_Window *window;

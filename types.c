@@ -9,6 +9,7 @@
 
 #include "assert.h"
 #include "arenas.h"
+#include "debug.h"
 
 void *kNullPtr = nullptr;
 
@@ -134,7 +135,7 @@ void array_sort(
     }
 }
 
-i32x4 f32x4_to_i32(f32x4 vec) {
+i32x4 ftoi32x4(f32x4 vec) {
     return (i32x4){
         .x = (i32) (vec.x),
         .y = (i32) (vec.y),
@@ -143,74 +144,13 @@ i32x4 f32x4_to_i32(f32x4 vec) {
     };
 }
 
-f32x4 i32x4_to_f32(i32x4 vec) {
+f32x4 itof32x4(i32x4 vec) {
     return (f32x4){
         .x = (f32) (vec.x),
         .y = (f32) (vec.y),
         .z = (f32) (vec.z),
         .w = (f32) (vec.w),
     };
-}
-
-void u64x2_bit_set(u64x2 *bits, i32 bit_idx) {
-    if (bit_idx < 0 || bit_idx >= 128) {
-        return;
-    }
-
-    if (bit_idx < 64) {
-        bits->lower |= 1ULL << bit_idx;
-    } else {
-        bits->upper |= 1ULL << (bit_idx - 64);
-    }
-}
-
-void u64x2_bit_unset(u64x2 *bits, i32 bit_idx) {
-    if (bit_idx < 0 || bit_idx >= 128) {
-        return;
-    }
-
-    if (bit_idx < 64) {
-        bits->lower &= ~(1ULL << bit_idx);
-    } else {
-        bits->upper &= ~(1ULL << (bit_idx - 64));
-    }
-}
-
-bool u64x2_bit_is_set(u64x2 bits, i32 bit_idx) {
-    if (bit_idx < 0 || bit_idx >= 128) {
-        return false;
-    }
-
-    if (bit_idx < 64) {
-        return bits.lower & (1ULL << bit_idx);
-    } else {
-        return bits.upper & (1ULL << (bit_idx - 64));
-    }
-}
-
-u64x2 u64x2_bits_and(u64x2 left, u64x2 right) {
-    return (u64x2){
-        .lower = (left.lower & right.lower),
-        .upper = (left.upper & right.upper),
-    };
-}
-
-u64x2 u64x2_bits_or(u64x2 left, u64x2 right) {
-    return (u64x2){
-        .lower = (left.lower | right.lower),
-        .upper = (left.upper | right.upper),
-    };
-}
-
-u64x2 u64x2_bits_not(u64x2 bits) {
-    return (u64x2){
-        .lower = ~bits.lower,
-        .upper = ~bits.upper,
-    };
-}
-
-bool u64x2_equal(u64x2 left, u64x2 right) {
-    return (left.lower == right.lower) && (left.upper == right.upper);
 }
 
 void queue_make(
@@ -242,11 +182,11 @@ void queue_make(
 static void queue_expand(
     struct ARENA_T *arena,
     i64 *cap,
-    void** data,
+    void **data,
     u64 elem_size
 ) {
     i64 new_cap = 2 * (*cap);
-    void* new_data = arena_alloc(arena, new_cap * (i64)elem_size);
+    void *new_data = arena_alloc(arena, new_cap * (i64) elem_size);
     memcpy(new_data, *data, (*cap) * elem_size);
     *data = new_data;
     *cap = new_cap;
@@ -266,8 +206,119 @@ void queue_push_back(
     }
 
     i64 new_elem_idx = (*head + *count) % (*cap);
-    u8* new_elem_bytes = (u8*)(*data) + (new_elem_idx * elem_size);
+    u8 *new_elem_bytes = (u8 *) (*data) + (new_elem_idx * elem_size);
     memcpy(new_elem_bytes, new_elem_ptr, elem_size);
 
     (*count)++;
+}
+
+bits bits_make(struct ARENA_T *arena, i64 bit_count) {
+    if (bit_count < 0) {
+        crash_msg("Tried to set bit max count to %d\n", bit_count);
+    }
+
+    bits bs = {
+        .arena = arena,
+        .len = bit_count / 64 + 1
+    };
+
+    if (!bs.arena) {
+        bs.arena = arena_make(bs.len * (i64) sizeof(u64));
+    }
+
+    ARRAY_MAKE(&bs);
+
+    return bs;
+}
+
+static i64 get_bitfield_idx(const bits *bs, i64 bit_idx) {
+    i64 bitfield_idx = bit_idx / 64;
+    if (bitfield_idx >= bs->len) {
+        crash_msg("Bit index %d does not reside in allocated bit fields count %d\n", bit_idx, bs->len);
+    }
+
+    return bitfield_idx;
+}
+
+void bits_set(bits *bs, i64 bit_idx) {
+    i64 bitfield_idx = get_bitfield_idx(bs, bit_idx);
+    bs->data[bitfield_idx] |= 1ULL << (bit_idx % 64);
+}
+
+void bits_unset(bits *bs, i64 bit_idx) {
+    i64 bitfield_idx = get_bitfield_idx(bs, bit_idx);
+    u64 bit = 1ULL << (bit_idx % 64);
+    bs->data[bitfield_idx] &= ~bit;
+}
+
+bool bits_is_set(const bits *bs, i64 bit_idx) {
+    i64 bitfield_idx = get_bitfield_idx(bs, bit_idx);
+    return bs->data[bitfield_idx] & (bit_idx % 64);
+}
+
+void assert_bits_count_match(const bits* left, const bits* right) {
+    if (left->len != right->len) {
+        crash_msg("Left bits have max bit count %d, right bits have max bit count %d\n", left->len, right->len);
+    }
+}
+
+void bits_and(bits *left, const bits *right) {
+    assert_bits_count_match(left, right);
+    i64 bitfield_count = left->len;
+    for (i64 bitfield_idx = 0; bitfield_idx < bitfield_count; bitfield_idx++) {
+        left->data[bitfield_idx] &= right->data[bitfield_idx];
+    }
+}
+
+void bits_or(bits *left, const bits *right) {
+    assert_bits_count_match(left, right);
+    i64 bitfield_count = left->len;
+    for (i64 bitfield_idx = 0; bitfield_idx < bitfield_count; bitfield_idx++) {
+        left->data[bitfield_idx] |= right->data[bitfield_idx];
+    }
+}
+
+void bits_xor(bits *left, const bits *right) {
+    assert_bits_count_match(left, right);
+    i64 bitfield_count = left->len;
+    for (i64 bitfield_idx = 0; bitfield_idx < bitfield_count; bitfield_idx++) {
+        left->data[bitfield_idx] ^= right->data[bitfield_idx];
+    }
+}
+
+void bits_not(bits *bs) {
+    for (i64 bitfield_idx = 0; bitfield_idx < bs->len; bitfield_idx++) {
+        bs->data[bitfield_idx] = ~bs->data[bitfield_idx];
+    }
+}
+
+bool bits_match(const bits *left, const bits *right) {
+    assert_bits_count_match(left, right);
+    bool match = true;
+
+    i64 bitfield_count = left->len;
+    for (i64 bitfield_idx = 0; bitfield_idx < bitfield_count; bitfield_idx++) {
+        if (left->data[bitfield_idx] != right->data[bitfield_idx]) {
+            match = false;
+            break;
+        }
+    }
+
+    return match;
+}
+
+bits bits_dup(struct ARENA_T *arena, const bits *bs) {
+    bits new_bs = {
+        .arena = arena,
+        .len = bs->len,
+    };
+    ARRAY_MAKE(&new_bs);
+
+    memcpy(new_bs.data, bs->data, bs->len * sizeof(bs->data[0]));
+
+    return new_bs;
+}
+
+void bits_clear(bits *bs) {
+    memset(bs->data, 0, bs->len * sizeof(bs->data[0]));
 }

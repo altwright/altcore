@@ -3,7 +3,7 @@
 //
 
 #include "pixels.h"
-#include "pixels_impl.h"
+#include "pixels.impl.h"
 #include "../debug.h"
 
 i32 pixels_get_size(PixelFormat pixel_format) {

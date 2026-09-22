@@ -7,7 +7,7 @@
 #include <assert.h>
 
 #include "../../maths.h"
-#include "../framebuffer_impl.h"
+#include "../framebuffer.impl.h"
 
 void soft_cmd_draw_rect(
     Framebuffer* px_buf,

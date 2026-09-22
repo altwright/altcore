@@ -95,3 +95,12 @@ void *arena_alloc(Arena *arena, i64 size) {
 void arena_reset(Arena *arena) {
     arena->offset = 0;
 }
+
+i64 arena_get(Arena *arena) {
+    return arena->offset;
+}
+
+void arena_set(Arena *arena, i64 offset) {
+    arena->offset = offset;
+}
+

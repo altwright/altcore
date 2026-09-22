@@ -8,6 +8,11 @@
 #include "hashmap.h"
 #include "debug.h"
 #include "maths.h"
+#include "memory.h"
+
+constexpr i64 kDefaultEntitiesCapacity = 256;
+
+typedef bits EntityComponentFlags;
 
 typedef struct ENTITY_VARS_T {
     ARRAY_FIELDS(EntityVar)
@@ -17,9 +22,9 @@ typedef struct ENTITY_T {
     EntityID eid;
     u64 prev_tick;
     const char *name;
-    EntityComponentFlags components;
     i64 fn_ptrs_idx;
     EntityVars vars;
+    EntityComponentFlags component_flags;
     u64 priority;
 } Entity;
 
@@ -39,101 +44,31 @@ typedef struct ENTITY_IDS_T {
     ARRAY_FIELDS(EntityID)
 } EntityIDs;
 
-#ifndef COMPONENT_ARRAY_FIELDS
-#define COMPONENT_ARRAY_FIELDS(component_type) \
-EntityID* eids; \
-component_type* data; \
-i64 len; \
-i64 cap; \
-Arena* arena;
-#endif
+typedef struct COMPONENT_ARRAY_T {
+    EntityID *eids;
+    u8 *elems;
+    u64 elem_size;
+    i64 len;
+    i64 cap;
+    Arena *arena;
+} ComponentArray;
 
-#ifndef COMPONENT_ARRAY_PUT
-#define COMPONENT_ARRAY_PUT(component_array_ptr, eid_ptr) \
-    component_array_put( \
-        (void **)(&((component_array_ptr)->data)), \
-        sizeof(*((component_array_ptr)->data)), \
-        &((component_array_ptr)->eids), \
-        &((component_array_ptr)->len), \
-        &((component_array_ptr)->cap), \
-        &((component_array_ptr)->arena), \
-        (eid_ptr) \
-    );
-#endif
+typedef struct COMPONENT_ARRAYS_T {
+    ARRAY_FIELDS(ComponentArray)
+} ComponentArrays;
 
-#ifndef COMPONENT_ARRAY_DEL
-#define COMPONENT_ARRAY_DEL(component_array_ptr, eid_ptr) \
-    component_array_del( \
-        (component_array_ptr)->data, \
-        sizeof(*((component_array_ptr)->data)), \
-        (component_array_ptr)->eids, \
-        &((component_array_ptr)->len), \
-        (eid_ptr) \
-    )
-#endif
-
-#ifndef COMPONENT_ARRAY_FREE
-#define COMPONENT_ARRAY_FREE(component_array_ptr) \
-    component_array_free( \
-        (void **)(&((component_array_ptr)->data)), \
-        &((component_array_ptr)->eids), \
-        &((component_array_ptr)->len), \
-        &((component_array_ptr)->cap), \
-        &((component_array_ptr)->arena) \
-    )
-#endif
-
-#ifndef COMPONENT_ARRAY_GET
-#define COMPONENT_ARRAY_GET(component_array_ptr, eid_ptr) \
-    (typeof(*((component_array_ptr)->data))*) \
-    component_array_get( \
-        (component_array_ptr)->data, \
-        sizeof(*((component_array_ptr)->data)), \
-        (component_array_ptr)->eids, \
-        (component_array_ptr)->len, \
-        (eid_ptr) \
-    )
-#endif
-
-typedef struct F32X2_COMPONENTS_T {
-    COMPONENT_ARRAY_FIELDS(f32x2)
-} F32x2Components;
-
-typedef struct F32X4_COMPONENTS_T {
-    COMPONENT_ARRAY_FIELDS(f32x4)
-} F32x4Components;
-
-typedef struct F32X3_COMPONENTS_T {
-    COMPONENT_ARRAY_FIELDS(f32x3)
-} F32x3Components;
-
-typedef struct F32X44_COMPONENTS_T {
-    COMPONENT_ARRAY_FIELDS(f32x44)
-} F32x44Components;
-
-typedef struct RECT_2D_COMPONENTS_T {
-    COMPONENT_ARRAY_FIELDS(Rect2DComponent)
-} Rect2DComponents;
-
-static bool g_initialized = false;
-static u64 g_tick_counter = 0;
-static u64 g_entity_counter = 0;
-static EntityMap g_entity_map = {};
-static EntityPtrs g_entity_ptrs = {};
-static EntityFnPtrsArray g_entity_fn_ptrs_array = {};
-
-static F32x3Components g_positions = {};
-static F32x4Components g_rotations = {};
-static F32x3Components g_scales = {};
-static Rect2DComponents g_rect_2ds = {};
-
-constexpr i64 kDefaultEntitiesCapacity = 256;
+struct ECS_HANDLE_T {
+    Arena* arena;
+    u64 tick_counter;
+    u64 entity_counter;
+    EntityMap entity_map;
+    EntityPtrs entity_ptrs;
+    EntityFnPtrsArray entity_fn_ptrs_array;
+    ComponentArrays component_arrays;
+};
 
 static void *component_array_get(
-    void *data,
-    u64 data_elem_size,
-    EntityID *eids,
-    i64 len,
+    const ComponentArray *component_array,
     const EntityID *eid
 ) {
     u8 *elem_start = nullptr;
@@ -141,19 +76,19 @@ static void *component_array_get(
     u64 search_guid = eid->guid;
 
     i64 start_idx = 0;
-    i64 end_idx = len;
+    i64 end_idx = component_array->len;
 
     while (start_idx < end_idx) {
         i64 middle_idx = start_idx + (end_idx - start_idx) / 2;
 
-        u64 middle_guid = eids[middle_idx].guid;
+        u64 middle_guid = component_array->eids[middle_idx].guid;
 
         if (middle_guid < search_guid) {
             start_idx = middle_idx + 1;
         } else if (middle_guid > search_guid) {
             end_idx = middle_idx - 1;
         } else {
-            elem_start = (u8 *) data + (middle_idx * data_elem_size);
+            elem_start = component_array->elems + (middle_idx * component_array->elem_size);
             break;
         }
     }
@@ -161,272 +96,213 @@ static void *component_array_get(
     return elem_start;
 }
 
-static void component_array_extend(
-    void **data_ptr,
-    u64 data_elem_size,
-    EntityID **eids_ptr,
-    i64 len,
-    i64 *cap,
-    Arena **arena_ptr
-) {
-    i64 new_cap = 2 * (*cap);
+static void component_array_extend(ComponentArray *component_array) {
+    i64 new_cap = 2 * (component_array->cap);
     if (new_cap <= 0) {
         new_cap = kDefaultEntitiesCapacity;
     }
 
-    Arena *new_arena = arena_make(new_cap * (i64) (data_elem_size + sizeof(EntityID)));
+    Arena *new_arena = arena_make(new_cap * (i64) (component_array->elem_size + sizeof(EntityID)));
     EntityID *new_eids = arena_alloc(new_arena, new_cap * (i64) sizeof(EntityID));
-    void *new_data = arena_alloc(new_arena, new_cap * (i64) data_elem_size);
+    void *new_elems = arena_alloc(new_arena, new_cap * (i64) component_array->elem_size);
 
-    if (*arena_ptr) {
-        memcpy(new_data, *data_ptr, len * data_elem_size);
-        memcpy(new_eids, *eids_ptr, len * sizeof(EntityID));
-        arena_free(*arena_ptr);
+    if (component_array->arena) {
+        memcpy(new_elems, component_array->elems, component_array->len * component_array->elem_size);
+        memcpy(new_eids, component_array->eids, component_array->len * sizeof(EntityID));
+        arena_free(component_array->arena);
     }
 
-    *arena_ptr = new_arena;
-    *data_ptr = new_data;
-    *eids_ptr = new_eids;
-    *cap = new_cap;
+    component_array->arena = new_arena;
+    component_array->elems = new_elems;
+    component_array->eids = new_eids;
+    component_array->cap = new_cap;
 }
 
 static void component_array_put(
-    void **data_ptr,
-    u64 data_elem_size,
-    EntityID **eids_ptr,
-    i64 *len,
-    i64 *cap,
-    Arena **arena_ptr,
+    ComponentArray *component_array,
     const EntityID *new_eid
 ) {
-    void *del_elem = component_array_get(*data_ptr, data_elem_size, *eids_ptr, *len, new_eid);
+    void *del_elem = component_array_get(component_array, new_eid);
     if (del_elem) {
         return;
     }
 
-    while (*len >= *cap) {
-        component_array_extend(data_ptr, data_elem_size, eids_ptr, *len, cap, arena_ptr);
+    while (component_array->len >= component_array->cap) {
+        component_array_extend(component_array);
     }
 
     i64 put_idx = 0;
 
-    for (i64 current_idx = *len - 1; current_idx >= 0; current_idx--) {
-        EntityID *current_eid = *eids_ptr + current_idx;
+    for (i64 current_idx = component_array->len - 1; current_idx >= 0; current_idx--) {
+        EntityID *current_eid = component_array->eids + current_idx;
         if (current_eid->guid < new_eid->guid) {
             put_idx = current_idx + 1;
             break;
         }
     }
 
-    for (i64 current_idx = *len; current_idx > put_idx; current_idx--) {
-        EntityID *current_eid = *eids_ptr + current_idx;
+    for (i64 current_idx = component_array->len; current_idx > put_idx; current_idx--) {
+        EntityID *current_eid = component_array->eids + current_idx;
         EntityID *prev_eid = current_eid - 1;
         memcpy(current_eid, prev_eid, sizeof(EntityID));
 
-        u8 *current_data_start = ((u8 *) *data_ptr) + current_idx * data_elem_size;
-        u8 *prev_data_start = current_data_start - data_elem_size;
-        memcpy(current_data_start, prev_data_start, data_elem_size);
+        u8 *current_data_start = (component_array->elems) + current_idx * component_array->elem_size;
+        u8 *prev_data_start = current_data_start - component_array->elem_size;
+        memcpy(current_data_start, prev_data_start, component_array->elem_size);
     }
 
-    memcpy((*eids_ptr) + put_idx, new_eid, sizeof(EntityID));
-    memset((u8 *) (*data_ptr) + put_idx * data_elem_size, 0, data_elem_size);
+    memcpy(component_array->eids + put_idx, new_eid, sizeof(EntityID));
+    memset(component_array->elems + put_idx * component_array->elem_size, 0, component_array->elem_size);
 
-    (*len)++;
+    component_array->len++;
 }
 
 
 static void component_array_del(
-    void *data,
-    u64 data_elem_size,
-    EntityID *eids,
-    i64 *len,
+    ComponentArray *component_array,
     const EntityID *del_eid
 ) {
-    void *del_elem = component_array_get(data, data_elem_size, eids, *len, del_eid);
+    void *del_elem = component_array_get(component_array, del_eid);
     if (!del_elem) {
         return;
     }
 
-    i64 del_elem_idx = ((u8 *) del_elem - (u8 *) data) / (i64) data_elem_size;
+    i64 del_elem_idx = ((u8 *) del_elem - component_array->elems) / (i64) component_array->elem_size;
 
-    for (i64 current_elem_idx = del_elem_idx; current_elem_idx < (*len) - 1; current_elem_idx++) {
-        u8 *current_elem = (u8 *) data + (current_elem_idx * data_elem_size);
-        u8 *next_elem = current_elem + data_elem_size;
+    for (i64 current_elem_idx = del_elem_idx; current_elem_idx < component_array->len - 1; current_elem_idx++) {
+        u8 *current_elem = component_array->elems + (current_elem_idx * component_array->elem_size);
+        u8 *next_elem = current_elem + component_array->elem_size;
 
-        memcpy(current_elem, next_elem, data_elem_size);
+        memcpy(current_elem, next_elem, component_array->elem_size);
 
-        memcpy(&eids[current_elem_idx], &eids[current_elem_idx + 1], sizeof(*eids));
+        memcpy(
+            &component_array->eids[current_elem_idx],
+            &component_array->eids[current_elem_idx + 1],
+            sizeof(EntityID)
+        );
     }
 
-    (*len)--;
+    component_array->len--;
 }
 
-static void component_array_free(
-    void **data,
-    EntityID **eids,
-    i64 *len,
-    i64 *cap,
-    Arena **arena
-) {
-    if (*arena) {
-        arena_free(*arena);
+static void component_array_free(ComponentArray* component_array) {
+    if (component_array->arena) {
+        arena_free(component_array->arena);
     }
-    *data = nullptr;
-    *eids = nullptr;
-    *len = *cap = 0;
+    component_array->elems = nullptr;
+    component_array->eids = nullptr;
+    component_array->len = component_array->cap = 0;
 }
 
-static void entity_add_component(EntityID eid, EntityComponentFlag flag) {
-    switch (flag) {
-        case ENTITY_COMPONENT_FLAG_POSITION: {
-            COMPONENT_ARRAY_PUT(&g_positions, &eid);
-            break;
-        }
-        case ENTITY_COMPONENT_FLAG_ROTATION: {
-            COMPONENT_ARRAY_PUT(&g_rotations, &eid);
-            break;
-        }
-        case ENTITY_COMPONENT_FLAG_SCALE: {
-            COMPONENT_ARRAY_PUT(&g_scales, &eid);
-            break;
-        }
-        case ENTITY_COMPONENT_FLAG_RECT_2D: {
-            COMPONENT_ARRAY_PUT(&g_rect_2ds, &eid);
-            break;
-        }
-        default:
-            crash_msg("Unhandled component flag %lu addition\n", flag);
-            break;
-    }
-}
+EcsHandle *ecs_create(const EcsCreateInfo *info) {
+    EcsHandle *ecs = alt_malloc(sizeof(*ecs));
 
-static void entity_del_component(EntityID eid, EntityComponentFlag flag) {
-    switch (flag) {
-        case ENTITY_COMPONENT_FLAG_POSITION: {
-            COMPONENT_ARRAY_DEL(&g_positions, &eid);
-            break;
-        }
-        case ENTITY_COMPONENT_FLAG_ROTATION: {
-            COMPONENT_ARRAY_DEL(&g_rotations, &eid);
-            break;
-        }
-        case ENTITY_COMPONENT_FLAG_SCALE: {
-            COMPONENT_ARRAY_DEL(&g_scales, &eid);
-            break;
-        }
-        case ENTITY_COMPONENT_FLAG_RECT_2D: {
-            COMPONENT_ARRAY_DEL(&g_rect_2ds, &eid);
-            break;
-        }
-        default:
-            crash_msg("Unhandled component flag %lu deletion\n", flag);
-            break;
-    }
-}
-
-void ecs_init() {
-    if (g_initialized) {
-        return;
-    }
-
-    g_entity_map = (EntityMap){HASHMAP_TYPE_NON_STR_KEY, HASHMAP_DEL_FREQ_HIGH};
-
-    Entity default_entity = {};
-    HASHMAP_MAKE(&g_entity_map, &default_entity);
-
-    g_entity_ptrs = (EntityPtrs){
-        .arena = arena_make(kDefaultEntitiesCapacity * sizeof(*g_entity_ptrs.data)),
-        .cap = kDefaultEntitiesCapacity
+    *ecs = (EcsHandle){
+        .arena = arena_make(64 * MIBIBYTE),
+        .tick_counter = 0,
+        .entity_counter = 0,
     };
 
-    ARRAY_MAKE(&g_entity_ptrs);
+    ecs->entity_map = (EntityMap){
+        .type = HASHMAP_TYPE_NON_STR_KEY,
+        .del_freq = HASHMAP_DEL_FREQ_HIGH
+    };
 
-    g_tick_counter = 0;
+    Entity default_entity = {};
+    HASHMAP_MAKE(&ecs->entity_map, &default_entity);
 
-    g_entity_counter = 0;
+    ecs->entity_ptrs = (EntityPtrs){
+        .arena = ecs->arena,
+        .cap = kDefaultEntitiesCapacity
+    };
+    ARRAY_MAKE(&ecs->entity_ptrs);
 
-    g_initialized = true;
-}
+    ecs->component_arrays = (ComponentArrays){
+        .arena = ecs->arena,
+        .len = info->component_types.len
+    };
+    ARRAY_MAKE(&ecs->component_arrays);
 
-void ecs_deinit() {
-    if (!g_initialized) {
-        return;
-    }
+    for (i64 component_array_idx = 0; component_array_idx < info->component_types.len; component_array_idx++) {
+        EntityComponentType component_type = info->component_types.data[component_array_idx];
 
-    for (i32 component_idx = 0; component_idx < ENTITY_COMPONENT_INDEX_COUNT; component_idx++) {
-        switch ((EntityComponentIndex) component_idx) {
-            case ENTITY_COMPONENT_INDEX_POSITION: {
-                COMPONENT_ARRAY_FREE(&g_positions);
+        u64 elem_size = 0;
+
+        switch (component_type) {
+            case ENTITY_COMPONENT_TYPE_I32: {
+                elem_size = sizeof(i32);
                 break;
             }
-            case ENTITY_COMPONENT_INDEX_ROTATION: {
-                COMPONENT_ARRAY_FREE(&g_rotations);
-                break;
-            }
-            case ENTITY_COMPONENT_INDEX_SCALE: {
-                COMPONENT_ARRAY_FREE(&g_scales);
-                break;
-            }
-            case ENTITY_COMPONENT_INDEX_RECT_2D: {
-                COMPONENT_ARRAY_FREE(&g_rect_2ds);
+            case ENTITY_COMPONENT_TYPE_F32X3: {
+                elem_size = sizeof(f32x3);
                 break;
             }
             default:
-                crash_msg("Unhandled component type index %d deinit\n", component_idx);
+                crash_msg("Unhandled component type %d size\n", component_type);
                 break;
         }
+
+        ComponentArray *component_array = ARRAY_GET(&ecs->component_arrays, component_array_idx);
+        *component_array = (ComponentArray){
+            .elem_size = elem_size,
+        };
     }
 
-    arena_free(g_entity_ptrs.arena);
-
-    g_entity_ptrs = (EntityPtrs){};
-
-    HASHMAP_FREE(&g_entity_map);
-
-    g_initialized = false;
+    return ecs;
 }
 
-void ecs_set_entity_fn_ptrs(EntityFnPtrs *fn_ptrs, i32 fn_ptrs_len) {
-    if (g_entity_fn_ptrs_array.arena) {
-        arena_free(g_entity_fn_ptrs_array.arena);
+void ecs_destroy(EcsHandle *ecs) {
+    ARRAY_FOR(component_array, &ecs->component_arrays) {
+        component_array_free(component_array);
     }
 
-    i64 array_size = fn_ptrs_len * (i64) sizeof(*g_entity_fn_ptrs_array.data);
-    g_entity_fn_ptrs_array = (EntityFnPtrsArray){
+    HASHMAP_FREE(&ecs->entity_map);
+
+    if (ecs->entity_fn_ptrs_array.arena) {
+        arena_free(ecs->entity_fn_ptrs_array.arena);
+    }
+
+    arena_free(ecs->arena);
+}
+
+void ecs_set_entity_fn_ptrs(EcsHandle *ecs, EntityFnPtrs *fn_ptrs, i64 fn_ptrs_len) {
+    if (ecs->entity_fn_ptrs_array.arena) {
+        arena_free(ecs->entity_fn_ptrs_array.arena);
+    }
+
+    i64 array_size = fn_ptrs_len * (i64) sizeof(*ecs->entity_fn_ptrs_array.data);
+    ecs->entity_fn_ptrs_array = (EntityFnPtrsArray){
         .arena = arena_make(array_size),
         .len = fn_ptrs_len,
     };
 
-    ARRAY_MAKE(&g_entity_fn_ptrs_array);
+    ARRAY_MAKE(&ecs->entity_fn_ptrs_array);
 
-    memcpy(g_entity_fn_ptrs_array.data, fn_ptrs, array_size);
+    memcpy(ecs->entity_fn_ptrs_array.data, fn_ptrs, array_size);
 }
 
-void ecs_tick() {
-    if (!g_initialized) {
-        return;
-    }
+void ecs_tick(EcsHandle *ecs) {
+    ecs->tick_counter++;
 
-    g_tick_counter++;
+    for (i64 entity_idx = 0; entity_idx < ecs->entity_ptrs.len; entity_idx++) {
+        Entity *entity = *ARRAY_GET(&ecs->entity_ptrs, entity_idx);
 
-    for (i64 entity_idx = 0; entity_idx < g_entity_ptrs.len; entity_idx++) {
-        Entity *entity = *ARRAY_GET(&g_entity_ptrs, entity_idx);
+        if (entity->fn_ptrs_idx >= 0 && entity->prev_tick < ecs->tick_counter) {
+            entity->prev_tick = ecs->tick_counter;
 
-        if (entity->fn_ptrs_idx >= 0 && entity->prev_tick < g_tick_counter) {
-            entity->prev_tick = g_tick_counter;
-
-            EntityTickFnPtr entity_tick_fn_ptr = ARRAY_GET(&g_entity_fn_ptrs_array, entity->fn_ptrs_idx)->tick_fn_ptr;
-
-            EntityTickReturnCode code = entity_tick_fn_ptr(entity->eid);
+            EntityTickFnPtr entity_tick_fn_ptr = ARRAY_GET(&ecs->entity_fn_ptrs_array, entity->fn_ptrs_idx)->
+                    tick_fn_ptr;
+            EntityTickReturnCode code = entity_tick_fn_ptr(ecs, entity->eid);
 
             switch (code) {
                 case ENTITY_TICK_RETURN_CODE_EXIT: {
-                    EntityComponentFlags components = entity->components;
+                    EntityComponentFlags *component_flags = &entity->component_flags;
 
-                    for (i64 component_idx = 0; component_idx < ENTITY_COMPONENT_INDEX_COUNT; component_idx++) {
-                        EntityComponentFlag component_flag = 1ULL << component_idx;
-                        if (components & component_flag) {
-                            entity_del_component(entity->eid, component_flag);
+                    if (component_flags->arena) {
+                        for (i64 component_idx = 0; component_idx < ecs->component_arrays.len; component_idx++) {
+                            if (bits_is_set(component_flags, component_idx)) {
+                                ecs_entity_component_del(ecs, entity->eid, component_idx);
+                            }
                         }
                     }
 
@@ -434,10 +310,10 @@ void ecs_tick() {
                         arena_free(entity->vars.arena);
                     }
 
-                    ARRAY_DEL(&g_entity_ptrs, entity_idx);
+                    ARRAY_DEL(&ecs->entity_ptrs, entity_idx);
                     entity_idx--;
 
-                    HASHMAP_DEL(&g_entity_map, &entity->eid);
+                    HASHMAP_DEL(&ecs->entity_map, &entity->eid);
 
                     break;
                 }
@@ -448,15 +324,16 @@ void ecs_tick() {
     }
 }
 
-EntityID ecs_create_entity(const EntityCreateInfo *info) {
-    EntityID new_eid = {++g_entity_counter};
+EntityID ecs_entity_create(EcsHandle *ecs, const EntityCreateInfo *info) {
+    EntityID new_eid = {
+        .guid = ++ecs->entity_counter,
+    };
 
     u64 vars_size = info->var_types.len * sizeof(EntityVar);
     Entity new_entity = {
         .eid = new_eid,
         .prev_tick = 0,
         .name = info->name,
-        .components = info->components,
         .fn_ptrs_idx = info->entity_type_idx,
         .priority = info->priority,
     };
@@ -473,34 +350,33 @@ EntityID ecs_create_entity(const EntityCreateInfo *info) {
         EntityVar *var = ARRAY_GET(&new_entity.vars, var_idx);
         var->type = info->var_types.data[var_idx];
     }
+    HASHMAP_PUT(&ecs->entity_map, &new_eid, &new_entity);
 
-    HASHMAP_PUT(&g_entity_map, &new_eid, &new_entity);
-
-    while (g_entity_ptrs.len >= g_entity_ptrs.cap) {
-        i64 new_cap = 2 * g_entity_ptrs.cap;
-        u64 elem_size = sizeof(g_entity_ptrs.data[0]);
+    while (ecs->entity_ptrs.len >= ecs->entity_ptrs.cap) {
+        i64 new_cap = 2 * ecs->entity_ptrs.cap;
+        u64 elem_size = sizeof(ecs->entity_ptrs.data[0]);
         u64 new_size = new_cap * elem_size;
 
         EntityPtrs new_entity_ptrs = {
             .arena = arena_make((i64) new_size),
-            .len = g_entity_ptrs.len,
+            .len = ecs->entity_ptrs.len,
             .cap = new_cap,
         };
 
         ARRAY_MAKE(&new_entity_ptrs);
-        memcpy(new_entity_ptrs.data, g_entity_ptrs.data, g_entity_ptrs.len * elem_size);
+        memcpy(new_entity_ptrs.data, ecs->entity_ptrs.data, ecs->entity_ptrs.len * elem_size);
 
-        arena_free(g_entity_ptrs.arena);
+        arena_free(ecs->entity_ptrs.arena);
 
-        g_entity_ptrs = new_entity_ptrs;
+        ecs->entity_ptrs = new_entity_ptrs;
     }
 
-    Entity *new_entity_ptr = &(HASHMAP_GET(&g_entity_map, &new_eid)->value);
+    Entity *new_entity_ptr = &(HASHMAP_GET(&ecs->entity_map, &new_eid)->value);
 
     i64 new_entity_ptr_idx = 0;
 
-    for (i64 entity_ptr_idx = 0; entity_ptr_idx < g_entity_ptrs.len; entity_ptr_idx++) {
-        Entity *entity_ptr = *ARRAY_GET(&g_entity_ptrs, entity_ptr_idx);
+    for (i64 entity_ptr_idx = 0; entity_ptr_idx < ecs->entity_ptrs.len; entity_ptr_idx++) {
+        Entity *entity_ptr = *ARRAY_GET(&ecs->entity_ptrs, entity_ptr_idx);
         if ((entity_ptr->priority) > (new_entity_ptr->priority)) {
             break;
         }
@@ -508,26 +384,19 @@ EntityID ecs_create_entity(const EntityCreateInfo *info) {
         new_entity_ptr_idx = entity_ptr_idx + 1;
     }
 
-    ARRAY_PUT(&g_entity_ptrs, new_entity_ptr_idx, &new_entity_ptr);
-
-    for (i32 component_idx = 0; component_idx < ENTITY_COMPONENT_INDEX_COUNT; component_idx++) {
-        EntityComponentFlag component_flag = 1ULL << component_idx;
-        if (info->components & component_flag) {
-            entity_add_component(new_eid, component_flag);
-        }
-    }
+    ARRAY_PUT(&ecs->entity_ptrs, new_entity_ptr_idx, &new_entity_ptr);
 
     return new_eid;
 }
 
-bool ecs_entity_exists(EntityID eid) {
-    return HASHMAP_GET(&g_entity_map, &eid);
+bool ecs_entity_exists(EcsHandle *ecs, EntityID eid) {
+    return HASHMAP_GET(&ecs->entity_map, &eid);
 }
 
-static void *get_entity_var(EntityID eid, i32 var_idx, EntityVarType var_type) {
+static void *get_entity_var(EcsHandle *ecs, EntityID eid, i64 var_idx, EntityVarType var_type) {
     void *var_ptr = nullptr;
 
-    auto entity_pair = HASHMAP_GET(&g_entity_map, &eid);
+    auto entity_pair = HASHMAP_GET(&ecs->entity_map, &eid);
     if (entity_pair) {
         Entity *entity = &entity_pair->value;
 
@@ -565,108 +434,72 @@ static void *get_entity_var(EntityID eid, i32 var_idx, EntityVarType var_type) {
     return var_ptr;
 }
 
-i64 *ecs_get_i64_var(EntityID eid, i32 var_idx) {
-    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_I64);
+i64 *ecs_entity_var_get_i64(EcsHandle *ecs, EntityID eid, i64 var_idx) {
+    return get_entity_var(ecs, eid, var_idx, ENTITY_VAR_TYPE_I64);
 }
 
-u64 *ecs_get_u64_var(EntityID eid, i32 var_idx) {
-    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_U64);
+u64 *ecs_entity_var_get_u64(EcsHandle *ecs, EntityID eid, i64 var_idx) {
+    return get_entity_var(ecs, eid, var_idx, ENTITY_VAR_TYPE_U64);
 }
 
-f64 *ecs_get_f64_var(EntityID eid, i32 var_idx) {
-    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_F64);
+f64 *ecs_entity_var_get_f64(EcsHandle *ecs, EntityID eid, i64 var_idx) {
+    return get_entity_var(ecs, eid, var_idx, ENTITY_VAR_TYPE_F64);
 }
 
-void **ecs_get_ptr_var(EntityID eid, i32 var_idx) {
-    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_PTR);
+void **ecs_entity_var_get_ptr(EcsHandle *ecs, EntityID eid, i64 var_idx) {
+    return get_entity_var(ecs, eid, var_idx, ENTITY_VAR_TYPE_PTR);
 }
 
-EntityID *ecs_get_eid_var(EntityID eid, i32 var_idx) {
-    return get_entity_var(eid, var_idx, ENTITY_VAR_TYPE_EID);
+EntityID *ecs_entity_var_get_eid(EcsHandle *ecs, EntityID eid, i64 var_idx) {
+    return get_entity_var(ecs, eid, var_idx, ENTITY_VAR_TYPE_EID);
 }
 
-EntityComponentFlags ecs_get_components(EntityID eid) {
-    EntityComponentFlags flags = 0;
-
-    auto entity_pair = HASHMAP_GET(&g_entity_map, &eid);
-    if (entity_pair) {
-        flags = entity_pair->value.components;
+void ecs_entity_component_add(EcsHandle *ecs, EntityID eid, i64 component_idx) {
+    if (ecs_entity_component_has(ecs, eid, component_idx)) {
+        return;
     }
 
-    return flags;
-}
-
-void ecs_set_components(EntityID eid, EntityComponentFlags component_flags) {
-    EntityComponentFlags current_flags = ecs_get_components(eid);
-    EntityComponentFlags flags_diff = current_flags ^ component_flags;
-
-    for (i32 component_idx = 0; component_idx < ENTITY_COMPONENT_INDEX_COUNT; component_idx++) {
-        EntityComponentFlag component_flag = 1ULL << component_idx;
-        if (flags_diff & component_flag) {
-            if (component_flag & current_flags) {
-                entity_del_component(eid, component_flag);
-            } else {
-                entity_add_component(eid, component_flag);
-            }
-        }
-    }
-}
-
-u64 ecs_get_priority(EntityID eid) {
-    u64 priority = UINT64_MAX;
-
-    auto entity_pair = HASHMAP_GET(&g_entity_map, &eid);
-    if (entity_pair) {
-        priority = entity_pair->value.priority;
+    Entity *entity = &HASHMAP_GET(&ecs->entity_map, &eid)->value;
+    if (!entity->component_flags.data) {
+        entity->component_flags = bits_make(nullptr, ecs->component_arrays.len);
     }
 
-    return priority;
+    ComponentArray *component_array = ARRAY_GET(&ecs->component_arrays, component_idx);
+    component_array_put(component_array, &eid);
+
+    bits_set(&entity->component_flags, component_idx);
 }
 
-f32x3 *ecs_get_position(EntityID eid) {
-    return COMPONENT_ARRAY_GET(&g_positions, &eid);
-}
-
-f32x4 *ecs_get_rotation(EntityID eid) {
-    return COMPONENT_ARRAY_GET(&g_rotations, &eid);
-}
-
-f32x3 *ecs_get_scale(EntityID eid) {
-    return COMPONENT_ARRAY_GET(&g_scales, &eid);
-}
-
-Rect2DComponent *ecs_get_rect_2d(EntityID eid) {
-    return COMPONENT_ARRAY_GET(&g_rect_2ds, &eid);
-}
-
-void ecs_get_positions(f32x3 **positions, EntityID **eids, i32 *len) {
-    if (positions && eids && len) {
-        *len = (i32) g_positions.len;
-        *positions = g_positions.data;
-        *eids = g_positions.eids;
+void ecs_entity_component_del(EcsHandle *ecs, EntityID eid, i64 component_idx) {
+    if (!ecs_entity_component_has(ecs, eid, component_idx)) {
+        return;
     }
+
+    Entity *entity = &HASHMAP_GET(&ecs->entity_map, &eid)->value;
+    if (!entity->component_flags.data) {
+        crash_msg("Tried unsetting component flag %d from uninitialised bit field\n", component_idx);
+    }
+
+    ComponentArray *component_array = ARRAY_GET(&ecs->component_arrays, component_idx);
+    component_array_del(component_array, &eid);
+
+    bits_unset(&entity->component_flags, component_idx);
 }
 
-void ecs_get_rotations(f32x4 **rotations, EntityID **eids, i32 *len) {
-    if (rotations && eids && len) {
-        *len = (i32) g_rotations.len;
-        *rotations = g_rotations.data;
-        *eids = g_rotations.eids;
+bool ecs_entity_component_has(EcsHandle *ecs, EntityID eid, i64 component_idx) {
+    if (component_idx < 0 || component_idx >= ecs->component_arrays.len) {
+        crash_msg("Component index %d exceeds component array length of %d\n", component_idx,
+                  ecs->component_arrays.len);
     }
-}
 
-void ecs_get_scales(f32x3 **scales, EntityID **eids, i32 *len) {
-    if (scales && eids && len) {
-        *len = (i32) g_scales.len;
-        *scales = g_scales.data;
-        *eids = g_scales.eids;
+    if (!ecs_entity_exists(ecs, eid)) {
+        crash_msg("Entity %u does not exist\n", eid);
     }
-}
 
-void ecs_get_rect_2ds(Rect2DComponent **rect_2ds, EntityID **eids, i32 *len) {
-    if (rect_2ds && eids && len) {
-        *len = (i32) g_rect_2ds.len;
-        *rect_2ds = g_rect_2ds.data;
-        *eids = g_rect_2ds.eids;
+    Entity *entity = &HASHMAP_GET(&ecs->entity_map, &eid)->value;
+    if (!entity->component_flags.data) {
+        return false;
     }
+
+    return bits_is_set(&entity->component_flags, component_idx);
 }

@@ -9,7 +9,7 @@
 #include "memory.h"
 #include "SDL3/SDL_init.h"
 #include "draw/window.h"
-#include "draw/window_impl.h"
+#include "draw/window.impl.h"
 
 static bool g_events_initd = false;
 static EventSourceFlags g_event_source_flags = 0;

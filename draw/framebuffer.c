@@ -10,7 +10,7 @@
 #include "../memory.h"
 #include "../debug.h"
 #include "window.h"
-#include "framebuffer_impl.h"
+#include "framebuffer.impl.h"
 
 typedef struct PIXEL_BUFFER_T {
     PixelFormat format;

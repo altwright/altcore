@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <fcntl.h>
 
-#include "fonts_impl.h"
+#include "fonts.impl.h"
 #include "../../memory.h"
 
 struct UI_CONTEXT_T {
@@ -46,10 +46,10 @@ static f32x4 clay_to_render_rect(Clay_BoundingBox box) {
     };
 }
 
-Clay_Dimensions ui_clay_measure_text_fn(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data) {
+Clay_Dimensions ui_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data) {
     FontHandle *font = g_fonts[config->fontId];
 
-    f32x2 dim = font_measure_text_line(
+    f32x2 dim = font_measure_text(
         font,
         (string_view){.start = text.chars, .len = text.length},
         config->fontSize,
@@ -147,6 +147,8 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
         },
         layout_info->frame_elapsed_time_s
     );
+
+    Clay_SetMeasureTextFunction(ui_measure_text, ui);
 
     Clay_BeginLayout();
 }
@@ -263,6 +265,8 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 break;
         }
     }
+
+    Clay_SetMeasureTextFunction(nullptr, nullptr);
 
     ui->current_canvas = nullptr;
 

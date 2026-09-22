@@ -18,4 +18,8 @@ void *arena_alloc(Arena *arena, i64 size);
 
 void arena_reset(Arena *arena);
 
+i64 arena_get(Arena *arena);
+
+void arena_set(Arena *arena, i64 offset);
+
 #endif //ALTCORE_ARENAS_H

@@ -154,15 +154,6 @@ typedef struct F32X4_T {
     };
 } f32x4;
 
-typedef struct U64X2_T {
-    union {
-        struct {
-            u64 lower;
-            u64 upper;
-        };
-    };
-} u64x2;
-
 struct ARENA_T;
 
 extern void *kNullPtr;
@@ -177,13 +168,15 @@ type *data;
 
 #ifndef ARRAY_MAKE
 #define ARRAY_MAKE(array_ptr) \
+do { \
     array_make( \
         (void**)(&(array_ptr)->data), \
         &((array_ptr)->len), \
         &((array_ptr)->cap), \
         sizeof(*((array_ptr)->data)), \
         (array_ptr)->arena \
-    );
+    ); \
+} while(0)
 #endif
 
 #ifndef ARRAY_EMPTY
@@ -211,6 +204,7 @@ for ( \
 
 #ifndef ARRAY_PUSH
 #define ARRAY_PUSH(array_ptr, elem_ptr) \
+do { \
     array_push( \
         (void**)(&((array_ptr)->data)), \
         &((array_ptr)->len), \
@@ -219,15 +213,16 @@ for ( \
         sizeof(*(elem_ptr)), \
         (const void*)(elem_ptr), \
         (array_ptr)->arena \
-    );
+    ); \
+} while(0)
 #endif
 
 #ifndef ARRAY_POP
 #define ARRAY_POP(array_ptr) \
 ( \
-(array_ptr)->len > 0 ? \
-(array_ptr)->data[--((array_ptr)->len)] : \
-kNullPtr[0] \
+    (array_ptr)->len > 0 ? \
+    (array_ptr)->data[--((array_ptr)->len)] : \
+    kNullPtr[0] \
 )
 #endif
 
@@ -242,6 +237,7 @@ kNullPtr[0] \
 
 #ifndef ARRAY_PUT
 #define ARRAY_PUT(array_ptr, idx, elem_ptr) \
+do { \
     array_put( \
         (void**)(&((array_ptr)->data)), \
         sizeof((array_ptr)->data[0]), \
@@ -251,17 +247,20 @@ kNullPtr[0] \
         sizeof((elem_ptr)[0]), \
         (idx), \
         (array_ptr)->arena \
-    );
+    ); \
+} while(0)
 #endif
 
 #ifndef ARRAY_DEL
 #define ARRAY_DEL(array_ptr, idx) \
+do { \
     array_del( \
         (array_ptr)->data, \
         sizeof((array_ptr)->data[0]), \
         &((array_ptr)->len), \
         (idx) \
-    );
+    ); \
+} while(0)
 #endif
 
 #ifndef ARRAY_SORT
@@ -275,49 +274,6 @@ do { \
     ); \
 } while(0)
 #endif
-
-void array_make(
-    void **data_ptr,
-    i64 *len,
-    i64 *cap,
-    i64 elem_size,
-    struct ARENA_T *arena
-);
-
-void array_push(
-    void **data_ptr,
-    i64 *len,
-    i64 *cap,
-    i64 data_elem_size,
-    i64 new_elem_size,
-    const void *new_elem,
-    struct ARENA_T *arena
-);
-
-void array_put(
-    void **data_ptr,
-    i64 data_elem_size,
-    i64 *len,
-    i64 *cap,
-    void *new_elem,
-    i64 new_elem_size,
-    i64 idx,
-    struct ARENA_T *arena
-);
-
-void array_del(
-    void *data,
-    i64 data_elem_size,
-    i64 *len,
-    i64 idx
-);
-
-void array_sort(
-    void *data,
-    i64 len,
-    i64 elem_size,
-    int (*sort_fn)(const void *, const void *)
-);
 
 typedef struct I8S_T {
     ARRAY_FIELDS(i8)
@@ -481,8 +437,60 @@ i64 free_elem_idx;
 
 #ifndef QUEUE_POP_FRONT
 #define QUEUE_POP_FRONT(q_ptr) \
-    (q_ptr)->data[(q_ptr)->head]; (q_ptr)->head++; (q_ptr)->head %= (q_ptr)->cap; (q_ptr)->count--
+    (q_ptr)->data[(q_ptr)->head]; \
+    (q_ptr)->head++; \
+    (q_ptr)->head %= (q_ptr)->cap; \
+    (q_ptr)->count--
 #endif
+
+typedef u64s bits;
+
+typedef struct BITSX_T {
+    ARRAY_FIELDS(bits)
+} bitsx;
+
+void array_make(
+    void **data_ptr,
+    i64 *len,
+    i64 *cap,
+    i64 elem_size,
+    struct ARENA_T *arena
+);
+
+void array_push(
+    void **data_ptr,
+    i64 *len,
+    i64 *cap,
+    i64 data_elem_size,
+    i64 new_elem_size,
+    const void *new_elem,
+    struct ARENA_T *arena
+);
+
+void array_put(
+    void **data_ptr,
+    i64 data_elem_size,
+    i64 *len,
+    i64 *cap,
+    void *new_elem,
+    i64 new_elem_size,
+    i64 idx,
+    struct ARENA_T *arena
+);
+
+void array_del(
+    void *data,
+    i64 data_elem_size,
+    i64 *len,
+    i64 idx
+);
+
+void array_sort(
+    void *data,
+    i64 len,
+    i64 elem_size,
+    int (*sort_fn)(const void *, const void *)
+);
 
 void queue_make(
     struct ARENA_T *arena,
@@ -503,22 +511,30 @@ void queue_push_back(
     void *new_elem_ptr
 );
 
-i32x4 f32x4_to_i32(f32x4 vec);
+i32x4 ftoi32x4(f32x4 vec);
 
-f32x4 i32x4_to_f32(i32x4 vec);
+f32x4 itof32x4(i32x4 vec);
 
-void u64x2_bit_set(u64x2 *bits, i32 bit_idx);
+bits bits_make(struct ARENA_T *arena, i64 bit_count);
 
-void u64x2_bit_unset(u64x2 *bits, i32 bit_idx);
+void bits_set(bits *bs, i64 bit_idx);
 
-bool u64x2_bit_is_set(u64x2 bits, i32 bit_idx);
+void bits_unset(bits *bs, i64 bit_idx);
 
-u64x2 u64x2_bits_and(u64x2 left, u64x2 right);
+bool bits_is_set(const bits *bs, i64 bit_idx);
 
-u64x2 u64x2_bits_or(u64x2 left, u64x2 right);
+void bits_and(bits *left, const bits *right);
 
-u64x2 u64x2_bits_not(u64x2 bits);
+void bits_or(bits *left, const bits *right);
 
-bool u64x2_equal(u64x2 left, u64x2 right);
+void bits_xor(bits *left, const bits *right);
+
+void bits_not(bits *bs);
+
+bool bits_match(const bits *left, const bits *right);
+
+bits bits_dup(struct ARENA_T *arena, const bits *bs);
+
+void bits_clear(bits* bs);
 
 #endif //ALTCORE_TYPES_H

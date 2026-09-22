@@ -8,6 +8,8 @@
 #include "types.h"
 #include "draw/lights.h"
 
+typedef struct ECS_HANDLE_T EcsHandle;
+
 typedef struct ENTITY_ID_T {
     u64 guid;
 } EntityID;
@@ -30,13 +32,59 @@ typedef enum ENTITY_VAR_TYPE_E {
 #undef X
 } EntityVarType;
 
+typedef enum ENTITY_COMPONENT_TYPE_E {
+#define X_ENTITY_COMPONENT_TYPES \
+    X(I8) \
+    X(U8) \
+    X(I16) \
+    X(U16) \
+    X(I32) \
+    X(U32) \
+    X(I64) \
+    X(U64) \
+    X(F32) \
+    X(F64) \
+    X(I8X2) \
+    X(U8X2) \
+    X(I16X2) \
+    X(U16X2) \
+    X(I32X2) \
+    X(U32X2) \
+    X(I64X2) \
+    X(U64X2) \
+    X(F32X2) \
+    X(F64X2) \
+    X(I8X3) \
+    X(U8X3) \
+    X(I16X3) \
+    X(U16X3) \
+    X(I32X3) \
+    X(U32X3) \
+    X(I64X3) \
+    X(U64X3) \
+    X(F32X3) \
+    X(F64X3) \
+    X(I8X4) \
+    X(U8X4) \
+    X(I16X4) \
+    X(U16X4) \
+    X(I32X4) \
+    X(U32X4) \
+    X(I64X4) \
+    X(U64X4) \
+    X(F32X4) \
+    X(F64X4)
+#define X(type) \
+    ENTITY_COMPONENT_TYPE_##type,
+    X_ENTITY_COMPONENT_TYPES
+#undef X
+    ENTITY_COMPONENT_TYPE_COUNT
+} EntityComponentType;
+
 typedef struct ENTITY_VAR_T {
     EntityVarType type;
 
     union {
-        i32 i32_val;
-        u32 u32_val;
-        f32 f32_val;
         i64 i64_val;
         u64 u64_val;
         f64 f64_val;
@@ -45,53 +93,23 @@ typedef struct ENTITY_VAR_T {
     } data;
 } EntityVar;
 
-typedef enum ENTITY_COMPONENT_INDEX_E : i64 {
-#ifndef X_ENTITY_COMPONENT_INDEXES
-#define X_ENTITY_COMPONENT_INDEXES \
-    X(POSITION) \
-    X(ROTATION) \
-    X(SCALE) \
-    X(RECT_2D) \
-    X(COUNT)
-#endif
-#ifndef X
-#define X(component) \
-    ENTITY_COMPONENT_INDEX_##component,
-#endif
-    X_ENTITY_COMPONENT_INDEXES
-#undef X
-} EntityComponentIndex;
-
-typedef enum ENTITY_COMPONENT_FLAG_E : u64 {
-#ifndef X
-#define X(component) \
-    ENTITY_COMPONENT_FLAG_##component = 1ULL << ENTITY_COMPONENT_INDEX_##component,
-#endif
-    X_ENTITY_COMPONENT_INDEXES
-#undef X
-} EntityComponentFlag;
-
-typedef EntityComponentFlag EntityComponentFlags;
-
 typedef enum ENTITY_TICK_RETURN_CODE_E {
-#ifndef X_ENTITY_TICK_RETURN_CODES
 #define X_ENTITY_TICK_RETURN_CODES \
     X(RUNNING) \
     X(EXIT)
-#endif
-#ifndef X
 #define X(code) \
     ENTITY_TICK_RETURN_CODE_##code,
-#endif
     X_ENTITY_TICK_RETURN_CODES
 #undef X
 } EntityTickReturnCode;
 
-typedef EntityTickReturnCode (*EntityTickFnPtr)(EntityID eid);
+typedef EntityTickReturnCode (*EntityTickFnPtr)(EcsHandle *ecs, EntityID eid);
 
-typedef void (*EntitySerializeFnPtr)(EntityID eid, i32 var_idx, u8 *out_serialized_var, i64 *out_serialized_var_len);
+typedef void (*EntitySerializeFnPtr)(EcsHandle *ecs, EntityID eid, i32 var_idx, u8 *out_serialized_var,
+                                     i64 *out_serialized_var_len);
 
-typedef void (*EntityDeserializeFnPtr)(EntityID eid, i32 var_idx, u8 *in_serialized_var, i64 in_serialized_var_len);
+typedef void (*EntityDeserializeFnPtr)(EcsHandle *ecs, EntityID eid, i32 var_idx, u8 *in_serialized_var,
+                                       i64 in_serialized_var_len);
 
 typedef struct ENTITY_FN_PTRS_T {
     EntityTickFnPtr tick_fn_ptr;
@@ -101,8 +119,6 @@ typedef struct ENTITY_FN_PTRS_T {
 
 typedef struct ENTITY_CREATE_INFO_T {
     const char *name;
-
-    EntityComponentFlags components;
 
     struct {
         EntityVarType *data;
@@ -114,53 +130,43 @@ typedef struct ENTITY_CREATE_INFO_T {
     i64 entity_type_idx;
 } EntityCreateInfo;
 
-typedef struct RECT_2D_COMPONENT_T {
-    f32x2 size;
-    RGBA8888 color;
-} Rect2DComponent;
+typedef struct ECS_CREATE_INFO_T {
+    const struct {
+        EntityComponentType *data;
+        i64 len;
+    } component_types;
 
-void ecs_init();
+    f64 tick_len_s;
+} EcsCreateInfo;
 
-void ecs_deinit();
+EcsHandle *ecs_create(const EcsCreateInfo *info);
 
-void ecs_set_entity_fn_ptrs(EntityFnPtrs *fn_ptrs, i32 fn_ptrs_len);
+void ecs_destroy(EcsHandle *ecs);
 
-void ecs_tick();
+void ecs_set_entity_fn_ptrs(EcsHandle *ecs, EntityFnPtrs *fn_ptrs, i64 fn_ptrs_len);
 
-EntityID ecs_create_entity(const EntityCreateInfo *info);
+void ecs_tick(EcsHandle *ecs);
 
-bool ecs_entity_exists(EntityID eid);
+EntityID ecs_entity_create(EcsHandle *ecs, const EntityCreateInfo *info);
 
-i64 *ecs_get_i64_var(EntityID eid, i32 var_idx);
+bool ecs_entity_exists(EcsHandle *ecs, EntityID eid);
 
-u64 *ecs_get_u64_var(EntityID eid, i32 var_idx);
+i64 *ecs_entity_var_get_i64(EcsHandle *ecs, EntityID eid, i64 var_idx);
 
-f64 *ecs_get_f64_var(EntityID eid, i32 var_idx);
+u64 *ecs_entity_var_get_u64(EcsHandle *ecs, EntityID eid, i64 var_idx);
 
-void **ecs_get_ptr_var(EntityID eid, i32 var_idx);
+f64 *ecs_entity_var_get_f64(EcsHandle *ecs, EntityID eid, i64 var_idx);
 
-EntityID *ecs_get_eid_var(EntityID eid, i32 var_idx);
+void **ecs_entity_var_get_ptr(EcsHandle *ecs, EntityID eid, i64 var_idx);
 
-EntityComponentFlags ecs_get_components(EntityID eid);
+EntityID *ecs_entity_var_get_eid(EcsHandle *ecs, EntityID eid, i64 var_idx);
 
-void ecs_set_components(EntityID eid, EntityComponentFlags component_flags);
+void ecs_entity_component_add(EcsHandle *ecs, EntityID eid, i64 component_idx);
 
-u64 ecs_get_priority(EntityID eid);
+void ecs_entity_component_del(EcsHandle *ecs, EntityID eid, i64 component_idx);
 
-f32x3 *ecs_get_position(EntityID eid);
+bool ecs_entity_component_has(EcsHandle *ecs, EntityID eid, i64 component_idx);
 
-f32x4 *ecs_get_rotation(EntityID eid);
-
-f32x3 *ecs_get_scale(EntityID eid);
-
-Rect2DComponent *ecs_get_rect_2d(EntityID eid);
-
-void ecs_get_positions(f32x3 **positions, EntityID **eids, i32 *len);
-
-void ecs_get_rotations(f32x4 **rotations, EntityID **eids, i32 *len);
-
-void ecs_get_scales(f32x3 **scales, EntityID **eids, i32 *len);
-
-void ecs_get_rect_2ds(Rect2DComponent **rect_2ds, EntityID **eids, i32 *len);
+i32 *ecs_entity_component_get_i32(EcsHandle *ecs, EntityID eid, i64 component_idx);
 
 #endif //ALTCORE_ECS_H
