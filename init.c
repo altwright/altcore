@@ -12,6 +12,7 @@
 #include "memory.h"
 #include "defer.h"
 #include "clock.h"
+#include "db.h"
 
 void alt_init(const AltInitInfo* info) {
     dlmalloc_set_footprint_limit(info->max_address_space_size);
@@ -20,11 +21,13 @@ void alt_init(const AltInitInfo* info) {
     assert(success);
 
     clock_init();
+    db_init();
     defer_init();
 }
 
 void alt_deinit() {
     defer_uninit();
+    db_deinit();
     clock_deinit();
 
     SDL_malloc_func malloc_fn;

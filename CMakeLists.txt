@@ -21,6 +21,7 @@ set(HEADER_FILEPATHS
         maths.h
         ecs.h
         clock.h
+        db.h
         draw/pixels.h
         draw/window.h
         draw/framebuffer.h
