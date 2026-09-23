@@ -47,6 +47,8 @@ void db_init();
 
 void db_deinit();
 
+bool db_exists(const DbReadInfo* info);
+
 u8s db_read(Arena *arena, const DbReadInfo *info);
 
 void db_write(const DbWriteInfo *info);

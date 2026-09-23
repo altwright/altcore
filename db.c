@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "memory.h"
 #include "strings.h"
@@ -83,12 +84,18 @@ static string build_folder_path(Arena *arena, const char **nested_folders, i64 n
     return folder_path;
 }
 
+static string build_file_path(Arena *tmp, DbMount mount, const char **nested_folders, i64 nested_folders_len,
+                              const char *filename) {
+    const char *mount_path = get_mount_path(mount);
+    string folder_path = build_folder_path(tmp, nested_folders, nested_folders_len);
+    return string_make(tmp, "%s/%s/%s", mount_path, folder_path.data, filename);
+}
+
 u8s db_read(Arena *arena, const DbReadInfo *info) {
     Arena *tmp = arena_make(KIBIBYTE);
 
-    const char *mount_path = get_mount_path(info->mount);
-    string folder_path = build_folder_path(tmp, info->folder.nested_path, info->folder.nested_path_len);
-    string file_path = string_make(tmp, "%s/%s/%s", mount_path, folder_path.data, info->filename);
+    string file_path = build_file_path(tmp, info->mount, info->folder.nested_path, info->folder.nested_path_len,
+                                       info->filename);
 
     FILE *fp = fopen(file_path.data, "rb");
     if (!fp) {
@@ -120,9 +127,8 @@ u8s db_read(Arena *arena, const DbReadInfo *info) {
 void db_write(const DbWriteInfo *info) {
     Arena *tmp = arena_make(KIBIBYTE);
 
-    const char *mount_path = get_mount_path(DB_MOUNT_RW);
-    string folder_path = build_folder_path(tmp, info->folder.nested_path, info->folder.nested_path_len);
-    string file_path = string_make(tmp, "%s/%s/%s", mount_path, folder_path.data, info->filename);
+    string file_path = build_file_path(tmp, DB_MOUNT_RW, info->folder.nested_path, info->folder.nested_path_len,
+                                       info->filename);
 
     FILE *fp = fopen(file_path.data, "wb");
     if (!fp) {
@@ -146,9 +152,9 @@ DbReadStream *db_read_open(const DbReadInfo *info) {
         .arena = arena_make(KIBIBYTE),
     };
 
-    const char *mount_path = get_mount_path(info->mount);
-    string folder_path = build_folder_path(stream->arena, info->folder.nested_path, info->folder.nested_path_len);
-    string file_path = string_make(stream->arena, "%s/%s/%s", mount_path, folder_path.data, info->filename);
+    string file_path = build_file_path(stream->arena, info->mount, info->folder.nested_path,
+                                       info->folder.nested_path_len,
+                                       info->filename);
 
     stream->fp = fopen(file_path.data, "rb");
     if (!stream->fp) {
@@ -175,9 +181,9 @@ DbWriteStream *db_write_open(const DbWriteInfo *info) {
         .arena = arena_make(KIBIBYTE),
     };
 
-    const char *mount_path = get_mount_path(DB_MOUNT_RW);
-    string folder_path = build_folder_path(stream->arena, info->folder.nested_path, info->folder.nested_path_len);
-    string file_path = string_make(stream->arena, "%s/%s/%s", mount_path, folder_path.data, info->filename);
+    string file_path = build_file_path(stream->arena, DB_MOUNT_RW, info->folder.nested_path,
+                                       info->folder.nested_path_len,
+                                       info->filename);
 
     stream->fp = fopen(file_path.data, "wb");
     if (!stream->fp) {
@@ -195,4 +201,17 @@ void db_write_close(DbWriteStream *stream) {
     fclose(stream->fp);
     arena_free(stream->arena);
     alt_free(stream);
+}
+
+bool db_exists(const DbReadInfo *info) {
+    Arena *tmp = arena_make(KIBIBYTE);
+
+    string file_path = build_file_path(tmp, info->mount, info->folder.nested_path, info->folder.nested_path_len,
+                                       info->filename);
+
+    bool exists = access(file_path.data, F_OK) == 0;
+
+    arena_free(tmp);
+
+    return exists;
 }
