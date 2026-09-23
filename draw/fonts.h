@@ -11,8 +11,10 @@
 typedef struct FONT_HANDLE_T FontHandle;
 
 typedef struct FONT_LOAD_INFO_T {
-    u8 *ttf_bytes;
-    u64 ttf_bytes_len;
+    struct {
+        u8 *data;
+        i64 len;
+    } ttf;
 } FontLoadInfo;
 
 FontHandle *font_load(const FontLoadInfo *info);

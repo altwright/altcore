@@ -80,15 +80,17 @@ struct FONT_HANDLE_T {
 FontHandle *font_load(const FontLoadInfo *info) {
     FontHandle *font = alt_malloc(sizeof(*font));
 
-    font->arena = arena_make(MIBIBYTE);
+    *font = (FontHandle){
+        .arena = arena_make(MIBIBYTE)
+    };
 
     font->ttf = (u8s){
         .arena = font->arena,
-        .len = (i64) info->ttf_bytes_len
+        .len = (i64) info->ttf.len
     };
     ARRAY_MAKE(&font->ttf);
 
-    memcpy(font->ttf.data, info->ttf_bytes, info->ttf_bytes_len);
+    memcpy(font->ttf.data, info->ttf.data, info->ttf.len);
 
     int success = stbtt_InitFont(&font->info, font->ttf.data, 0);
     if (!success) {
@@ -108,13 +110,14 @@ FontHandle *font_load(const FontLoadInfo *info) {
         &font->max_bbox.y1
     );
 
-    font->kerning_table.arena = font->arena;
     font->kerning_table.len = stbtt_GetKerningTableLength(&font->info);
-    ARRAY_MAKE(&font->kerning_table);
+    if (font->kerning_table.len > 0) {
+        font->kerning_table.arena = font->arena;
+        ARRAY_MAKE(&font->kerning_table);
+        stbtt_GetKerningTable(&font->info, font->kerning_table.data, (i32) font->kerning_table.len);
+    }
 
-    stbtt_GetKerningTable(&font->info, font->kerning_table.data, (i32) font->kerning_table.len);
-
-    for (i64 ascii_idx = 0; ascii_idx < 128; ascii_idx++) {
+    for (i64 ascii_idx = 0; ascii_idx <= INT8_MAX; ascii_idx++) {
         CodepointInfo *ascii_info = &font->codepoints.ascii[ascii_idx];
         ascii_info->glyph_idx = stbtt_FindGlyphIndex(&font->info, (i32) ascii_idx);
         if (ascii_info->glyph_idx) {
@@ -152,11 +155,6 @@ FontHandle *font_load(const FontLoadInfo *info) {
                     break;
                 }
             }
-
-            assert(
-                ascii_info->kerning_entry_idxs.start >= 0
-                && ascii_info->kerning_entry_idxs.end >= ascii_info->kerning_entry_idxs.start
-            );
         }
     }
 

@@ -15,7 +15,6 @@ typedef struct ENTITY_ID_T {
 } EntityID;
 
 typedef enum ENTITY_VAR_TYPE_E {
-#ifndef X_ENTITY_VAR_TYPES
 #define X_ENTITY_VAR_TYPES \
     X(I64) \
     X(U64) \
@@ -23,11 +22,8 @@ typedef enum ENTITY_VAR_TYPE_E {
     X(PTR) \
     X(EID) \
     X(COUNT)
-#endif
-#ifndef X
 #define X(type) \
     ENTITY_VAR_TYPE_##type,
-#endif
     X_ENTITY_VAR_TYPES
 #undef X
 } EntityVarType;

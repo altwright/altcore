@@ -16,6 +16,7 @@ typedef enum DB_MOUNT_E : u32 {
 #define X(mount) \
     DB_MOUNT_##mount,
     X_DB_MOUNTS
+#undef X
 } DbMount;
 
 typedef struct DB_FOLDER_T {
