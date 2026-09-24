@@ -5,7 +5,7 @@
 #include "strings.h"
 
 #include <assert.h>
-#include <ctype.h>
+#include <uchar.h>
 #include <string.h>
 
 #define STB_SPRINTF_IMPLEMENTATION
@@ -84,4 +84,19 @@ string string_dup(Arena *arena, const string *str) {
     memcpy(new_str.data, str->data, str->len + 1);
 
     return new_str;
+}
+
+const char *utf8_next(const char *current, i64 max_bytes) {
+    i64 remaining_bytes = max_bytes;
+    auto utf8 = (const char8_t *) current;
+
+    do {
+        utf8++;
+        remaining_bytes--;
+        if (remaining_bytes <= 0) {
+            return nullptr;
+        }
+    } while ((*utf8 & 0xC0) == 0x80);
+
+    return (const char *) utf8;
 }

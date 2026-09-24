@@ -33,4 +33,24 @@ bool string_empty(const string *str);
 
 string string_dup(Arena *arena, const string *str);
 
+#ifndef STRING_FOR
+#define STRING_FOR(ptr_var, string_ptr) \
+    for ( \
+        const char *ptr_var = (string_ptr)->data; \
+        ptr_var && (ptr_var < (string_ptr)->data + (string_ptr)->len); \
+        ptr_var = utf8_next(ptr_var, (string_ptr)->len - (ptr_var - (string_ptr)->data)) \
+    )
+#endif
+
+#ifndef STRING_VIEW_FOR
+#define STRING_VIEW_FOR(ptr_var, string_view_ptr) \
+    for ( \
+        const char *ptr_var = (string_view_ptr)->start; \
+        ptr_var && (ptr_var < (string_view_ptr)->start + (string_view_ptr)->len); \
+        ptr_var = utf8_next(ptr_var, (string_view_ptr)->len - (ptr_var - (string_view_ptr)->start)) \
+    )
+#endif
+
+const char *utf8_next(const char *current, i64 max_bytes);
+
 #endif //ALTCORE_STRINGS_H
