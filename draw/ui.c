@@ -422,3 +422,20 @@ u16 ui_px_height(UiContext *ui, f32 pct) {
 
     return MAX(1, px_height);
 }
+
+u16 ui_px_width(UiContext *ui, f32 pct) {
+    if (!ui->current_canvas) {
+        return 0;
+    }
+
+    FramebufferInfo canvas_info = framebuffer_get_info(ui->current_canvas);
+    if (canvas_info.type != FRAMEBUFFER_TYPE_PIXEL) {
+        return 0;
+    }
+
+    i32x2 canvas_size = canvas_info.data.pixel_buf.size;
+
+    i32 px_width = (i32) ((f32) canvas_size.width * pct);
+
+    return MAX(1, px_width);
+}

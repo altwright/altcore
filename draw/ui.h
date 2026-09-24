@@ -53,6 +53,8 @@ void ui_set_locale(UiContext *ui, u64 loc_key);
 
 u64 ui_get_locale(UiContext *ui);
 
+u16 ui_px_width(UiContext *ui, f32 pct);
+
 u16 ui_px_height(UiContext *ui, f32 pct);
 
 #endif //ALTCORE_UI_H
