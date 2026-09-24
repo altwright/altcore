@@ -5,6 +5,8 @@
 #ifndef ALTCORE_UI_H
 #define ALTCORE_UI_H
 
+#include <uchar.h>
+
 #include "clay.h"
 #include "renderer.h"
 
@@ -43,7 +45,7 @@ Clay_Padding ui_padding(UiContext *ui, f32x4 padding_pct);
 
 Clay_Padding ui_padding_all(UiContext *ui, f32 padding_pct);
 
-void ui_set_string(UiContext *ui, u64 str_key, u64 loc_key, const char *str);
+void ui_set_string(UiContext *ui, u64 str_key, u64 loc_key, const char8_t *utf8_str);
 
 Clay_String ui_get_string(UiContext *ui, u64 str_key);
 

@@ -351,7 +351,9 @@ Clay_Padding ui_padding_all(UiContext *ui, f32 padding_pct) {
     );
 }
 
-void ui_set_string(UiContext *ui, u64 str_key, u64 loc_key, const char *str) {
+void ui_set_string(UiContext *ui, u64 str_key, u64 loc_key, const char8_t *utf8_str) {
+    const char *c_str = (const char *) utf8_str;
+
     auto str_loc_pair = HASHMAP_GET(&ui->string_key_map, &str_key);
     if (!str_loc_pair) {
         LocaleKeyMap new_loc_map = {
@@ -368,8 +370,8 @@ void ui_set_string(UiContext *ui, u64 str_key, u64 loc_key, const char *str) {
     LocaleKeyMap *loc_map = &str_loc_pair->value;
 
     string_view view = {
-        .start = str,
-        .len = (i64) strlen(str),
+        .start = c_str,
+        .len = (i64) strlen(c_str),
     };
     HASHMAP_PUT(loc_map, &loc_key, &view);
 }
