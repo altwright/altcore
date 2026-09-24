@@ -100,8 +100,7 @@ typedef struct RENDER_CMD_BLIT_T {
 
 typedef struct RENDER_CMD_DRAW_TEXT_T {
     Framebuffer *framebuffer;
-    char *text;
-    i64 text_len;
+    string_view text;
     f32x4 dst;
     FontHandle *font;
     RGBA8888 color;

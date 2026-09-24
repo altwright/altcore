@@ -12,8 +12,13 @@ typedef struct UI_CONTEXT_T UiContext;
 
 typedef struct UI_CREATE_INFO_T {
     i64 memory_cap;
-    Clay_ErrorHandler err_handler;
     const Framebuffer *initial_canvas;
+
+    // The font handle lifetimes must be managed externally
+    struct {
+        FontHandle **data;
+        i64 len;
+    } fonts;
 } UiCreateInfo;
 
 typedef struct UI_BEGIN_LAYOUT_INFO_T {
@@ -23,8 +28,6 @@ typedef struct UI_BEGIN_LAYOUT_INFO_T {
     f32x2 scroll_delta;
     f32 frame_elapsed_time_s;
 } UiBeginLayoutInfo;
-
-void ui_set_fonts(FontHandle **fonts, i64 fonts_len);
 
 UiContext *ui_create(const UiCreateInfo *create_info);
 
@@ -39,5 +42,15 @@ Clay_Color ui_color(RGBA8888 color);
 Clay_Padding ui_padding(UiContext *ui, f32x4 padding_pct);
 
 Clay_Padding ui_padding_all(UiContext *ui, f32 padding_pct);
+
+void ui_set_string(UiContext *ui, u64 str_key, u64 loc_key, const char *str);
+
+Clay_String ui_get_string(UiContext *ui, u64 str_key);
+
+void ui_set_locale(UiContext *ui, u64 loc_key);
+
+u64 ui_get_locale(UiContext *ui);
+
+u16 ui_px_height(UiContext *ui, f32 pct);
 
 #endif //ALTCORE_UI_H

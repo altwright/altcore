@@ -208,8 +208,7 @@ EcsHandle *ecs_create(const EcsCreateInfo *info) {
         .del_freq = HASHMAP_DEL_FREQ_HIGH
     };
 
-    Entity default_entity = {};
-    HASHMAP_MAKE(&ecs->entity_map, &default_entity);
+    HASHMAP_MAKE(&ecs->entity_map);
 
     ecs->entity_ptrs = (EntityPtrs){
         .arena = ecs->arena,

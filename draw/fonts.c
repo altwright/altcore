@@ -10,6 +10,7 @@
 #include <ctype.h>
 
 #define STB_TRUETYPE_IMPLEMENTATION
+#include "../debug.h"
 #include "../libs/stb_truetype.h"
 
 #include "../memory.h"
@@ -19,6 +20,10 @@ typedef struct GLYPH_BITMAP_T {
     i32 width, height;
     u8s bytes;
 } GlyphBitmap;
+
+typedef struct HEIGHT_GLYPH_MAP_T {
+    HASHMAP_FIELDS(i32, GlyphBitmap)
+} HeightBitmapMap;
 
 typedef struct CODEPOINT_INFO_T {
     i32 glyph_idx;
@@ -36,9 +41,7 @@ typedef struct CODEPOINT_INFO_T {
         i32 start, end;
     } kerning_entry_idxs;
 
-    struct {
-        HASHMAP_FIELDS(i32, GlyphBitmap)
-    } bitmaps; // per px height
+    HeightBitmapMap bitmaps; // per px height
 } CodepointInfo;
 
 struct FONT_HANDLE_T {
@@ -99,8 +102,7 @@ FontHandle *font_load(const FontLoadInfo *info) {
 
     font->scale_factors.type = HASHMAP_TYPE_NON_STR_KEY;
     font->scale_factors.del_freq = HASHMAP_DEL_FREQ_LOW;
-    f32 default_sf = 0;
-    HASHMAP_MAKE(&font->scale_factors, &default_sf);
+    HASHMAP_MAKE(&font->scale_factors);
 
     stbtt_GetFontBoundingBox(
         &font->info,
@@ -155,6 +157,12 @@ FontHandle *font_load(const FontLoadInfo *info) {
                     break;
                 }
             }
+
+            ascii_info->bitmaps = (HeightBitmapMap){
+                .type = HASHMAP_TYPE_NON_STR_KEY,
+                .del_freq = HASHMAP_DEL_FREQ_LOW,
+            };
+            HASHMAP_MAKE(&ascii_info->bitmaps);
         }
     }
 
@@ -172,7 +180,15 @@ f32x2 font_measure_text(
     i32 height_px,
     i32 letter_spacing_px
 ) {
-    f32 scale_factor = HASHMAP_GET(&font->scale_factors, &height_px)->value;
+    auto px_sf_pair = HASHMAP_GET(&font->scale_factors, &height_px);
+    f32 scale_factor = 0;
+    if (!px_sf_pair) {
+        scale_factor = stbtt_ScaleForPixelHeight(&font->info, (f32) height_px);
+        HASHMAP_PUT(&font->scale_factors, &height_px, &scale_factor);
+    } else {
+        scale_factor = px_sf_pair->value;
+    }
+
     f32 y1 = scale_factor * (f32) font->max_bbox.y1;
     f32 y0 = scale_factor * (f32) font->max_bbox.y0;
     f32 height = y1 - y0;
@@ -264,7 +280,7 @@ void font_impl_create_codepoint_bitmap(FontHandle *font, const char *codepoint, 
 
     GlyphBitmap bitmap = {
         .bytes = {
-            .arena = arena_alloc(font->arena, bitmap_width * bitmap_height),
+            .arena = font->arena,
             .len = bitmap_width * bitmap_height,
         },
         .width = bitmap_width,
@@ -273,7 +289,8 @@ void font_impl_create_codepoint_bitmap(FontHandle *font, const char *codepoint, 
     ARRAY_MAKE(&bitmap.bytes);
 
     if (isascii(*codepoint)) {
-        HASHMAP_PUT(&font->codepoints.ascii[*codepoint].bitmaps, &px_height, &bitmap);
+        HeightBitmapMap *height_bitmap_map = &font->codepoints.ascii[*codepoint].bitmaps;
+        HASHMAP_PUT(height_bitmap_map, &px_height, &bitmap);
     }
 }
 
@@ -288,7 +305,12 @@ void font_impl_get_codepoint_bitmap(
     GlyphBitmap *glyph_bitmap = nullptr;
 
     if (isascii(*codepoint)) {
-        glyph_bitmap = &HASHMAP_GET(&font->codepoints.ascii[*codepoint].bitmaps, &px_height)->value;
+        auto height_bitmap_pair = HASHMAP_GET(&font->codepoints.ascii[*codepoint].bitmaps, &px_height);
+        if (!height_bitmap_pair) {
+            crash_msg("Glyph bitmap for char %c and height %d px is missing\n", *codepoint, px_height);
+        }
+
+        glyph_bitmap = &height_bitmap_pair->value;
     } else {
         return;
     }

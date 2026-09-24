@@ -141,15 +141,10 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                         RenderCmdDrawText* data = &cmd->data.draw_text;
                         i32x4 px_buf_dst = ftoi32x4(data->dst);
 
-                        string_view str_view = {
-                            .start = data->text,
-                            .len = data->text_len
-                        };
-
                         soft_cmd_draw_text(
                             data->framebuffer,
                             px_buf_dst,
-                            str_view,
+                            data->text,
                             data->font,
                             data->font_height_px,
                             data->letter_spacing_px,

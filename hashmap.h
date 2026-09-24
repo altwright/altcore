@@ -52,7 +52,7 @@ typedef enum HASHMAP_DEL_FREQ_E {
 #endif
 
 #ifndef HASHMAP_MAKE
-#define HASHMAP_MAKE(hashmap_ptr, default_val_ptr) \
+#define HASHMAP_MAKE(hashmap_ptr) \
     do { \
         switch ((hashmap_ptr)->type) { \
             case HASHMAP_TYPE_STR_KEY: \
@@ -72,12 +72,6 @@ typedef enum HASHMAP_DEL_FREQ_E {
                     default: \
                         break; \
                 } \
-                shdefault((hashmap_ptr)->hash, *(default_val_ptr)); \
-                break; \
-            } \
-            case HASHMAP_TYPE_NON_STR_KEY: \
-            { \
-                hmdefault((hashmap_ptr)->hash, *(default_val_ptr)); \
                 break; \
             } \
             default: \
