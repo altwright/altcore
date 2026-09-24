@@ -29,9 +29,12 @@ void soft_cmd_draw_text(
     i32 max_x0, max_x1, max_y0, max_y1;
     font_impl_get_max_bbox(font, &max_x0, &max_y0, &max_x1, &max_y1);
 
-    max_y0 = (i32) (scale_factor * (float) max_y0);
+    max_x0 = (i32) (scale_factor * (f32) max_x0);
+    max_y0 = (i32) (scale_factor * (f32) max_y0);
+    max_x1 = (i32) (scale_factor * (f32) max_x1);
+    max_y1 = (i32) (scale_factor * (f32) max_y1);
 
-    i32x2 cursor = {.x = 0, .y = -max_y0};
+    i32x2 cursor = {.x = 0, .y = px_buf_dst.height + max_y0};
 
     for (i32 c_idx = 0; c_idx < text.len; c_idx++) {
         const char *c = &text.start[c_idx];
@@ -55,24 +58,25 @@ void soft_cmd_draw_text(
 
         i32 bitmap_width = x1 - x0;
         i32 bitmap_height = y1 - y0;
+        u8 *bitmap_bytes = nullptr;
 
         if (!font_impl_codepoint_bitmap_exists(font, c, font_size_px)) {
             font_impl_create_codepoint_bitmap(font, c, font_size_px, bitmap_width, bitmap_height);
+            font_impl_get_codepoint_bitmap(font, c, font_size_px, &bitmap_bytes, &bitmap_width, &bitmap_height);
+
+            stbtt_MakeGlyphBitmap(
+                font_info,
+                bitmap_bytes,
+                bitmap_width,
+                bitmap_height,
+                bitmap_width,
+                scale_factor,
+                scale_factor,
+                glyph_idx
+            );
+        } else {
+            font_impl_get_codepoint_bitmap(font, c, font_size_px, &bitmap_bytes, &bitmap_width, &bitmap_height);
         }
-
-        u8 *bitmap_bytes = nullptr;
-        font_impl_get_codepoint_bitmap(font, c, font_size_px, &bitmap_bytes, &bitmap_width, &bitmap_height);
-
-        stbtt_MakeGlyphBitmap(
-            font_info,
-            bitmap_bytes,
-            bitmap_width,
-            bitmap_height,
-            bitmap_width,
-            scale_factor,
-            scale_factor,
-            glyph_idx
-        );
 
         i32 lsb = (i32) (scale_factor * (float) font_impl_get_left_side_bearing(font, c));
         cursor.x += lsb;

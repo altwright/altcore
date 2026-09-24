@@ -289,6 +289,7 @@ void font_impl_create_codepoint_bitmap(FontHandle *font, const char *codepoint, 
     ARRAY_MAKE(&bitmap.bytes);
 
     if (isascii(*codepoint)) {
+
         HeightBitmapMap *height_bitmap_map = &font->codepoints.ascii[*codepoint].bitmaps;
         HASHMAP_PUT(height_bitmap_map, &px_height, &bitmap);
     }

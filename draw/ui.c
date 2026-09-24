@@ -406,9 +406,6 @@ u64 ui_get_locale(UiContext *ui) {
     return ui->current_locale;
 }
 
-void ui_set_fonts(UiContext *ui, FontHandle **fonts, i64 fonts_len) {
-}
-
 u16 ui_px_height(UiContext *ui, f32 pct) {
     if (!ui->current_canvas) {
         return 0;
