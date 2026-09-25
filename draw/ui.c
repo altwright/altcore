@@ -7,11 +7,15 @@
 #include <assert.h>
 
 #include "fonts.impl.h"
+#include "framebuffer.impl.h"
 #include "../../memory.h"
 #include "../../hashmap.h"
 #include "../../strings.h"
 #include "../../maths.h"
 #include "../../debug.h"
+
+#define CLAY_IMPLEMENTATION
+#include "clay.h"
 
 typedef struct LOCALE_KEY_MAP_T {
     HASHMAP_FIELDS(u64, string_view)
@@ -306,7 +310,37 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
 
                 break;
             }
+            case CLAY_RENDER_COMMAND_TYPE_IMAGE: {
+                const Clay_ImageRenderData *image_cmd = &clay_cmd->renderData.image;
+
+                RenderCmd blit_cmd = {
+                    .type = RENDER_CMD_TYPE_BLIT
+                };
+                RenderCmdBlit *blit_data = &blit_cmd.data.blit;
+
+                blit_data->framebuffer = ui->current_canvas;
+                blit_data->dst = clay_to_render_rect(clay_cmd->boundingBox);
+                blit_data->dst_corner_radii = clay_to_render_corner_radii(image_cmd->cornerRadius);
+
+                Framebuffer *image_fb = image_cmd->imageData;
+                FramebufferInfo image_fb_info = framebuffer_get_info(image_fb);
+
+                if (image_fb_info.type != FRAMEBUFFER_TYPE_PIXEL) {
+                    crash_msg("Expected pixel framebuffer, not type %d\n", image_fb_info.type);
+                }
+
+                u8 *image_fb_bytes = framebuffer_impl_get_bytes(image_fb);
+                blit_data->src_pixels = image_fb_bytes;
+                blit_data->src_px_format = image_fb_info.data.pixel_buf.format;
+                blit_data->src_size = image_fb_info.data.pixel_buf.size;
+                blit_data->src_pitch_bytes = image_fb_info.data.pixel_buf.pitch_bytes;
+
+                ARRAY_PUSH(&render_cmds, &blit_cmd);
+
+                break;
+            }
             default:
+                crash_msg("Unhandled Clay render command %d\n", clay_cmd->commandType);
                 break;
         }
     }

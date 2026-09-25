@@ -29,6 +29,7 @@ set(HEADER_FILEPATHS
         draw/ui.h
         draw/fonts.h
         draw/lights.h
+        draw/image.h
 )
 
 set(SOURCE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -60,8 +61,8 @@ add_library(${PROJECT_NAME}
         draw/renderer.c
         draw/pixels.c
         draw/ui.c
-        draw/ui_impl.c
         draw/fonts.c
+        draw/image.c
         draw/cmds/clear.c
         draw/cmds/draw_rect.c
         draw/cmds/draw_text.c

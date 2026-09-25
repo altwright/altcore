@@ -139,17 +139,21 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                     }
                     case RENDER_CMD_TYPE_DRAW_TEXT: {
                         RenderCmdDrawText* data = &cmd->data.draw_text;
-                        i32x4 px_buf_dst = ftoi32x4(data->dst);
 
                         soft_cmd_draw_text(
                             data->framebuffer,
-                            px_buf_dst,
+                            ftoi32x4(data->dst),
                             data->text,
                             data->font,
                             data->font_height_px,
                             data->letter_spacing_px,
                             data->color
                         );
+
+                        break;
+                    }
+                    case RENDER_CMD_TYPE_BLIT: {
+                        RenderCmdBlit* data = &cmd->data.blit;
 
                         break;
                     }
