@@ -55,4 +55,8 @@ f32x2 f32x2_sub(f32x2 left, f32x2 right);
 
 f32 f32x2_dist(f32x2 start, f32x2 end);
 
+f32x4 f32x4_scale(f32x4 src, f32 scale);
+
+f32x4 f32x4_add(f32x4 left, f32x4 right);
+
 #endif //ALTCORE_MATHS_H

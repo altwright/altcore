@@ -102,7 +102,9 @@ void soft_cmd_draw_text(
                                     );
 
                 rgba8 final_color = color;
-                final_color.a = bitmap_byte;
+                f32 bitmap_alpha = (f32)bitmap_byte / 255.f;
+                f32 color_alpha = (f32)color.a / 255.f;
+                final_color.a = (u8)(bitmap_alpha * color_alpha * 255.f);
 
                 Pixel dst = {
                     .format = px_buf_info.data.pixel_buf.format,

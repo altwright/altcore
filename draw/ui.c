@@ -224,6 +224,7 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 break;
             }
             case CLAY_RENDER_COMMAND_TYPE_BORDER: {
+                // TODO: Create
                 RenderCmd border_cmd = {RENDER_CMD_TYPE_DRAW_RECT};
                 border_cmd.data.draw_rect.framebuffer = ui->current_canvas;
 

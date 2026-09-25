@@ -24,7 +24,13 @@ typedef enum PIXEL_FORMAT_E {
 } PixelFormat;
 
 typedef struct RGBA8_T {
-    u8 a, b, g, r;
+    union {
+        struct {
+            u8 a, b, g, r;
+        };
+
+        u8 data[4];
+    };
 } rgba8;
 
 typedef struct ABGR8_T {
@@ -32,16 +38,22 @@ typedef struct ABGR8_T {
 } abgr8;
 
 typedef struct ARGB8_T {
-    u8 b, g, r, a;
+    union {
+        struct {
+            u8 b, g, r, a;
+        };
+
+        u8 data[4];
+    };
 } argb8;
 
 typedef struct PIXEL_T {
     PixelFormat format;
-    u8* px_start;
+    u8 *px_start;
 } Pixel;
 
 i64 pixel_size(PixelFormat format);
 
-void pixel_set(Pixel* dst_px, const Pixel* src_px);
+void pixel_set(Pixel *dst_px, const Pixel *src_px);
 
 #endif //ALTCORE_PIXELS_H

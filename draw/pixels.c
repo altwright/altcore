@@ -5,6 +5,7 @@
 #include "pixels.h"
 #include "pixels.impl.h"
 #include "../debug.h"
+#include "../maths.h"
 
 i64 pixel_size(PixelFormat format) {
     i32 size = 0;
@@ -71,6 +72,31 @@ PixelFormat pixel_impl_from_sdl_format(SDL_PixelFormat sdl_format) {
     return pixel_format;
 }
 
+static void alpha_blend_8888(u8 dst[4], const u8 src[4], i64 alpha_idx) {
+    if (src[alpha_idx] == 0) {
+        return;
+    }
+
+    if (src[alpha_idx] == 0xff) {
+        memcpy(dst, src, 4);
+    } else {
+        f32x4 f_src = {}, f_dst = {};
+
+        for (i64 cmp_idx = 0; cmp_idx < 4; cmp_idx++) {
+            f_src.data[cmp_idx] = (f32) src[cmp_idx] / 255.f;
+            f_dst.data[cmp_idx] = (f32) dst[cmp_idx] / 255.f;
+        }
+
+        f32x4 alpha_src = f32x4_scale(f_src, f_src.data[alpha_idx]);
+        f32x4 inv_alpha_dst = f32x4_scale(f_dst, 1.f - f_src.data[alpha_idx]);
+        f_dst = f32x4_add(alpha_src, inv_alpha_dst);
+
+        for (i64 cmp_idx = 0; cmp_idx < 4; cmp_idx++) {
+            dst[cmp_idx] = (u8) (f_dst.data[cmp_idx] * 255.f);
+        }
+    }
+}
+
 void pixel_set(Pixel *dst_px, const Pixel *src_px) {
     if (dst_px->format == src_px->format) {
         switch (dst_px->format) {
@@ -78,23 +104,14 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                 auto dst = (rgba8 *) dst_px->px_start;
                 auto src = (const rgba8 *) src_px->px_start;
 
-                if (src->a == 0) {
-                    break;
-                }
-
-                *dst = *src;
-
+                alpha_blend_8888(dst->data, src->data, offsetof(rgba8, a));
                 break;
             }
             case PIXEL_FORMAT_ARGB8: {
                 auto dst = (argb8 *) dst_px->px_start;
                 auto src = (const argb8 *) src_px->px_start;
 
-                if (src->a == 0) {
-                    break;
-                }
-
-                *dst = *src;
+                alpha_blend_8888(dst->data, src->data, offsetof(argb8, a));
                 break;
             }
             default:
@@ -108,14 +125,15 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                 switch (src_px->format) {
                     case PIXEL_FORMAT_ARGB8: {
                         auto src = (const argb8 *) src_px->px_start;
-                        if (src->a == 0) {
-                            break;
-                        }
 
-                        dst->a = src->a;
-                        dst->r = src->r;
-                        dst->g = src->g;
-                        dst->b = src->b;
+                        rgba8 new_src = {
+                            .r = src->r,
+                            .g = src->g,
+                            .b = src->b,
+                            .a = src->a
+                        };
+
+                        alpha_blend_8888(dst->data, new_src.data, offsetof(rgba8, a));
 
                         break;
                     }
@@ -125,10 +143,14 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                             break;
                         }
 
-                        dst->a = src->a;
-                        dst->r = src->r;
-                        dst->g = src->g;
-                        dst->b = src->b;
+                        rgba8 new_src = {
+                            .r = src->r,
+                            .g = src->g,
+                            .b = src->b,
+                            .a = src->a
+                        };
+
+                        alpha_blend_8888(dst->data, new_src.data, offsetof(rgba8, a));
 
                         break;
                     }
