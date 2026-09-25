@@ -15,6 +15,7 @@
 #include "cmds/present.h"
 #include "cmds/draw_rect.h"
 #include "cmds/draw_text.h"
+#include "cmds/blit.h"
 
 struct RENDERER_T {
     RendererType type;
@@ -138,7 +139,7 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                         break;
                     }
                     case RENDER_CMD_TYPE_DRAW_TEXT: {
-                        RenderCmdDrawText* data = &cmd->data.draw_text;
+                        RenderCmdDrawText *data = &cmd->data.draw_text;
 
                         soft_cmd_draw_text(
                             data->framebuffer,
@@ -153,8 +154,7 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                         break;
                     }
                     case RENDER_CMD_TYPE_BLIT: {
-                        RenderCmdBlit* data = &cmd->data.blit;
-
+                        soft_cmd_blit(&cmd->data.blit);
                         break;
                     }
                     default:
