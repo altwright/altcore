@@ -33,8 +33,8 @@ void soft_cmd_blit(RenderCmdBlit *blit_data) {
         for (i32 dst_x_idx = dst_start_x; dst_x_idx < dst_end_x; dst_x_idx++) {
             u8 *dst_px_start = dst_fb_bytes + dst_y_idx * dst_fb_stride + dst_x_idx * dst_fb_px_size;
 
-            f32 dst_y_pct = (f32) dst_y_idx / (f32) dst_end_y;
-            f32 dst_x_pct = (f32) dst_x_idx / (f32) dst_end_x;
+            f32 dst_y_pct = (f32) (dst_y_idx - dst_start_y) / (f32) (dst_end_y - dst_start_y);
+            f32 dst_x_pct = (f32) (dst_x_idx - dst_start_x) / (f32) (dst_end_x - dst_start_x);
 
             i32 src_y_idx = (i32) (dst_y_pct * (f32) blit_data->src_size.height);
             i32 src_x_idx = (i32) (dst_x_pct * (f32) blit_data->src_size.width);
