@@ -24,5 +24,5 @@ f32 f32x2_dist(f32x2 start, f32x2 end) {
 
 f32 f32_lerp(f32 start, f32 end, f32 lerp) {
     lerp = SATURATE(lerp);
-    return lerp * start + (1.0f - lerp) * end;
+    return lerp * end + (1.0f - lerp) * start;
 }

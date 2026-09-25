@@ -121,12 +121,86 @@ void soft_cmd_draw_rect(
                         }
                         if (vec.x != 0 || vec.y != 0) {
                             f32 x_axis_rad = atan2f(vec.y, vec.x);
-                            if (x_axis_rad >= M_PI_2) {
-                                f32 lerp = (x_axis_rad - (f32) M_PI_2) / (f32) M_PI_2;
-                                f32 lerp_border_width = f32_lerp(border_widths.left_px, border_widths.top_px, lerp);
-                                if (corner_radii.top_left_px - dist <= lerp_border_width) {
-                                    pixels_set(pixel_start, px_format, border_px);
-                                }
+                            if (x_axis_rad < 0) {
+                                x_axis_rad *= -1;
+                            }
+                            f32 lerp = (x_axis_rad - (f32) M_PI_2) / (f32) M_PI_2;
+                            f32 lerp_border_width = f32_lerp(border_widths.top_px, border_widths.left_px, lerp);
+                            if (corner_radii.top_left_px - dist <= lerp_border_width) {
+                                pixels_set(pixel_start, px_format, border_px);
+                            }
+                        }
+                    }
+                } else if (y_idx <= top_right_axis.y && x_idx >= top_right_axis.x) {
+                    f32x2 top_right_axis_coord = itof32x2(top_right_axis);
+
+                    f32 dist = f32x2_dist(
+                        top_right_axis_coord,
+                        px_coord
+                    );
+
+                    if (dist <= corner_radii.top_right_px) {
+                        f32x2 vec = f32x2_sub(px_coord, top_right_axis_coord);
+                        if (vec.y < 0) {
+                            vec.y *= -1;
+                        }
+
+                        if (vec.x != 0 || vec.y != 0) {
+                            f32 x_axis_rad = atan2f(vec.y, vec.x);
+                            if (x_axis_rad < 0) {
+                                x_axis_rad *= -1;
+                            }
+                            f32 lerp = x_axis_rad / (f32) M_PI_2;
+                            f32 lerp_border_width = f32_lerp(border_widths.right_px, border_widths.top_px, lerp);
+                            if (corner_radii.top_right_px - dist <= lerp_border_width) {
+                                pixels_set(pixel_start, px_format, border_px);
+                            }
+                        }
+                    }
+                } else if (y_idx >= bottom_left_axis.y && x_idx <= bottom_left_axis.x) {
+                    f32x2 bottom_left_axis_coord = itof32x2(bottom_left_axis);
+
+                    f32 dist = f32x2_dist(bottom_left_axis_coord, px_coord);
+
+                    if (dist <= corner_radii.bottom_left_px) {
+                        f32x2 vec = f32x2_sub(px_coord, bottom_left_axis_coord);
+                        if (vec.y > 0) {
+                            vec.y *= -1;
+                        }
+                        if (vec.x != 0 || vec.y != 0) {
+                            f32 x_axis_rad = atan2f(vec.y, vec.x);
+                            if (x_axis_rad > 0) {
+                                x_axis_rad *= -1;
+                            }
+                            f32 lerp = (x_axis_rad + (f32) M_PI) / (f32) M_PI_2;
+                            f32 lerp_border_width = f32_lerp(border_widths.left_px, border_widths.bottom_px, lerp);
+                            if (corner_radii.bottom_left_px - dist <= lerp_border_width) {
+                                pixels_set(pixel_start, px_format, border_px);
+                            }
+                        }
+                    }
+                } else if (y_idx >= bottom_right_axis.y && x_idx >= bottom_right_axis.x) {
+                    f32x2 bottom_right_axis_coord = itof32x2(bottom_right_axis);
+
+                    f32 dist = f32x2_dist(bottom_right_axis_coord, px_coord);
+
+                    if (dist <= corner_radii.bottom_right_px) {
+                        f32x2 vec = f32x2_sub(px_coord, bottom_right_axis_coord);
+
+                        if (vec.y > 0) {
+                            vec.y *= -1;
+                        }
+
+                        if (vec.x != 0 || vec.y != 0) {
+                            f32 x_axis_rad = atan2f(vec.y, vec.x);
+                            if (x_axis_rad > 0) {
+                                x_axis_rad *= -1;
+                            }
+
+                            f32 lerp = x_axis_rad / (f32) -M_PI_2;
+                            f32 lerp_border_width = f32_lerp(border_widths.right_px, border_widths.bottom_px, lerp);
+                            if (corner_radii.bottom_left_px - dist <= lerp_border_width) {
+                                pixels_set(pixel_start, px_format, border_px);
                             }
                         }
                     }
