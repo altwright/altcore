@@ -245,7 +245,7 @@ bool window_resize(WindowHandle *handle, i32x2 new_size) {
 
 WindowHandleInfo window_get_info(WindowHandle* handle) {
     WindowHandleInfo info = {
-        .pixel_format = pixels_impl_from_sdl_format(handle->window_surface->format),
+        .pixel_format = pixel_impl_from_sdl_format(handle->window_surface->format),
         .size = handle->window_size,
     };
 
@@ -289,7 +289,7 @@ void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf) {
     SDL_Surface* surface = SDL_CreateSurfaceFrom(
         info.data.pixel_buf.size.x,
         info.data.pixel_buf.size.y,
-        pixels_impl_to_sdl_format(info.data.pixel_buf.format),
+        pixel_impl_to_sdl_format(info.data.pixel_buf.format),
         bytes,
         (i32)info.data.pixel_buf.pitch_bytes
     );

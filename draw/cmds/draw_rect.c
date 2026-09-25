@@ -12,9 +12,9 @@
 void soft_cmd_draw_rect(
     Framebuffer *px_buf,
     i32x4 px_buf_dst,
-    RGBA8888 bg_color,
+    rgba8 bg_color,
     RectCornerRadii corner_radii,
-    RGBA8888 border_color,
+    rgba8 border_color,
     RectBorderWidths border_widths
 ) {
     FramebufferInfo px_buf_info = framebuffer_get_info(px_buf);
@@ -25,9 +25,17 @@ void soft_cmd_draw_rect(
     i32x2 px_buf_size = px_buf_info.data.pixel_buf.size;
     i64 px_buf_pitch_bytes = px_buf_info.data.pixel_buf.pitch_bytes;
 
-    PixelColor bg_px = pixels_convert_rgba(px_format, bg_color);
-    PixelColor border_px = pixels_convert_rgba(px_format, border_color);
-    i32 px_size = pixels_get_size(px_format);
+    Pixel bg_px = {
+        .format = PIXEL_FORMAT_RGBA8,
+        .px_start = (u8*)&bg_color,
+    };
+
+    Pixel border_px = {
+        .format = PIXEL_FORMAT_RGBA8,
+        .px_start = (u8*)&border_color,
+    };
+
+    i32 px_size = (i32)pixel_size(px_format);
 
     i32 start_y = CLAMP(px_buf_dst.start_y, 0, px_buf_size.height);
     i32 end_y = CLAMP(px_buf_dst.start_y + px_buf_dst.height, start_y, px_buf_size.height);
@@ -57,6 +65,10 @@ void soft_cmd_draw_rect(
     for (i32 y_idx = start_y; y_idx < end_y; y_idx++) {
         for (i32 x_idx = start_x; x_idx < end_x; x_idx++) {
             u8 *pixel_start = px_buf_bytes + y_idx * px_buf_pitch_bytes + x_idx * px_size;
+            Pixel dst_px = {
+                .format = px_format,
+                .px_start = pixel_start,
+            };
 
             f32x2 px_coord = {
                 .x = (f32) x_idx,
@@ -71,7 +83,7 @@ void soft_cmd_draw_rect(
                 );
 
                 if (dist <= corner_radii.top_left_px) {
-                    pixels_set(pixel_start, px_format, bg_px);
+                    pixel_set(&dst_px, &bg_px);
 
                     f32x2 vec = f32x2_sub(px_coord, top_left_axis_coord);
                     if (vec.y < 0) {
@@ -85,7 +97,7 @@ void soft_cmd_draw_rect(
                         f32 lerp = (x_axis_rad - (f32) M_PI_2) / (f32) M_PI_2;
                         f32 lerp_border_width = f32_lerp(border_widths.top_px, border_widths.left_px, lerp);
                         if (corner_radii.top_left_px - dist <= lerp_border_width) {
-                            pixels_set(pixel_start, px_format, border_px);
+                            pixel_set(&dst_px, &border_px);
                         }
                     }
                 }
@@ -98,7 +110,7 @@ void soft_cmd_draw_rect(
                 );
 
                 if (dist <= corner_radii.top_right_px) {
-                    pixels_set(pixel_start, px_format, bg_px);
+                    pixel_set(&dst_px, &bg_px);
 
                     f32x2 vec = f32x2_sub(px_coord, top_right_axis_coord);
                     if (vec.y < 0) {
@@ -113,7 +125,7 @@ void soft_cmd_draw_rect(
                         f32 lerp = x_axis_rad / (f32) M_PI_2;
                         f32 lerp_border_width = f32_lerp(border_widths.right_px, border_widths.top_px, lerp);
                         if (corner_radii.top_right_px - dist <= lerp_border_width) {
-                            pixels_set(pixel_start, px_format, border_px);
+                            pixel_set(&dst_px, &border_px);
                         }
                     }
                 }
@@ -126,7 +138,7 @@ void soft_cmd_draw_rect(
                 );
 
                 if (dist <= corner_radii.bottom_left_px) {
-                    pixels_set(pixel_start, px_format, bg_px);
+                    pixel_set(&dst_px, &bg_px);
 
                     f32x2 vec = f32x2_sub(px_coord, bottom_left_axis_coord);
                     if (vec.y > 0) {
@@ -140,7 +152,7 @@ void soft_cmd_draw_rect(
                         f32 lerp = (x_axis_rad + (f32) M_PI) / (f32) M_PI_2;
                         f32 lerp_border_width = f32_lerp(border_widths.left_px, border_widths.bottom_px, lerp);
                         if (corner_radii.bottom_left_px - dist <= lerp_border_width) {
-                            pixels_set(pixel_start, px_format, border_px);
+                            pixel_set(&dst_px, &border_px);
                         }
                     }
                 }
@@ -153,7 +165,7 @@ void soft_cmd_draw_rect(
                 );
 
                 if (dist <= corner_radii.bottom_right_px) {
-                    pixels_set(pixel_start, px_format, bg_px);
+                    pixel_set(&dst_px, &bg_px);
 
                     f32x2 vec = f32x2_sub(px_coord, bottom_right_axis_coord);
 
@@ -170,17 +182,17 @@ void soft_cmd_draw_rect(
                         f32 lerp = x_axis_rad / (f32) -M_PI_2;
                         f32 lerp_border_width = f32_lerp(border_widths.right_px, border_widths.bottom_px, lerp);
                         if (corner_radii.bottom_left_px - dist <= lerp_border_width) {
-                            pixels_set(pixel_start, px_format, border_px);
+                            pixel_set(&dst_px, &border_px);
                         }
                     }
                 }
             } else {
-                pixels_set(pixel_start, px_format, bg_px);
+                pixel_set(&dst_px, &bg_px);
                 if (y_idx - start_y < (i32) border_widths.top_px
                     || end_y - y_idx <= (i32) border_widths.bottom_px
                     || x_idx - start_x < (i32) border_widths.left_px
                     || end_x - x_idx <= (i32) border_widths.right_px) {
-                    pixels_set(pixel_start, px_format, border_px);
+                    pixel_set(&dst_px, &border_px);
                 }
             }
         }

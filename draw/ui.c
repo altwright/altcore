@@ -48,8 +48,8 @@ static void ui_error_handler(Clay_ErrorData err_data) {
     );
 }
 
-static RGBA8888 clay_to_render_color(Clay_Color clay_color) {
-    return (RGBA8888){
+static rgba8 clay_to_render_color(Clay_Color clay_color) {
+    return (rgba8){
         .r = (u8) clay_color.r,
         .g = (u8) clay_color.g,
         .b = (u8) clay_color.b,
@@ -96,7 +96,7 @@ static Clay_Dimensions ui_measure_text(Clay_StringSlice text, Clay_TextElementCo
     };
 };
 
-Clay_Color ui_color(RGBA8888 color) {
+Clay_Color ui_color(rgba8 color) {
     return (Clay_Color){
         .r = color.r,
         .g = color.g,

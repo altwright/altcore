@@ -37,7 +37,7 @@ Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info) {
             fb->data.pixel_buf.size = create_info->data.pixel_buf.size;
             fb->data.pixel_buf.bytes = alt_calloc(
                 fb->data.pixel_buf.size.x * fb->data.pixel_buf.size.y,
-                pixels_get_size(create_info->data.pixel_buf.format)
+                pixel_size(create_info->data.pixel_buf.format)
             );
             fb->data.pixel_buf.scissor = (i32x4) {
                 .start_x = 0,
@@ -78,7 +78,7 @@ FramebufferInfo framebuffer_get_info(const Framebuffer *fb) {
             info.type = FRAMEBUFFER_TYPE_PIXEL;
             info.data.pixel_buf.format = fb->data.pixel_buf.format;
             info.data.pixel_buf.size = fb->data.pixel_buf.size;
-            info.data.pixel_buf.pitch_bytes = fb->data.pixel_buf.size.x * pixels_get_size(fb->data.pixel_buf.format);
+            info.data.pixel_buf.pitch_bytes = fb->data.pixel_buf.size.x * pixel_size(fb->data.pixel_buf.format);
             break;
         }
         default:

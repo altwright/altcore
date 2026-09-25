@@ -86,9 +86,16 @@ static string build_folder_path(Arena *arena, const char **nested_folders, i64 n
 
 static string build_file_path(Arena *tmp, DbMount mount, const char **nested_folders, i64 nested_folders_len,
                               const char *filename) {
+    string file_path = {};
     const char *mount_path = get_mount_path(mount);
-    string folder_path = build_folder_path(tmp, nested_folders, nested_folders_len);
-    return string_make(tmp, "%s/%s/%s", mount_path, folder_path.data, filename);
+    if (nested_folders_len > 0) {
+        string folder_path = build_folder_path(tmp, nested_folders, nested_folders_len);
+        file_path = string_make(tmp, "%s/%s/%s", mount_path, folder_path.data, filename);
+    } else {
+        file_path = string_make(tmp, "%s/%s", mount_path, filename);
+    }
+
+    return file_path;
 }
 
 u8s db_read(Arena *arena, const DbReadInfo *info) {

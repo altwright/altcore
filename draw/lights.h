@@ -11,7 +11,7 @@
 typedef struct POINT_LIGHT_COMPONENT_T {
     f32 fade_start_radius;
     f32 fade_end_radius;
-    RGBA8888 color;
+    rgba8 color;
 } PointLightComponent;
 
 #endif //ALTCORE_LIGHTS_H

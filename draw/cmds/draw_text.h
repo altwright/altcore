@@ -18,7 +18,7 @@ void soft_cmd_draw_text(
     FontHandle *font,
     i32 font_size_px,
     i32 letter_spacing_px,
-    RGBA8888 color
+    rgba8 color
 );
 
 #endif //ALTCORE_DRAW_TEXT_H

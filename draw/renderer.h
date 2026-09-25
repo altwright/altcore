@@ -68,7 +68,7 @@ typedef enum RENDER_BUFFER_TYPE_E {
 
 typedef struct RENDER_CMD_CLEAR_T {
     Framebuffer *framebuffer;
-    RGBA8888 color;
+    rgba8 color;
 } RenderCmdClear;
 
 typedef struct RECT_CORNER_RADII_T {
@@ -82,9 +82,9 @@ typedef struct RECT_BORDER_WIDTHS_T {
 typedef struct RENDER_CMD_DRAW_RECT_T {
     Framebuffer *framebuffer;
     f32x4 dst;
-    RGBA8888 bg_color;
+    rgba8 bg_color;
     RectCornerRadii corner_radii;
-    RGBA8888 border_color;
+    rgba8 border_color;
     RectBorderWidths border_widths;
 } RenderCmdDrawRect;
 
@@ -103,7 +103,7 @@ typedef struct RENDER_CMD_DRAW_TEXT_T {
     string_view text;
     f32x4 dst;
     FontHandle *font;
-    RGBA8888 color;
+    rgba8 color;
     i32 font_height_px;
     i32 letter_spacing_px;
     i32 line_height_px;

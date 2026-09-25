@@ -11,7 +11,7 @@
 
 void soft_cmd_clear(
     Framebuffer* px_buf,
-    RGBA8888 rgba
+    rgba8 rgba
 );
 
 #endif //ALTCORE_CLEAR_H

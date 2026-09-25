@@ -16,7 +16,7 @@ void soft_cmd_draw_text(
     FontHandle *font,
     i32 font_size_px,
     i32 letter_spacing_px,
-    RGBA8888 color
+    rgba8 color
 ) {
     FramebufferInfo px_buf_info = framebuffer_get_info(px_buf);
     assert(px_buf_info.type == FRAMEBUFFER_TYPE_PIXEL);
@@ -82,7 +82,7 @@ void soft_cmd_draw_text(
         cursor.x += lsb;
 
         PixelFormat px_format = px_buf_info.data.pixel_buf.format;
-        i32 px_size = pixels_get_size(px_format);
+        i32 px_size = (i32)pixel_size(px_format);
 
         for (i32 bitmap_row_idx = 0; bitmap_row_idx < bitmap_height; bitmap_row_idx++) {
             for (i32 bitmap_col_idx = 0; bitmap_col_idx < bitmap_width; bitmap_col_idx++) {
@@ -101,11 +101,20 @@ void soft_cmd_draw_text(
                                         + (px_buf_dst.x + (cursor.x + x0 + bitmap_col_idx)) * px_size
                                     );
 
-                RGBA8888 final_color = color;
+                rgba8 final_color = color;
                 final_color.a = bitmap_byte;
 
-                PixelColor px_color = pixels_convert_rgba(px_format, final_color);
-                pixels_set(px_byte_start, px_format, px_color);
+                Pixel dst = {
+                    .format = px_buf_info.data.pixel_buf.format,
+                    .px_start = px_byte_start,
+                };
+
+                Pixel src = {
+                    .format = PIXEL_FORMAT_RGBA8,
+                    .px_start = (u8*)&final_color,
+                };
+
+                pixel_set(&dst, &src);
             }
         }
 

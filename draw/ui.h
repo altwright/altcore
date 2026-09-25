@@ -39,7 +39,7 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info);
 
 RenderCmds ui_end_layout(Arena *arena, UiContext *ui);
 
-Clay_Color ui_color(RGBA8888 color);
+Clay_Color ui_color(rgba8 color);
 
 void ui_set_string(UiContext *ui, u64 str_key, u64 loc_key, const char8_t *utf8_str);
 

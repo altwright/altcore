@@ -10,8 +10,9 @@
 typedef enum PIXEL_FORMAT_E {
 #ifndef X_PIXEL_FORMATS
 #define X_PIXEL_FORMATS \
-    X(ARGB_8888) \
-    X(RGBA_8888) \
+    X(RGBA8) \
+    X(ABGR8) \
+    X(ARGB8) \
     X(COUNT)
 #endif
 #ifndef X
@@ -22,23 +23,25 @@ typedef enum PIXEL_FORMAT_E {
 #undef X
 } PixelFormat;
 
-typedef struct RGBA_8888_T {
+typedef struct RGBA8_T {
     u8 a, b, g, r;
-} RGBA8888;
+} rgba8;
 
-typedef struct ARGB_8888_T {
+typedef struct ABGR8_T {
+    u8 r, g, b, a;
+} abgr8;
+
+typedef struct ARGB8_T {
     u8 b, g, r, a;
-} ARGB8888;
+} argb8;
 
-typedef union PIXEL_U {
-    RGBA8888 rgba;
-    ARGB8888 argb;
-} PixelColor;
+typedef struct PIXEL_T {
+    PixelFormat format;
+    u8* px_start;
+} Pixel;
 
-PixelColor pixels_convert_rgba(PixelFormat format, RGBA8888 rgba);
+i64 pixel_size(PixelFormat format);
 
-i32 pixels_get_size(PixelFormat pixel_format);
-
-void pixels_set(u8* px_start, PixelFormat format, PixelColor px);
+void pixel_set(Pixel* dst_px, const Pixel* src_px);
 
 #endif //ALTCORE_PIXELS_H

@@ -49,18 +49,24 @@ Framebuffer *image_load(const ImageLoadInfo *info) {
             fb = framebuffer_create(&fb_create_info);
             FramebufferInfo fb_info = framebuffer_get_info(fb);
             u8 *fb_bytes = framebuffer_impl_get_bytes(fb);
-            i32 fb_px_stride = pixels_get_size(info->dst_format);
+            i32 fb_px_stride = pixel_size(info->dst_format);
 
             for (i64 y_idx = 0; y_idx < height; y_idx++) {
                 for (i64 x_idx = 0; x_idx < width; x_idx++) {
                     u8 *fb_px_start = fb_bytes + (y_idx * fb_info.data.pixel_buf.pitch_bytes) + (x_idx * fb_px_stride);
-                    stbi_uc *image_px_start = image_bytes + (y_idx * width * sizeof(RGBA8888)) + (x_idx * sizeof(RGBA8888));
+                    stbi_uc *image_px_start = image_bytes + (y_idx * width * sizeof(argb8)) + (x_idx * sizeof(argb8));
 
-                    PixelColor image_px = {
-                        .rgba = *(RGBA8888 *) image_px_start,
+                    Pixel src = {
+                        .format = PIXEL_FORMAT_ABGR8,
+                        .px_start = image_px_start,
                     };
 
-                    pixels_set(fb_px_start, info->dst_format, image_px);
+                    Pixel dst = {
+                        .format = fb_info.data.pixel_buf.format,
+                        .px_start = fb_px_start,
+                    };
+
+                    pixel_set(&dst, &src);
                 }
             }
 

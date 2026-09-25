@@ -13,9 +13,9 @@
 void soft_cmd_draw_rect(
     Framebuffer* px_buf,
     i32x4 px_buf_dst,
-    RGBA8888 bg_color,
+    rgba8 bg_color,
     RectCornerRadii corner_radii,
-    RGBA8888 border_color,
+    rgba8 border_color,
     RectBorderWidths border_widths
 );
 
