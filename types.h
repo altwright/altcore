@@ -33,6 +33,8 @@ typedef struct U32X2_T {
         struct {
             u32 width, height;
         };
+
+        u32 data[2];
     };
 } u32x2;
 
@@ -49,6 +51,8 @@ typedef struct I32X2_T {
         struct {
             i32 width, height;
         };
+
+        i32 data[2];
     };
 } i32x2;
 
@@ -65,36 +69,38 @@ typedef struct F32X2_T {
         struct {
             f32 width, height;
         };
+
+        f32 data[2];
     };
 } f32x2;
 
 typedef struct I32X3_T {
     union {
-        i32 data[4];
-
         struct {
             i32 x, y, z;
         };
+
+        i32 data[4];
     };
 } i32x3;
 
 typedef struct U32X3_T {
     union {
-        u32 data[4];
-
         struct {
             u32 x, y, z;
         };
+
+        u32 data[4];
     };
 } u32x3;
 
 typedef struct F32X3_T {
     union {
-        f32 data[4];
-
         struct {
             f32 x, y, z;
         };
+
+        f32 data[4];
     };
 } f32x3;
 
@@ -510,6 +516,10 @@ void queue_push_back(
     u64 elem_size,
     void *new_elem_ptr
 );
+
+i32x2 ftoi32x2(f32x2 vec);
+
+f32x2 itof32x2(i32x2 vec);
 
 i32x4 ftoi32x4(f32x4 vec);
 

@@ -135,6 +135,20 @@ void array_sort(
     }
 }
 
+i32x2 ftoi32x2(f32x2 vec) {
+    return (i32x2){
+        .x = (i32) vec.x,
+        .y = (i32) vec.y,
+    };
+}
+
+f32x2 itof32x2(i32x2 vec) {
+    return (f32x2){
+        .x = (f32) vec.x,
+        .y = (f32) vec.y,
+    };
+}
+
 i32x4 ftoi32x4(f32x4 vec) {
     return (i32x4){
         .x = (i32) (vec.x),
@@ -256,7 +270,7 @@ bool bits_is_set(const bits *bs, i64 bit_idx) {
     return bs->data[bitfield_idx] & (bit_idx % 64);
 }
 
-void assert_bits_count_match(const bits* left, const bits* right) {
+void assert_bits_count_match(const bits *left, const bits *right) {
     if (left->len != right->len) {
         crash_msg("Left bits have max bit count %d, right bits have max bit count %d\n", left->len, right->len);
     }
