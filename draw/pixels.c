@@ -90,15 +90,21 @@ PixelColor pixels_convert_rgba(PixelFormat format, RGBA8888 rgba) {
     return px;
 }
 
-void pixels_set(u8* px_start, PixelFormat format, PixelColor px) {
+void pixels_set(u8 *px_start, PixelFormat format, PixelColor px) {
     switch (format) {
         case PIXEL_FORMAT_RGBA_8888: {
-            RGBA8888* pixel = (RGBA8888*)px_start;
+            if (px.rgba.a == 0) {
+                break;
+            }
+            RGBA8888 *pixel = (RGBA8888 *) px_start;
             *pixel = px.rgba;
             break;
         }
         case PIXEL_FORMAT_ARGB_8888: {
-            ARGB8888* pixel = (ARGB8888*)px_start;
+            if (px.argb.a == 0) {
+                break;
+            }
+            ARGB8888 *pixel = (ARGB8888 *) px_start;
             *pixel = px.argb;
             break;
         }
