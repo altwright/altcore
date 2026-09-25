@@ -133,7 +133,7 @@ void soft_cmd_draw_rect(
                 f32x2 bottom_left_axis_coord = itof32x2(bottom_left_axis);
 
                 f32 dist = f32x2_dist(
-                    itof32x2(bottom_left_axis),
+                    bottom_left_axis_coord,
                     px_coord
                 );
 
