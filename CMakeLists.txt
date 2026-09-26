@@ -68,7 +68,6 @@ add_library(${PROJECT_NAME}
         draw/cmds/draw_text.c
         draw/cmds/present.c
         draw/cmds/scissor.c
-        draw/cmds/blit.c
 )
 
 add_subdirectory(libs/SDL3-3.4.4 EXCLUDE_FROM_ALL)

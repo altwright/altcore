@@ -10,13 +10,6 @@
 #include "../renderer.h"
 #include "../framebuffer.h"
 
-void soft_cmd_draw_rect(
-    Framebuffer* px_buf,
-    i32x4 px_buf_dst,
-    rgba8 bg_color,
-    RectCornerRadii corner_radii,
-    rgba8 border_color,
-    RectBorderWidths border_widths
-);
+void soft_cmd_draw_rect(RenderCmdDrawRect *data);
 
 #endif //ALTCORE_DRAW_RECT_H

@@ -15,7 +15,6 @@
 #include "cmds/present.h"
 #include "cmds/draw_rect.h"
 #include "cmds/draw_text.h"
-#include "cmds/blit.h"
 
 struct RENDERER_T {
     RendererType type;
@@ -128,14 +127,7 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                     case RENDER_CMD_TYPE_DRAW_RECT: {
                         RenderCmdDrawRect *data = &cmd->data.draw_rect;
 
-                        soft_cmd_draw_rect(
-                            data->framebuffer,
-                            ftoi32x4(data->dst),
-                            data->bg_color,
-                            data->corner_radii,
-                            data->border_color,
-                            data->border_widths
-                        );
+                        soft_cmd_draw_rect(data);
                         break;
                     }
                     case RENDER_CMD_TYPE_DRAW_TEXT: {
@@ -151,10 +143,6 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                             data->color
                         );
 
-                        break;
-                    }
-                    case RENDER_CMD_TYPE_BLIT: {
-                        soft_cmd_blit(&cmd->data.blit);
                         break;
                     }
                     default:

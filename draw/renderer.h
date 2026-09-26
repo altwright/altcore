@@ -37,7 +37,6 @@ typedef enum RENDER_CMD_TYPE_E {
 #define X_RENDER_CMD_TYPES \
     X(CLEAR) \
     X(DRAW_RECT) \
-    X(BLIT) \
     X(DRAW_TEXT) \
     X(SCISSOR) \
     X(PRESENT) \
@@ -80,12 +79,18 @@ typedef struct RECT_BORDER_WIDTHS_T {
 } RectBorderWidths;
 
 typedef struct RENDER_CMD_DRAW_RECT_T {
-    Framebuffer *framebuffer;
-    f32x4 dst;
+    Framebuffer *dst_framebuffer;
+    f32x4 dst_region;
     rgba8 bg_color;
     RectCornerRadii corner_radii;
     rgba8 border_color;
     RectBorderWidths border_widths;
+    struct {
+        u8 *pixel_bytes;
+        PixelFormat px_format;
+        i32x2 size;
+        i64 pitch_bytes;
+    } src_blit;
 } RenderCmdDrawRect;
 
 typedef struct RENDER_CMD_BLIT_T {

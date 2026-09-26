@@ -8,84 +8,107 @@
 
 #include "../../maths.h"
 #include "../framebuffer.impl.h"
+#include "../../debug.h"
 
-void soft_cmd_draw_rect(
-    Framebuffer *px_buf,
-    i32x4 px_buf_dst,
-    rgba8 bg_color,
-    RectCornerRadii corner_radii,
-    rgba8 border_color,
-    RectBorderWidths border_widths
-) {
-    FramebufferInfo px_buf_info = framebuffer_get_info(px_buf);
-    assert(px_buf_info.type == FRAMEBUFFER_TYPE_PIXEL);
+void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
+    FramebufferInfo dst_fb_info = framebuffer_get_info(data->dst_framebuffer);
+    if (dst_fb_info.type != FRAMEBUFFER_TYPE_PIXEL) {
+        crash_msg("Destination framebuffer is not a pixel buffer\n");
+    }
 
-    u8 *px_buf_bytes = framebuffer_impl_get_bytes(px_buf);
-    PixelFormat px_format = px_buf_info.data.pixel_buf.format;
-    i32x2 px_buf_size = px_buf_info.data.pixel_buf.size;
-    i64 px_buf_pitch_bytes = px_buf_info.data.pixel_buf.pitch_bytes;
+    u8 *dst_fb_bytes = framebuffer_impl_get_bytes(data->dst_framebuffer);
+    PixelFormat dst_px_format = dst_fb_info.data.pixel_buf.format;
+    i64 dst_px_size = pixel_size(dst_px_format);
+    i32x2 dst_fb_size = dst_fb_info.data.pixel_buf.size;
+    i64 dst_fb_pitch_bytes = dst_fb_info.data.pixel_buf.pitch_bytes;
+    i32x4 dst_fb_region = ftoi32x4(data->dst_region);
+    RectCornerRadii corner_radii = data->corner_radii;
+    RectBorderWidths border_widths = data->border_widths;
+    rgba8 bg_color = data->bg_color;
+    rgba8 border_color = data->border_color;
 
     Pixel bg_px = {
         .format = PIXEL_FORMAT_RGBA8,
-        .px_start = (u8*)&bg_color,
+        .px_start = (u8 *) &bg_color,
     };
 
     Pixel border_px = {
         .format = PIXEL_FORMAT_RGBA8,
-        .px_start = (u8*)&border_color,
+        .px_start = (u8 *) &border_color,
     };
 
-    i32 px_size = (i32)pixel_size(px_format);
-
-    i32 start_y = CLAMP(px_buf_dst.start_y, 0, px_buf_size.height);
-    i32 end_y = CLAMP(px_buf_dst.start_y + px_buf_dst.height, start_y, px_buf_size.height);
-    i32 start_x = CLAMP(px_buf_dst.start_x, 0, px_buf_size.width);
-    i32 end_x = CLAMP(px_buf_dst.start_x + px_buf_dst.width, start_x, px_buf_size.width);
+    i32 dst_start_y = CLAMP(dst_fb_region.start_y, 0, dst_fb_size.height);
+    i32 dst_end_y = CLAMP(dst_fb_region.start_y + dst_fb_region.height, dst_start_y, dst_fb_size.height);
+    i32 dst_start_x = CLAMP(dst_fb_region.start_x, 0, dst_fb_size.width);
+    i32 dst_end_x = CLAMP(dst_fb_region.start_x + dst_fb_region.width, dst_start_x, dst_fb_size.width);
 
     i32x2 top_left_axis = {
-        .x = px_buf_dst.start_x + (i32) corner_radii.top_left_px,
-        .y = px_buf_dst.start_y + (i32) corner_radii.top_left_px,
+        .x = dst_fb_region.start_x + (i32) corner_radii.top_left_px,
+        .y = dst_fb_region.start_y + (i32) corner_radii.top_left_px,
     };
 
     i32x2 top_right_axis = {
-        .x = px_buf_dst.start_x + px_buf_dst.width - (i32) corner_radii.top_right_px,
-        .y = px_buf_dst.start_y + (i32) corner_radii.top_right_px,
+        .x = dst_fb_region.start_x + dst_fb_region.width - (i32) corner_radii.top_right_px,
+        .y = dst_fb_region.start_y + (i32) corner_radii.top_right_px,
     };
 
     i32x2 bottom_left_axis = {
-        .x = px_buf_dst.start_x + (i32) corner_radii.bottom_left_px,
-        .y = px_buf_dst.start_y + px_buf_dst.height - (i32) corner_radii.bottom_left_px,
+        .x = dst_fb_region.start_x + (i32) corner_radii.bottom_left_px,
+        .y = dst_fb_region.start_y + dst_fb_region.height - (i32) corner_radii.bottom_left_px,
     };
 
     i32x2 bottom_right_axis = {
-        .x = px_buf_dst.start_x + px_buf_dst.width - (i32) corner_radii.bottom_right_px,
-        .y = px_buf_dst.start_y + px_buf_dst.height - (i32) corner_radii.bottom_right_px,
+        .x = dst_fb_region.start_x + dst_fb_region.width - (i32) corner_radii.bottom_right_px,
+        .y = dst_fb_region.start_y + dst_fb_region.height - (i32) corner_radii.bottom_right_px,
     };
 
-    for (i32 y_idx = start_y; y_idx < end_y; y_idx++) {
-        for (i32 x_idx = start_x; x_idx < end_x; x_idx++) {
-            u8 *pixel_start = px_buf_bytes + y_idx * px_buf_pitch_bytes + x_idx * px_size;
+    for (i32 dst_y_idx = dst_start_y; dst_y_idx < dst_end_y; dst_y_idx++) {
+        for (i32 dst_x_idx = dst_start_x; dst_x_idx < dst_end_x; dst_x_idx++) {
+            u8 *dst_px_start = dst_fb_bytes + dst_y_idx * dst_fb_pitch_bytes + dst_x_idx * dst_px_size;
+
             Pixel dst_px = {
-                .format = px_format,
-                .px_start = pixel_start,
+                .format = dst_px_format,
+                .px_start = dst_px_start,
             };
 
-            f32x2 px_coord = {
-                .x = (f32) x_idx,
-                .y = (f32) y_idx,
+            f32x2 dst_px_coord = {
+                .x = (f32) dst_x_idx,
+                .y = (f32) dst_y_idx,
             };
 
-            if (y_idx <= top_left_axis.y && x_idx <= top_left_axis.x) {
+            u8 *src_px_start = nullptr;
+            Pixel src_px = {};
+
+            if (data->src_blit.pixel_bytes) {
+                f32 dst_y_pct = (f32) (dst_y_idx - dst_start_y) / (f32) (dst_end_y - dst_start_y);
+                f32 dst_x_pct = (f32) (dst_x_idx - dst_start_x) / (f32) (dst_end_x - dst_start_x);
+
+                i32 src_y_idx = (i32) (dst_y_pct * (f32) data->src_blit.size.height);
+                i32 src_x_idx = (i32) (dst_x_pct * (f32) data->src_blit.size.width);
+
+                src_px_start = data->src_blit.pixel_bytes
+                               + src_y_idx * data->src_blit.pitch_bytes
+                               + src_x_idx * pixel_size(data->src_blit.px_format);
+
+                src_px.format = data->src_blit.px_format;
+                src_px.px_start = src_px_start;
+            }
+
+            if (dst_y_idx <= top_left_axis.y && dst_x_idx <= top_left_axis.x) {
                 f32x2 top_left_axis_coord = itof32x2(top_left_axis);
                 f32 dist = f32x2_dist(
                     top_left_axis_coord,
-                    px_coord
+                    dst_px_coord
                 );
 
                 if (dist <= corner_radii.top_left_px) {
                     pixel_set(&dst_px, &bg_px);
 
-                    f32x2 vec = f32x2_sub(px_coord, top_left_axis_coord);
+                    if (src_px_start) {
+                        pixel_set(&dst_px, &src_px);
+                    }
+
+                    f32x2 vec = f32x2_sub(dst_px_coord, top_left_axis_coord);
                     if (vec.y < 0) {
                         vec.y *= -1;
                     }
@@ -101,18 +124,22 @@ void soft_cmd_draw_rect(
                         }
                     }
                 }
-            } else if (y_idx <= top_right_axis.y && x_idx >= top_right_axis.x) {
+            } else if (dst_y_idx <= top_right_axis.y && dst_x_idx >= top_right_axis.x) {
                 f32x2 top_right_axis_coord = itof32x2(top_right_axis);
 
                 f32 dist = f32x2_dist(
                     top_right_axis_coord,
-                    px_coord
+                    dst_px_coord
                 );
 
                 if (dist <= corner_radii.top_right_px) {
                     pixel_set(&dst_px, &bg_px);
 
-                    f32x2 vec = f32x2_sub(px_coord, top_right_axis_coord);
+                    if (src_px_start) {
+                        pixel_set(&dst_px, &src_px);
+                    }
+
+                    f32x2 vec = f32x2_sub(dst_px_coord, top_right_axis_coord);
                     if (vec.y < 0) {
                         vec.y *= -1;
                     }
@@ -129,18 +156,22 @@ void soft_cmd_draw_rect(
                         }
                     }
                 }
-            } else if (y_idx >= bottom_left_axis.y && x_idx <= bottom_left_axis.x) {
+            } else if (dst_y_idx >= bottom_left_axis.y && dst_x_idx <= bottom_left_axis.x) {
                 f32x2 bottom_left_axis_coord = itof32x2(bottom_left_axis);
 
                 f32 dist = f32x2_dist(
                     bottom_left_axis_coord,
-                    px_coord
+                    dst_px_coord
                 );
 
                 if (dist <= corner_radii.bottom_left_px) {
                     pixel_set(&dst_px, &bg_px);
 
-                    f32x2 vec = f32x2_sub(px_coord, bottom_left_axis_coord);
+                    if (src_px_start) {
+                        pixel_set(&dst_px, &src_px);
+                    }
+
+                    f32x2 vec = f32x2_sub(dst_px_coord, bottom_left_axis_coord);
                     if (vec.y > 0) {
                         vec.y *= -1;
                     }
@@ -156,18 +187,22 @@ void soft_cmd_draw_rect(
                         }
                     }
                 }
-            } else if (y_idx >= bottom_right_axis.y && x_idx >= bottom_right_axis.x) {
+            } else if (dst_y_idx >= bottom_right_axis.y && dst_x_idx >= bottom_right_axis.x) {
                 f32x2 bottom_right_axis_coord = itof32x2(bottom_right_axis);
 
                 f32 dist = f32x2_dist(
                     bottom_right_axis_coord,
-                    px_coord
+                    dst_px_coord
                 );
 
                 if (dist <= corner_radii.bottom_right_px) {
                     pixel_set(&dst_px, &bg_px);
 
-                    f32x2 vec = f32x2_sub(px_coord, bottom_right_axis_coord);
+                    if (src_px_start) {
+                        pixel_set(&dst_px, &src_px);
+                    }
+
+                    f32x2 vec = f32x2_sub(dst_px_coord, bottom_right_axis_coord);
 
                     if (vec.y > 0) {
                         vec.y *= -1;
@@ -188,10 +223,15 @@ void soft_cmd_draw_rect(
                 }
             } else {
                 pixel_set(&dst_px, &bg_px);
-                if (y_idx - start_y < (i32) border_widths.top_px
-                    || end_y - y_idx <= (i32) border_widths.bottom_px
-                    || x_idx - start_x < (i32) border_widths.left_px
-                    || end_x - x_idx <= (i32) border_widths.right_px) {
+
+                if (src_px_start) {
+                    pixel_set(&dst_px, &src_px);
+                }
+
+                if (dst_y_idx - dst_start_y < (i32) border_widths.top_px
+                    || dst_end_y - dst_y_idx <= (i32) border_widths.bottom_px
+                    || dst_x_idx - dst_start_x < (i32) border_widths.left_px
+                    || dst_end_x - dst_x_idx <= (i32) border_widths.right_px) {
                     pixel_set(&dst_px, &border_px);
                 }
             }

@@ -207,9 +207,9 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
         switch (clay_cmd->commandType) {
             case CLAY_RENDER_COMMAND_TYPE_RECTANGLE: {
                 RenderCmd rect_cmd = {RENDER_CMD_TYPE_DRAW_RECT};
-                rect_cmd.data.draw_rect.framebuffer = ui->current_canvas;
+                rect_cmd.data.draw_rect.dst_framebuffer = ui->current_canvas;
 
-                rect_cmd.data.draw_rect.dst = clay_to_render_rect(clay_cmd->boundingBox);
+                rect_cmd.data.draw_rect.dst_region = clay_to_render_rect(clay_cmd->boundingBox);
 
                 rect_cmd.data.draw_rect.bg_color = clay_to_render_color(
                     clay_cmd->renderData.rectangle.backgroundColor
@@ -226,9 +226,9 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
             case CLAY_RENDER_COMMAND_TYPE_BORDER: {
                 // TODO: Create
                 RenderCmd border_cmd = {RENDER_CMD_TYPE_DRAW_RECT};
-                border_cmd.data.draw_rect.framebuffer = ui->current_canvas;
+                border_cmd.data.draw_rect.dst_framebuffer = ui->current_canvas;
 
-                border_cmd.data.draw_rect.dst = clay_to_render_rect(clay_cmd->boundingBox);
+                border_cmd.data.draw_rect.dst_region = clay_to_render_rect(clay_cmd->boundingBox);
 
                 border_cmd.data.draw_rect.border_color = clay_to_render_color(
                     clay_cmd->renderData.border.color
@@ -315,13 +315,13 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 const Clay_ImageRenderData *image_cmd = &clay_cmd->renderData.image;
 
                 RenderCmd blit_cmd = {
-                    .type = RENDER_CMD_TYPE_BLIT
+                    .type = RENDER_CMD_TYPE_DRAW_RECT,
                 };
-                RenderCmdBlit *blit_data = &blit_cmd.data.blit;
+                RenderCmdDrawRect *blit_data = &blit_cmd.data.draw_rect;
 
-                blit_data->framebuffer = ui->current_canvas;
-                blit_data->dst = clay_to_render_rect(clay_cmd->boundingBox);
-                blit_data->dst_corner_radii = clay_to_render_corner_radii(image_cmd->cornerRadius);
+                blit_data->dst_framebuffer = ui->current_canvas;
+                blit_data->dst_region = clay_to_render_rect(clay_cmd->boundingBox);
+                blit_data->corner_radii = clay_to_render_corner_radii(image_cmd->cornerRadius);
 
                 Framebuffer *image_fb = image_cmd->imageData;
                 FramebufferInfo image_fb_info = framebuffer_get_info(image_fb);
@@ -331,10 +331,10 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 }
 
                 u8 *image_fb_bytes = framebuffer_impl_get_bytes(image_fb);
-                blit_data->src_pixels = image_fb_bytes;
-                blit_data->src_px_format = image_fb_info.data.pixel_buf.format;
-                blit_data->src_size = image_fb_info.data.pixel_buf.size;
-                blit_data->src_pitch_bytes = image_fb_info.data.pixel_buf.pitch_bytes;
+                blit_data->src_blit.pixel_bytes = image_fb_bytes;
+                blit_data->src_blit.px_format = image_fb_info.data.pixel_buf.format;
+                blit_data->src_blit.size = image_fb_info.data.pixel_buf.size;
+                blit_data->src_blit.pitch_bytes = image_fb_info.data.pixel_buf.pitch_bytes;
 
                 ARRAY_PUSH(&render_cmds, &blit_cmd);
 
