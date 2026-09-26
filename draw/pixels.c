@@ -101,15 +101,15 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
     if (dst_px->format == src_px->format) {
         switch (dst_px->format) {
             case PIXEL_FORMAT_RGBA8: {
-                auto dst = (rgba8 *) dst_px->px_start;
-                auto src = (const rgba8 *) src_px->px_start;
+                auto dst = (rgba8 *) dst_px->start;
+                auto src = (const rgba8 *) src_px->start;
 
                 alpha_blend_8888(dst->data, src->data, offsetof(rgba8, a));
                 break;
             }
             case PIXEL_FORMAT_ARGB8: {
-                auto dst = (argb8 *) dst_px->px_start;
-                auto src = (const argb8 *) src_px->px_start;
+                auto dst = (argb8 *) dst_px->start;
+                auto src = (const argb8 *) src_px->start;
 
                 alpha_blend_8888(dst->data, src->data, offsetof(argb8, a));
                 break;
@@ -121,10 +121,10 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
     } else {
         switch (dst_px->format) {
             case PIXEL_FORMAT_RGBA8: {
-                auto dst = (rgba8 *) dst_px->px_start;
+                auto dst = (rgba8 *) dst_px->start;
                 switch (src_px->format) {
                     case PIXEL_FORMAT_ARGB8: {
-                        auto src = (const argb8 *) src_px->px_start;
+                        auto src = (const argb8 *) src_px->start;
 
                         rgba8 new_src = {
                             .r = src->r,
@@ -138,7 +138,7 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                         break;
                     }
                     case PIXEL_FORMAT_ABGR8: {
-                        auto src = (const abgr8 *) src_px->px_start;
+                        auto src = (const abgr8 *) src_px->start;
                         if (src->a == 0) {
                             break;
                         }

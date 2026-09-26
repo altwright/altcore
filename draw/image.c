@@ -58,12 +58,12 @@ Framebuffer *image_load(const ImageLoadInfo *info) {
 
                     Pixel src = {
                         .format = PIXEL_FORMAT_ABGR8,
-                        .px_start = image_px_start,
+                        .start = image_px_start,
                     };
 
                     Pixel dst = {
                         .format = fb_info.data.pixel_buf.format,
-                        .px_start = fb_px_start,
+                        .start = fb_px_start,
                     };
 
                     pixel_set(&dst, &src);

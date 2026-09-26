@@ -49,7 +49,7 @@ typedef struct ARGB8_T {
 
 typedef struct PIXEL_T {
     PixelFormat format;
-    u8 *px_start;
+    u8 *start;
 } Pixel;
 
 i64 pixel_size(PixelFormat format);

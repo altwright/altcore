@@ -29,12 +29,12 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
 
     Pixel bg_px = {
         .format = PIXEL_FORMAT_RGBA8,
-        .px_start = (u8 *) &bg_color,
+        .start = (u8 *) &bg_color,
     };
 
     Pixel border_px = {
         .format = PIXEL_FORMAT_RGBA8,
-        .px_start = (u8 *) &border_color,
+        .start = (u8 *) &border_color,
     };
 
     i32 dst_start_y = CLAMP(dst_fb_region.start_y, 0, dst_fb_size.height);
@@ -68,7 +68,7 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
 
             Pixel dst_px = {
                 .format = dst_px_format,
-                .px_start = dst_px_start,
+                .start = dst_px_start,
             };
 
             f32x2 dst_px_coord = {
@@ -76,7 +76,6 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
                 .y = (f32) dst_y_idx,
             };
 
-            u8 *src_px_start = nullptr;
             Pixel src_px = {};
 
             if (data->src_blit.pixel_bytes) {
@@ -86,12 +85,11 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
                 i32 src_y_idx = (i32) (dst_y_pct * (f32) data->src_blit.size.height);
                 i32 src_x_idx = (i32) (dst_x_pct * (f32) data->src_blit.size.width);
 
-                src_px_start = data->src_blit.pixel_bytes
+                src_px.start= data->src_blit.pixel_bytes
                                + src_y_idx * data->src_blit.pitch_bytes
                                + src_x_idx * pixel_size(data->src_blit.px_format);
 
                 src_px.format = data->src_blit.px_format;
-                src_px.px_start = src_px_start;
             }
 
             if (dst_y_idx <= top_left_axis.y && dst_x_idx <= top_left_axis.x) {
@@ -104,7 +102,7 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
                 if (dist <= corner_radii.top_left_px) {
                     pixel_set(&dst_px, &bg_px);
 
-                    if (src_px_start) {
+                    if (src_px.start) {
                         pixel_set(&dst_px, &src_px);
                     }
 
@@ -135,7 +133,7 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
                 if (dist <= corner_radii.top_right_px) {
                     pixel_set(&dst_px, &bg_px);
 
-                    if (src_px_start) {
+                    if (src_px.start) {
                         pixel_set(&dst_px, &src_px);
                     }
 
@@ -167,7 +165,7 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
                 if (dist <= corner_radii.bottom_left_px) {
                     pixel_set(&dst_px, &bg_px);
 
-                    if (src_px_start) {
+                    if (src_px.start) {
                         pixel_set(&dst_px, &src_px);
                     }
 
@@ -198,7 +196,7 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
                 if (dist <= corner_radii.bottom_right_px) {
                     pixel_set(&dst_px, &bg_px);
 
-                    if (src_px_start) {
+                    if (src_px.start) {
                         pixel_set(&dst_px, &src_px);
                     }
 
@@ -224,7 +222,7 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
             } else {
                 pixel_set(&dst_px, &bg_px);
 
-                if (src_px_start) {
+                if (src_px.start) {
                     pixel_set(&dst_px, &src_px);
                 }
 

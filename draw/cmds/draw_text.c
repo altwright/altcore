@@ -108,12 +108,12 @@ void soft_cmd_draw_text(
 
                 Pixel dst = {
                     .format = px_buf_info.data.pixel_buf.format,
-                    .px_start = px_byte_start,
+                    .start = px_byte_start,
                 };
 
                 Pixel src = {
                     .format = PIXEL_FORMAT_RGBA8,
-                    .px_start = (u8*)&final_color,
+                    .start = (u8*)&final_color,
                 };
 
                 pixel_set(&dst, &src);

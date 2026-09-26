@@ -23,7 +23,7 @@ void soft_cmd_clear(
     i32 px_stride = (i32)pixel_size(px_format);
     Pixel src_px = {
         .format = PIXEL_FORMAT_RGBA8,
-        .px_start = (u8*)&rgba,
+        .start = (u8*)&rgba,
     };
 
     for (i32 y_idx = 0; y_idx < px_buf_size.y; y_idx++) {
@@ -32,7 +32,7 @@ void soft_cmd_clear(
 
             Pixel dst_px = {
                 .format = px_format,
-                .px_start = pixel_start,
+                .start = pixel_start,
             };
 
             pixel_set(&dst_px, &src_px);
