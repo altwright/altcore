@@ -11,6 +11,13 @@ f32x44 f32x44_identity() {
     };
 }
 
+f32x2 f32x2_add(f32x2 left, f32x2 right) {
+    return (f32x2){
+        .x = left.x + right.x,
+        .y = left.y + right.y,
+    };
+}
+
 f32x2 f32x2_sub(f32x2 left, f32x2 right) {
     return (f32x2){
         .x = left.x - right.x,

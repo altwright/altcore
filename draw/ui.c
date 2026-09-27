@@ -28,7 +28,13 @@ typedef struct STRING_KEY_MAP_T {
 struct UI_CONTEXT_T {
     Clay_Arena clay_arena;
     Clay_Context *clay_ctx;
-    Framebuffer *current_canvas;
+
+    f32 viewport_aspect_ratio;
+
+    struct {
+        f32x2 offset;
+        Framebuffer *fb;
+    } current_canvas;
 
     struct {
         FontHandle **data;
@@ -107,7 +113,9 @@ Clay_Color ui_color(rgba8 color) {
 
 UiContext *ui_create(const UiCreateInfo *create_info) {
     UiContext *ui = alt_malloc(sizeof(*ui));
-    *ui = (UiContext){};
+    *ui = (UiContext){
+        .viewport_aspect_ratio = MAX(0, create_info->viewport_aspect_ratio),
+    };
 
     u64 memory_size = Clay_MinMemorySize();
     if (memory_size < create_info->memory_cap) {
@@ -117,15 +125,27 @@ UiContext *ui_create(const UiCreateInfo *create_info) {
     ui->clay_arena = Clay_CreateArenaWithCapacityAndMemory(memory_size, alt_malloc(memory_size));
     FramebufferInfo canvas_info = framebuffer_get_info(create_info->initial_canvas);
     if (canvas_info.type != FRAMEBUFFER_TYPE_PIXEL) {
-        return nullptr;
+        crash_msg("Framebuffer is not a pixel buffer\n");
     }
-    i32x2 canvas_size = canvas_info.data.pixel_buf.size;
+
+    f32x2 canvas_size = itof32x2(canvas_info.data.pixel_buf.size);
+    Clay_Dimensions ui_size = {
+        .width = canvas_size.width,
+        .height = canvas_size.height
+    };
+
+    if (ui->viewport_aspect_ratio) {
+        f32 canvas_aspect_ratio = canvas_size.width / canvas_size.height;
+        if (canvas_aspect_ratio > ui->viewport_aspect_ratio) {
+            ui_size.width = ui_size.height * ui->viewport_aspect_ratio;
+        } else {
+            ui_size.height = ui_size.width / ui->viewport_aspect_ratio;
+        }
+    }
+
     ui->clay_ctx = Clay_Initialize(
         ui->clay_arena,
-        (Clay_Dimensions){
-            .width = (f32) canvas_size.width,
-            .height = (f32) canvas_size.height
-        },
+        ui_size,
         (Clay_ErrorHandler){
             .errorHandlerFunction = ui_error_handler
         }
@@ -157,23 +177,34 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
 
     FramebufferInfo canvas_info = framebuffer_get_info(layout_info->canvas);
     if (canvas_info.type != FRAMEBUFFER_TYPE_PIXEL) {
-        return;
+        crash_msg("Expected a pixel framebuffer\n");
     }
-    i32x2 canvas_size = canvas_info.data.pixel_buf.size;
+    f32x2 canvas_size = itof32x2(canvas_info.data.pixel_buf.size);
 
-    Clay_SetLayoutDimensions(
-        (Clay_Dimensions){
-            .width = (f32) canvas_size.width,
-            .height = (f32) canvas_size.height
+    Clay_Dimensions ui_size = {
+        .width = canvas_size.width,
+        .height = canvas_size.height
+    };
+
+    if (ui->viewport_aspect_ratio) {
+        f32 canvas_aspect_ratio = canvas_size.width / canvas_size.height;
+        if (canvas_aspect_ratio > ui->viewport_aspect_ratio) {
+            ui_size.width = ui_size.height * ui->viewport_aspect_ratio;
+            ui->current_canvas.offset.x = (canvas_size.width - ui_size.width) / 2;
+        } else {
+            ui_size.height = ui_size.width / ui->viewport_aspect_ratio;
+            ui->current_canvas.offset.y = (canvas_size.height - ui_size.height) / 2;
         }
-    );
+    }
 
-    ui->current_canvas = layout_info->canvas;
+    Clay_SetLayoutDimensions(ui_size);
+
+    ui->current_canvas.fb = layout_info->canvas;
 
     Clay_SetPointerState(
         (Clay_Vector2){
-            .x = layout_info->pointer_pos.x,
-            .y = layout_info->pointer_pos.y
+            .x = layout_info->pointer_pos.x - ui->current_canvas.offset.x,
+            .y = layout_info->pointer_pos.y - ui->current_canvas.offset.y,
         },
         layout_info->pointer_pressed
     );
@@ -201,15 +232,22 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
     };
     ARRAY_MAKE(&render_cmds);
 
+    f32x4 canvas_region_offset = {
+        .start_x = ui->current_canvas.offset.x,
+        .start_y = ui->current_canvas.offset.y,
+    };
+
     for (i32 clay_cmd_idx = 0; clay_cmd_idx < clay_cmds.length; clay_cmd_idx++) {
         const Clay_RenderCommand *clay_cmd = &clay_cmds.internalArray[clay_cmd_idx];
+
+        f32x4 dst_region = f32x4_add(clay_to_render_rect(clay_cmd->boundingBox), canvas_region_offset);
 
         switch (clay_cmd->commandType) {
             case CLAY_RENDER_COMMAND_TYPE_RECTANGLE: {
                 RenderCmd rect_cmd = {RENDER_CMD_TYPE_DRAW_RECT};
-                rect_cmd.data.draw_rect.dst_framebuffer = ui->current_canvas;
+                rect_cmd.data.draw_rect.dst_framebuffer = ui->current_canvas.fb;
 
-                rect_cmd.data.draw_rect.dst_region = clay_to_render_rect(clay_cmd->boundingBox);
+                rect_cmd.data.draw_rect.dst_region = dst_region;
 
                 rect_cmd.data.draw_rect.bg_color = clay_to_render_color(
                     clay_cmd->renderData.rectangle.backgroundColor
@@ -224,11 +262,10 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 break;
             }
             case CLAY_RENDER_COMMAND_TYPE_BORDER: {
-                // TODO: Create
                 RenderCmd border_cmd = {RENDER_CMD_TYPE_DRAW_RECT};
-                border_cmd.data.draw_rect.dst_framebuffer = ui->current_canvas;
+                border_cmd.data.draw_rect.dst_framebuffer = ui->current_canvas.fb;
 
-                border_cmd.data.draw_rect.dst_region = clay_to_render_rect(clay_cmd->boundingBox);
+                border_cmd.data.draw_rect.dst_region = dst_region;
 
                 border_cmd.data.draw_rect.border_color = clay_to_render_color(
                     clay_cmd->renderData.border.color
@@ -257,10 +294,8 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 render_cmd_data->text.start = clay_cmd_data->stringContents.chars;
                 render_cmd_data->text.len = clay_cmd_data->stringContents.length;
 
-                render_cmd_data->framebuffer = ui->current_canvas;
-                render_cmd_data->dst = clay_to_render_rect(
-                    clay_cmd->boundingBox
-                );
+                render_cmd_data->framebuffer = ui->current_canvas.fb;
+                render_cmd_data->dst = dst_region;
 
                 i64 font_idx = clay_cmd->renderData.text.fontId;
                 if (font_idx >= ui->fonts.len) {
@@ -284,10 +319,8 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
             case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START: {
                 RenderCmd scissor_cmd = {RENDER_CMD_TYPE_SCISSOR};
 
-                scissor_cmd.data.scissor.framebuffer = ui->current_canvas;
-                scissor_cmd.data.scissor.region = clay_to_render_rect(
-                    clay_cmd->boundingBox
-                );
+                scissor_cmd.data.scissor.framebuffer = ui->current_canvas.fb;
+                scissor_cmd.data.scissor.region = dst_region;
 
                 ARRAY_PUSH(&render_cmds, &scissor_cmd);
 
@@ -295,9 +328,9 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
             }
             case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END: {
                 RenderCmd scissor_cmd = {RENDER_CMD_TYPE_SCISSOR};
-                scissor_cmd.data.scissor.framebuffer = ui->current_canvas;
+                scissor_cmd.data.scissor.framebuffer = ui->current_canvas.fb;
 
-                FramebufferInfo fb_info = framebuffer_get_info(ui->current_canvas);
+                FramebufferInfo fb_info = framebuffer_get_info(ui->current_canvas.fb);
                 assert(fb_info.type == FRAMEBUFFER_TYPE_PIXEL);
 
                 scissor_cmd.data.scissor.region = (f32x4){
@@ -319,8 +352,8 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 };
                 RenderCmdDrawRect *blit_data = &blit_cmd.data.draw_rect;
 
-                blit_data->dst_framebuffer = ui->current_canvas;
-                blit_data->dst_region = clay_to_render_rect(clay_cmd->boundingBox);
+                blit_data->dst_framebuffer = ui->current_canvas.fb;
+                blit_data->dst_region = dst_region;
                 blit_data->corner_radii = clay_to_render_corner_radii(image_cmd->cornerRadius);
 
                 Framebuffer *image_fb = image_cmd->imageData;
@@ -348,7 +381,8 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
 
     Clay_SetMeasureTextFunction(nullptr, nullptr);
 
-    ui->current_canvas = nullptr;
+    ui->current_canvas.offset = (f32x2){.x = 0, .y = 0};
+    ui->current_canvas.fb = nullptr;
 
     return render_cmds;
 }
@@ -409,11 +443,11 @@ u64 ui_get_locale(UiContext *ui) {
 }
 
 u16 ui_px_height(UiContext *ui, f32 pct) {
-    if (!ui->current_canvas) {
+    if (!ui->current_canvas.fb) {
         return 0;
     }
 
-    FramebufferInfo canvas_info = framebuffer_get_info(ui->current_canvas);
+    FramebufferInfo canvas_info = framebuffer_get_info(ui->current_canvas.fb);
     if (canvas_info.type != FRAMEBUFFER_TYPE_PIXEL) {
         return 0;
     }
@@ -426,11 +460,11 @@ u16 ui_px_height(UiContext *ui, f32 pct) {
 }
 
 u16 ui_px_width(UiContext *ui, f32 pct) {
-    if (!ui->current_canvas) {
+    if (!ui->current_canvas.fb) {
         return 0;
     }
 
-    FramebufferInfo canvas_info = framebuffer_get_info(ui->current_canvas);
+    FramebufferInfo canvas_info = framebuffer_get_info(ui->current_canvas.fb);
     if (canvas_info.type != FRAMEBUFFER_TYPE_PIXEL) {
         return 0;
     }

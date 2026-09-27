@@ -15,6 +15,7 @@ typedef struct UI_CONTEXT_T UiContext;
 typedef struct UI_CREATE_INFO_T {
     i64 memory_cap;
     const Framebuffer *initial_canvas;
+    f32 viewport_aspect_ratio;
 
     // The font handle lifetimes must be managed externally
     struct {

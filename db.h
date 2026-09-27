@@ -48,7 +48,9 @@ void db_init();
 
 void db_deinit();
 
-bool db_exists(const DbReadInfo* info);
+bool db_exists(const DbReadInfo *info);
+
+i64 db_size(const DbReadInfo *info);
 
 u8s db_read(Arena *arena, const DbReadInfo *info);
 

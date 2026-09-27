@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "memory.h"
 #include "strings.h"
@@ -221,4 +222,23 @@ bool db_exists(const DbReadInfo *info) {
     arena_free(tmp);
 
     return exists;
+}
+
+i64 db_size(const DbReadInfo *info) {
+    i64 file_size = 0;
+
+    Arena *tmp = arena_make(KIBIBYTE);
+
+    string file_path = build_file_path(tmp, info->mount, info->folder.nested_path, info->folder.nested_path_len,
+                                       info->filename);
+
+    struct stat file_stat;
+
+    if (stat(file_path.data, &file_stat) == 0) {
+        file_size = file_stat.st_size;
+    }
+
+    arena_free(tmp);
+
+    return file_size;
 }

@@ -51,6 +51,8 @@ f32 f32_lerp(f32 start, f32 end, f32 lerp);
 
 f32x44 f32x44_identity();
 
+f32x2 f32x2_add(f32x2 left, f32x2 right);
+
 f32x2 f32x2_sub(f32x2 left, f32x2 right);
 
 f32 f32x2_dist(f32x2 start, f32x2 end);

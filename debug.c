@@ -8,7 +8,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
 
 void debug_msg_ex(const char* filename, i32 line_num, const char* fmt, ...) {
 #ifndef NDEBUG
@@ -22,10 +21,6 @@ void debug_msg_ex(const char* filename, i32 line_num, const char* fmt, ...) {
 }
 
 void crash_msg_ex(const char* filename, i32 line_num, const char* fmt, ...) {
-#ifdef NDEBUG
-    unreachable();
-#endif
-
     va_list args = {};
     va_start(args);
 
