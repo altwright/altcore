@@ -44,6 +44,7 @@ typedef struct PIXEL_BUFFER_INFO_T {
     PixelFormat format;
     i32x2 size;
     i64 pitch_bytes;
+    i32x4 scissor;
 } PixelBufferInfo;
 
 typedef struct FRAMEBUFFER_INFO_T {
@@ -59,5 +60,7 @@ Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info);
 void framebuffer_destroy(Framebuffer *fb);
 
 FramebufferInfo framebuffer_get_info(const Framebuffer *fb);
+
+void framebuffer_set_scissor(Framebuffer *fb, f32x4 region);
 
 #endif //ALTCORE_FRAMEBUFFER_H

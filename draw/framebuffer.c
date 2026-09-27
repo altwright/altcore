@@ -21,6 +21,7 @@ typedef struct PIXEL_BUFFER_T {
 
 struct FRAMEBUFFER_T {
     FramebufferType type;
+
     union {
         PixelBuffer pixel_buf;
     } data;
@@ -39,7 +40,7 @@ Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info) {
                 fb->data.pixel_buf.size.x * fb->data.pixel_buf.size.y,
                 pixel_size(create_info->data.pixel_buf.format)
             );
-            fb->data.pixel_buf.scissor = (i32x4) {
+            fb->data.pixel_buf.scissor = (i32x4){
                 .start_x = 0,
                 .start_y = 0,
                 .width = create_info->data.pixel_buf.size.width,
@@ -79,6 +80,7 @@ FramebufferInfo framebuffer_get_info(const Framebuffer *fb) {
             info.data.pixel_buf.format = fb->data.pixel_buf.format;
             info.data.pixel_buf.size = fb->data.pixel_buf.size;
             info.data.pixel_buf.pitch_bytes = fb->data.pixel_buf.size.x * pixel_size(fb->data.pixel_buf.format);
+            info.data.pixel_buf.scissor = fb->data.pixel_buf.scissor;
             break;
         }
         default:
@@ -89,8 +91,8 @@ FramebufferInfo framebuffer_get_info(const Framebuffer *fb) {
     return info;
 }
 
-u8* framebuffer_impl_get_bytes(Framebuffer *fb) {
-    u8* bytes = nullptr;
+u8 *framebuffer_impl_get_bytes(Framebuffer *fb) {
+    u8 *bytes = nullptr;
 
     switch (fb->type) {
         case FRAMEBUFFER_TYPE_PIXEL: {
@@ -103,4 +105,31 @@ u8* framebuffer_impl_get_bytes(Framebuffer *fb) {
     }
 
     return bytes;
+}
+
+void framebuffer_set_scissor(Framebuffer *fb, f32x4 region) {
+    switch (fb->type) {
+        case FRAMEBUFFER_TYPE_PIXEL: {
+            fb->data.pixel_buf.scissor = ftoi32x4(region);
+            i32x4 *scissor = &fb->data.pixel_buf.scissor;
+            if (scissor->start_x < 0) {
+                scissor->width += scissor->start_x;
+                scissor->start_x = 0;
+            }
+            if (scissor->start_y < 0) {
+                scissor->height += scissor->start_y;
+                scissor->start_y = 0;
+            }
+            if (scissor->width < 0) {
+                scissor->width = 0;
+            }
+            if (scissor->height < 0) {
+                scissor->height = 0;
+            }
+            break;
+        }
+        default:
+            crash_msg("Unhandled framebuffer type %d\n", fb->type);
+            break;
+    }
 }

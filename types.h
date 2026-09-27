@@ -133,6 +133,8 @@ typedef struct I32X4_T {
         struct {
             i32 start_x, start_y, width, height;
         };
+
+        i32 data[4];
     };
 } i32x4;
 

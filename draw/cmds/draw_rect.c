@@ -22,6 +22,7 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
     i32x2 dst_fb_size = dst_fb_info.data.pixel_buf.size;
     i64 dst_fb_pitch_bytes = dst_fb_info.data.pixel_buf.pitch_bytes;
     i32x4 dst_fb_region = ftoi32x4(data->dst_region);
+    i32x4 dst_fb_scissor = dst_fb_info.data.pixel_buf.scissor;
     RectCornerRadii corner_radii = data->corner_radii;
     RectBorderWidths border_widths = data->border_widths;
     rgba8 bg_color = data->bg_color;
@@ -41,6 +42,11 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
     i32 dst_end_y = CLAMP(dst_fb_region.start_y + dst_fb_region.height, dst_start_y, dst_fb_size.height);
     i32 dst_start_x = CLAMP(dst_fb_region.start_x, 0, dst_fb_size.width);
     i32 dst_end_x = CLAMP(dst_fb_region.start_x + dst_fb_region.width, dst_start_x, dst_fb_size.width);
+
+    dst_start_y = CLAMP(dst_start_y, dst_fb_scissor.start_y, dst_fb_size.height);
+    dst_end_y = CLAMP(dst_end_y, dst_start_y, dst_fb_scissor.start_y + dst_fb_scissor.height);
+    dst_start_x = CLAMP(dst_start_x, dst_fb_scissor.start_x, dst_fb_size.width);
+    dst_end_x = CLAMP(dst_end_x, dst_start_x, dst_fb_scissor.start_x + dst_fb_scissor.width);
 
     i32x2 top_left_axis = {
         .x = dst_fb_region.start_x + (i32) corner_radii.top_left_px,
