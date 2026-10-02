@@ -37,10 +37,6 @@ typedef struct CODEPOINT_INFO_T {
         i32 y1; // below baseline
     } bbox;
 
-    struct {
-        i32 start, end;
-    } kerning_entry_idxs;
-
     HeightBitmapPairs bitmaps; // per px height
 } CodepointInfo;
 
@@ -68,16 +64,9 @@ struct FONT_HANDLE_T {
         CodepointInfo ascii[128];
 
         struct {
-            HASHMAP_FIELDS(i32, CodepointInfo)
-        } non_ascii; // utf-8 key
+            HASHMAP_FIELDS(u32, CodepointInfo)
+        } non_ascii; // unicode key
     } codepoints;
-
-    /*
-     * Sorted in ascending glyph1 and glyph2 order
-     */
-    struct {
-        ARRAY_FIELDS(stbtt_kerningentry)
-    } kerning_table;
 };
 
 static void codepoint_info_init(FontHandle *font, CodepointInfo *codepoint_info) {
@@ -96,25 +85,6 @@ static void codepoint_info_init(FontHandle *font, CodepointInfo *codepoint_info)
         &codepoint_info->bbox.x1,
         &codepoint_info->bbox.y1
     );
-
-    codepoint_info->kerning_entry_idxs.start = codepoint_info->kerning_entry_idxs.end = -1;
-
-    for (
-        i32 kerning_entry_idx = 0;
-        kerning_entry_idx < font->kerning_table.len;
-        kerning_entry_idx++
-    ) {
-        stbtt_kerningentry *entry = ARRAY_GET(&font->kerning_table, kerning_entry_idx);
-
-        if (codepoint_info->kerning_entry_idxs.start < 0
-            && codepoint_info->glyph_idx == entry->glyph1) {
-            codepoint_info->kerning_entry_idxs.start = kerning_entry_idx;
-        } else if (codepoint_info->kerning_entry_idxs.end < 0
-                   && codepoint_info->glyph_idx != entry->glyph1) {
-            codepoint_info->kerning_entry_idxs.end = kerning_entry_idx - 1;
-            break;
-        }
-    }
 
     codepoint_info->bitmaps = (HeightBitmapPairs){
         .type = HASHMAP_TYPE_NON_STR_KEY,
@@ -155,13 +125,6 @@ FontHandle *font_load(const FontLoadInfo *info) {
         &font->max_bbox.y1
     );
 
-    font->kerning_table.len = stbtt_GetKerningTableLength(&font->info);
-    if (font->kerning_table.len > 0) {
-        font->kerning_table.arena = font->arena;
-        ARRAY_MAKE(&font->kerning_table);
-        stbtt_GetKerningTable(&font->info, font->kerning_table.data, (i32) font->kerning_table.len);
-    }
-
     for (i64 ascii_idx = 0; ascii_idx <= INT8_MAX; ascii_idx++) {
         CodepointInfo *ascii_info = &font->codepoints.ascii[ascii_idx];
         ascii_info->glyph_idx = stbtt_FindGlyphIndex(&font->info, (i32) ascii_idx);
@@ -182,15 +145,20 @@ void font_unload(FontHandle *font) {
     alt_free(font);
 }
 
-static CodepointInfo *get_non_ascii_info(FontHandle *font, const char *utf8) {
-    i32 unicode = 0;
-    i64 unicode_size = utf8_size(utf8, 4);
-    memcpy(&unicode, utf8, unicode_size);
-    auto unicode_info_pair = HASHMAP_GET(&font->codepoints.non_ascii, &unicode);
-    if (!unicode_info_pair) {
-        crash_msg("Codepoint info for %.*s not created yet\n", unicode_size, utf8);
+static CodepointInfo *get_codepoint_info(FontHandle *font, const char *utf8) {
+    CodepointInfo *info = nullptr;
+    if (isascii(*utf8)) {
+        info = &font->codepoints.ascii[*utf8];
+    } else {
+        u32 unicode = utf8_to_unicode(utf8, 4);
+        auto unicode_info_pair = HASHMAP_GET(&font->codepoints.non_ascii, &unicode);
+        if (!unicode_info_pair) {
+            crash_msg("Codepoint info for %.*s not created yet\n", utf8_size(utf8, 4), utf8);
+        }
+        info = &unicode_info_pair->value;
     }
-    return &unicode_info_pair->value;
+
+    return info;
 }
 
 f32x2 font_measure_text(
@@ -210,13 +178,7 @@ f32x2 font_measure_text(
     const char *prev_utf8 = nullptr;
     STRING_VIEW_FOR(utf8, &line) {
         i64 remaining_bytes = line.start + line.len - utf8;
-        CodepointInfo *codepoint_info = &font->codepoints.ascii[*utf8];
-
-        if (isascii(*utf8)) {
-            codepoint_info = &font->codepoints.ascii[*utf8];
-        } else {
-            codepoint_info = get_non_ascii_info(font, utf8);
-        }
+        CodepointInfo *codepoint_info = get_codepoint_info(font, utf8);
 
         if (codepoint_info->glyph_idx) {
             if (utf8 == line.start) {
@@ -226,8 +188,8 @@ f32x2 font_measure_text(
                 }
             }
 
-            width += scale_factor * (f32) codepoint_info->advance_width_units;
             width += scale_factor * (f32) font_impl_get_kerning_advance(font, prev_utf8, utf8);
+            width += scale_factor * (f32) codepoint_info->advance_width_units;
 
             if (utf8 + utf8_size(utf8, remaining_bytes) < line.start + line.len) {
                 width += (f32) letter_spacing_px;
@@ -240,9 +202,9 @@ f32x2 font_measure_text(
                     width -= rsb_px;
                 }
             }
-
-            prev_utf8 = utf8;
         }
+
+        prev_utf8 = utf8;
     }
 
     f32x2 dim = {
@@ -276,11 +238,10 @@ i32 font_impl_get_glyph_idx(FontHandle *font, const char *codepoint) {
     if (isascii(*codepoint)) {
         glyph_idx = font->codepoints.ascii[*codepoint].glyph_idx;
     } else {
-        i32 unicode = 0;
-        memcpy(&unicode, codepoint, utf8_size(codepoint, 4));
+        u32 unicode = utf8_to_unicode(codepoint, 4);
         auto unicode_info_pair = HASHMAP_GET(&font->codepoints.non_ascii, &unicode);
         if (!unicode_info_pair) {
-            glyph_idx = stbtt_FindGlyphIndex(&font->info, unicode);
+            glyph_idx = stbtt_FindGlyphIndex(&font->info, (int) unicode);
             CodepointInfo unicode_info = {
                 .glyph_idx = glyph_idx,
             };
@@ -300,26 +261,12 @@ i32 font_impl_get_glyph_idx(FontHandle *font, const char *codepoint) {
 
 
 i32 font_impl_get_left_side_bearing(FontHandle *font, const char *codepoint) {
-    i32 lsb = 0;
-
-    if (isascii(*codepoint)) {
-        lsb = font->codepoints.ascii[*codepoint].left_side_bearing_units;
-    } else {
-        lsb = get_non_ascii_info(font, codepoint)->left_side_bearing_units;
-    }
-
+    i32 lsb = get_codepoint_info(font, codepoint)->left_side_bearing_units;
     return lsb;
 }
 
 i32 font_impl_get_advance_width(FontHandle *font, const char *codepoint) {
-    i32 adv_width = 0;
-
-    if (isascii(*codepoint)) {
-        adv_width = font->codepoints.ascii[*codepoint].advance_width_units;
-    } else {
-        adv_width = get_non_ascii_info(font, codepoint)->advance_width_units;
-    }
-
+    i32 adv_width = get_codepoint_info(font, codepoint)->advance_width_units;
     return adv_width;
 }
 
@@ -331,15 +278,8 @@ void font_impl_get_max_bbox(FontHandle *font, i32 *x0, i32 *y0, i32 *x1, i32 *y1
 }
 
 bool font_impl_codepoint_bitmap_exists(FontHandle *font, const char *codepoint, i32 px_height) {
-    bool exists = false;
-
-    if (isascii(*codepoint)) {
-        exists = HASHMAP_GET(&font->codepoints.ascii[*codepoint].bitmaps, &px_height);
-    } else {
-        CodepointInfo *codepoint_info = get_non_ascii_info(font, codepoint);
-        exists = HASHMAP_GET(&codepoint_info->bitmaps, &px_height);
-    }
-
+    CodepointInfo *codepoint_info = get_codepoint_info(font, codepoint);
+    bool exists = HASHMAP_GET(&codepoint_info->bitmaps, &px_height) != nullptr;
     return exists;
 }
 
@@ -359,13 +299,7 @@ void font_impl_create_codepoint_bitmap(FontHandle *font, const char *codepoint, 
     };
     ARRAY_MAKE(&bitmap.bytes);
 
-    HeightBitmapPairs *height_bitmap_map = nullptr;
-    if (isascii(*codepoint)) {
-        height_bitmap_map = &font->codepoints.ascii[*codepoint].bitmaps;
-    } else {
-        CodepointInfo *unicode_info = get_non_ascii_info(font, codepoint);
-        height_bitmap_map = &unicode_info->bitmaps;
-    }
+    HeightBitmapPairs *height_bitmap_map = &get_codepoint_info(font, codepoint)->bitmaps;
 
     HASHMAP_PUT(height_bitmap_map, &px_height, &bitmap);
 }
@@ -388,7 +322,7 @@ void font_impl_get_codepoint_bitmap(
 
         glyph_bitmap = &height_bitmap_pair->value;
     } else {
-        CodepointInfo *unicode_info = get_non_ascii_info(font, codepoint);
+        CodepointInfo *unicode_info = get_codepoint_info(font, codepoint);
         auto height_bitmap_pair = HASHMAP_GET(&unicode_info->bitmaps, &px_height);
         if (!height_bitmap_pair) {
             crash_msg("Glyph bitmap for unicode %.*s and height %d px is missing\n", utf8_size(codepoint, 4), codepoint,
@@ -405,6 +339,19 @@ void font_impl_get_codepoint_bitmap(
 
 i32 font_impl_get_kerning_advance(FontHandle *font, const char *prev_codepoint, const char *next_codepoint) {
     i32 advance = 0;
+
+    if (!prev_codepoint || !next_codepoint) {
+        return advance;
+    }
+
+    CodepointInfo *prev_info = get_codepoint_info(font, prev_codepoint);
+    CodepointInfo *next_info = get_codepoint_info(font, next_codepoint);
+
+    if (prev_info->glyph_idx <= 0 || next_info->glyph_idx <= 0) {
+        return advance;
+    }
+
+    advance = stbtt_GetGlyphKernAdvance(&font->info, prev_info->glyph_idx, next_info->glyph_idx);
 
     return advance;
 }

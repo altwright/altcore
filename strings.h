@@ -53,6 +53,8 @@ string string_dup(Arena *arena, const string *str);
 
 const char *utf8_next(const char *current, i64 max_bytes);
 
-i64 utf8_size(const char* utf8, i64 max_bytes);
+i64 utf8_size(const char* current, i64 max_bytes);
+
+u32 utf8_to_unicode(const char *current, i64 max_bytes);
 
 #endif //ALTCORE_STRINGS_H

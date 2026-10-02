@@ -102,7 +102,7 @@ const char *utf8_next(const char *current, i64 max_bytes) {
     return (const char *) utf8;
 }
 
-i64 utf8_size(const char* current, i64 max_bytes) {
+i64 utf8_size(const char *current, i64 max_bytes) {
     i64 size = 0;
     auto utf8 = (const char8_t *) current;
 
@@ -117,4 +117,24 @@ i64 utf8_size(const char* current, i64 max_bytes) {
     }
 
     return size;
+}
+
+u32 utf8_to_unicode(const char *current, i64 max_bytes) {
+    u32 unicode = 0;
+
+    auto utf8 = (const char8_t *) current;
+
+    if (utf8[0] < 0x80) {
+        unicode = utf8[0];
+    } else if ((utf8[0] & 0xE0) == 0xC0) {
+        unicode = ((utf8[0] & 0x1F) << 6) | (utf8[1] & 0x3F);
+    } else if ((utf8[0] & 0xF0) == 0xE0) {
+        unicode = ((utf8[0] & 0x0F) << 12) | ((utf8[1] & 0x3F) << 6) | (utf8[2] & 0x3F);
+    } else if ((utf8[0] & 0xF8) == 0xF0) {
+        unicode = ((utf8[0] & 0x07) << 18) | ((utf8[1] & 0x3F) << 12) | ((utf8[2] & 0x3F) << 6) | (utf8[3] & 0x3F);
+    } else {
+        unicode = 0xFFFD;
+    }
+
+    return unicode;
 }

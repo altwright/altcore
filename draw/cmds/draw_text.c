@@ -31,6 +31,9 @@ static void draw_text_line(
     STRING_VIEW_FOR(utf8, &text) {
         i32 glyph_idx = font_impl_get_glyph_idx(font, utf8);
         if (glyph_idx > 0) {
+            i32 kerning_advance_px = (i32) (scale_factor * (f32) font_impl_get_kerning_advance(font, prev_utf8, utf8));
+            cursor->x += kerning_advance_px;
+
             i32 x0, x1, y0, y1;
             stbtt_GetGlyphBitmapBox(
                 font_info,
@@ -109,10 +112,11 @@ static void draw_text_line(
             }
 
             i32 advance_width_px = (i32) (scale_factor * (f32) font_impl_get_advance_width(font, utf8));
-            i32 kerning_advance_px = (i32) (scale_factor * (f32) font_impl_get_kerning_advance(font, prev_utf8, utf8));
 
-            cursor->x += advance_width_px + kerning_advance_px + letter_spacing_px;
+            cursor->x += advance_width_px + letter_spacing_px;
         }
+
+        prev_utf8 = utf8;
     }
 }
 
