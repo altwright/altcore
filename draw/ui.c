@@ -25,7 +25,13 @@ typedef struct STRING_KEY_MAP_T {
     HASHMAP_FIELDS(u64, LocaleKeyMap)
 } StringKeyMap;
 
+typedef struct FONT_THEMES_T {
+    ARRAY_FIELDS(FontSets)
+} FontThemes;
+
 struct UI_CONTEXT_T {
+    Arena *arena;
+
     Clay_Arena clay_arena;
     Clay_Context *clay_ctx;
 
@@ -36,13 +42,10 @@ struct UI_CONTEXT_T {
         Framebuffer *fb;
     } current_canvas;
 
-    struct {
-        FontHandle **data;
-        i64 len;
-    } fonts;
-
     u64 current_locale;
     StringKeyMap string_key_map;
+
+    FontThemes font_themes;
 };
 
 static void ui_error_handler(Clay_ErrorData err_data) {
@@ -81,24 +84,97 @@ static f32x4 clay_to_render_rect(Clay_BoundingBox box) {
     };
 }
 
-static Clay_Dimensions ui_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data) {
-    UiContext *ui = user_data;
-    if (config->fontId >= ui->fonts.len) {
-        crash_msg("Font index %d exceeds font array of length %d\n", config->fontId, ui->fonts.len);
+static FontStyle read_font_modifier_flags(u16 font_mod_flags) {
+    FontStyle font_style = FONT_STYLE_REGULAR;
+    if ((font_mod_flags & UI_FONT_MODIFIER_FLAG_ITALIC) && (font_mod_flags & UI_FONT_MODIFIER_FLAG_BOLD)) {
+        font_style = FONT_STYLE_BOLD_ITALIC;
+    } else if (font_mod_flags & UI_FONT_MODIFIER_FLAG_ITALIC) {
+        font_style = FONT_STYLE_ITALIC;
+    } else if (font_mod_flags & UI_FONT_MODIFIER_FLAG_BOLD) {
+        font_style = FONT_STYLE_BOLD;
     }
 
-    FontHandle *font = ui->fonts.data[config->fontId];
+    return font_style;
+}
+
+static Clay_Dimensions ui_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data) {
+    UiContext *ui = user_data;
+    u16 font_theme_idx = config->fontId & 0xff;
+    u16 font_mod_flags = config->fontId & ~font_theme_idx;
+
+    FontSets *font_theme = ARRAY_GET(&ui->font_themes, font_theme_idx);
+
+    FontStyle font_style = read_font_modifier_flags(font_mod_flags);
+
+    string_view full_txt_line = {
+        .start = text.chars,
+        .len = text.length,
+    };
+
+    f32x2 final_dim = {};
+
+    /*
+     * We want to identify "runs" within the text that use the same font.
+     * For example, if there was a line of mostly ascii characters with a
+     * unicode character in the middle that is not found in the default FontHandle, the run of ascii
+     * characters leading up to the unicode should be measured with the default FontHandle, the
+     * unicode character should be measured with the fallback FontHandle that contains it, and the
+     * remaining run of ascii characters should be measured with the default FontHandle again.
+     * If, however, the string is all unicode characters, then the measure function should only
+     * be called once with the fallback FontHandle that includes it.
+     */
+    const char *prev_txt_start = text.chars;
+    i64 prev_font_set_idx = 0;
+    STRING_VIEW_FOR(utf8, &full_txt_line) {
+        i64 current_font_set_idx = 0;
+
+        FontHandle *font = ARRAY_GET(font_theme, current_font_set_idx)->styles[font_style];
+
+        while (font_impl_get_glyph_idx(font, utf8) <= 0) {
+            current_font_set_idx++;
+            if (current_font_set_idx >= font_theme->len) {
+                current_font_set_idx = 0;
+                break;
+            }
+
+            font = ARRAY_GET(font_theme, current_font_set_idx)->styles[font_style];
+        }
+
+        if (current_font_set_idx != prev_font_set_idx) {
+            f32x2 dim = font_measure_text(
+                font,
+                (string_view){
+                    .start = prev_txt_start,
+                    .len = utf8 - prev_txt_start
+                },
+                config->fontSize,
+                config->letterSpacing
+            );
+
+            final_dim.height = MAX(dim.height, final_dim.height);
+            final_dim.width += dim.width;
+
+            prev_txt_start = utf8;
+            prev_font_set_idx = current_font_set_idx;
+        }
+    }
 
     f32x2 dim = font_measure_text(
-        font,
-        (string_view){.start = text.chars, .len = text.length},
+        ARRAY_GET(font_theme, prev_font_set_idx)->styles[font_style],
+        (string_view){
+            .start = prev_txt_start,
+            .len = (full_txt_line.start + full_txt_line.len) - prev_txt_start
+        },
         config->fontSize,
         config->letterSpacing
     );
 
+    final_dim.height = MAX(dim.height, final_dim.height);
+    final_dim.width += dim.width;
+
     return (Clay_Dimensions){
-        .width = dim.width,
-        .height = dim.height,
+        .width = final_dim.width,
+        .height = final_dim.height,
     };
 };
 
@@ -122,7 +198,9 @@ UiContext *ui_create(const UiCreateInfo *create_info) {
         memory_size = create_info->memory_cap;
     }
 
-    ui->clay_arena = Clay_CreateArenaWithCapacityAndMemory(memory_size, alt_malloc(memory_size));
+    ui->arena = arena_make((i64) memory_size + (i64) MIBIBYTE);
+
+    ui->clay_arena = Clay_CreateArenaWithCapacityAndMemory(memory_size, arena_alloc(ui->arena, (i64) memory_size));
     FramebufferInfo canvas_info = framebuffer_get_info(create_info->initial_canvas);
     if (canvas_info.type != FRAMEBUFFER_TYPE_PIXEL) {
         crash_msg("Framebuffer is not a pixel buffer\n");
@@ -151,10 +229,27 @@ UiContext *ui_create(const UiCreateInfo *create_info) {
         }
     );
 
-    u64 fonts_size = create_info->fonts.len * sizeof(*create_info->fonts.data);
-    ui->fonts.data = alt_malloc(fonts_size);
-    ui->fonts.len = create_info->fonts.len;
-    memcpy(ui->fonts.data, create_info->fonts.data, fonts_size);
+    ui->font_themes = (FontThemes){
+        .arena = ui->arena,
+        .len = create_info->font_themes.len,
+    };
+    ARRAY_MAKE(&ui->font_themes);
+
+    for (i64 font_theme_idx = 0; font_theme_idx < create_info->font_themes.len; font_theme_idx++) {
+        UiFontSets *create_font_theme = &create_info->font_themes.data[font_theme_idx];
+        FontSets *font_theme = ARRAY_GET(&ui->font_themes, font_theme_idx);
+        *font_theme = (FontSets){
+            .arena = ui->arena,
+            .len = create_font_theme->len,
+        };
+        ARRAY_MAKE(font_theme);
+
+        for (i64 font_set_idx = 0; font_set_idx < create_font_theme->len; font_set_idx++) {
+            FontSet *create_font_set = &create_font_theme->data[font_set_idx];
+            FontSet *font_set = ARRAY_GET(font_theme, font_set_idx);
+            memcpy(font_set, create_font_set, sizeof(FontSet));
+        }
+    }
 
     ui->string_key_map = (StringKeyMap){
         .type = HASHMAP_TYPE_NON_STR_KEY,
@@ -166,9 +261,8 @@ UiContext *ui_create(const UiCreateInfo *create_info) {
 }
 
 void ui_destroy(UiContext *ui) {
-    alt_free(ui->fonts.data);
+    arena_free(ui->arena);
     HASHMAP_FREE(&ui->string_key_map);
-    alt_free(ui->clay_arena.memory);
     alt_free(ui);
 }
 
@@ -294,17 +388,16 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 render_cmd_data->text.start = clay_cmd_data->stringContents.chars;
                 render_cmd_data->text.len = clay_cmd_data->stringContents.length;
 
-                render_cmd_data->framebuffer = ui->current_canvas.fb;
-                render_cmd_data->dst = dst_region;
+                render_cmd_data->dst_fb = ui->current_canvas.fb;
+                render_cmd_data->dst_fb_region = dst_region;
 
-                i64 font_idx = clay_cmd->renderData.text.fontId;
-                if (font_idx >= ui->fonts.len) {
-                    crash_msg("Font index %d exceeds font array of length %d\n", font_idx, ui->fonts.len);
-                }
+                u16 font_theme_idx = clay_cmd->renderData.text.fontId & 0xff;
+                u16 font_style_flags = clay_cmd->renderData.text.fontId & ~font_theme_idx;
 
-                render_cmd_data->font = ui->fonts.data[clay_cmd->renderData.text.fontId];
+                render_cmd_data->font_sets = ARRAY_GET(&ui->font_themes, font_theme_idx);
+                render_cmd_data->font_style = read_font_modifier_flags(font_style_flags);
 
-                render_cmd_data->color = clay_to_render_color(
+                render_cmd_data->text_color = clay_to_render_color(
                     clay_cmd->renderData.text.textColor
                 );
 
@@ -430,7 +523,7 @@ Clay_String ui_get_string(UiContext *ui, u64 str_key) {
     return (Clay_String){
         .chars = view.start,
         .length = (i32) view.len,
-        .isStaticallyAllocated = true,
+        .isStaticallyAllocated = true
     };
 }
 

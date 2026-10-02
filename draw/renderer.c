@@ -133,15 +133,7 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                     case RENDER_CMD_TYPE_DRAW_TEXT: {
                         RenderCmdDrawText *data = &cmd->data.draw_text;
 
-                        soft_cmd_draw_text(
-                            data->framebuffer,
-                            ftoi32x4(data->dst),
-                            data->text,
-                            data->font,
-                            data->font_height_px,
-                            data->letter_spacing_px,
-                            data->color
-                        );
+                        soft_cmd_draw_text(data);
 
                         break;
                     }

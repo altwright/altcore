@@ -38,7 +38,7 @@ string string_dup(Arena *arena, const string *str);
     for ( \
         const char *ptr_var = (string_ptr)->data; \
         ptr_var && (ptr_var < (string_ptr)->data + (string_ptr)->len); \
-        ptr_var = utf8_next(ptr_var, (string_ptr)->len - (ptr_var - (string_ptr)->data)) \
+        ptr_var = utf8_next(ptr_var, ((string_ptr)->data + (string_ptr)->len) - ptr_var) \
     )
 #endif
 
@@ -47,10 +47,12 @@ string string_dup(Arena *arena, const string *str);
     for ( \
         const char *ptr_var = (string_view_ptr)->start; \
         ptr_var && (ptr_var < (string_view_ptr)->start + (string_view_ptr)->len); \
-        ptr_var = utf8_next(ptr_var, (string_view_ptr)->len - (ptr_var - (string_view_ptr)->start)) \
+        ptr_var = utf8_next(ptr_var, ((string_view_ptr)->start + (string_view_ptr)->len) - ptr_var) \
     )
 #endif
 
 const char *utf8_next(const char *current, i64 max_bytes);
+
+i64 utf8_size(const char* utf8, i64 max_bytes);
 
 #endif //ALTCORE_STRINGS_H

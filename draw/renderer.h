@@ -104,11 +104,12 @@ typedef struct RENDER_CMD_BLIT_T {
 } RenderCmdBlit;
 
 typedef struct RENDER_CMD_DRAW_TEXT_T {
-    Framebuffer *framebuffer;
+    Framebuffer *dst_fb;
     string_view text;
-    f32x4 dst;
-    FontHandle *font;
-    rgba8 color;
+    f32x4 dst_fb_region;
+    FontSets *font_sets;
+    FontStyle font_style;
+    rgba8 text_color;
     i32 font_height_px;
     i32 letter_spacing_px;
     i32 line_height_px;

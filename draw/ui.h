@@ -12,16 +12,56 @@
 
 typedef struct UI_CONTEXT_T UiContext;
 
+typedef enum UI_FONT_MODIFIER_E : i32 {
+#define X_UI_FONT_MODIFIERS \
+    X(ITALIC) \
+    X(BOLD)
+#define X(mod) \
+    UI_FONT_MODIFIER_##mod,
+    X_UI_FONT_MODIFIERS
+#undef X
+    UI_FONT_MODIFIER_COUNT
+} UiFontModifier;
+
+typedef enum UI_FONT_MODIFIER_FLAGS_E : u16 {
+#define X(mod) \
+    UI_FONT_MODIFIER_FLAG_##mod = 1U << (UI_FONT_MODIFIER_##mod + 8),
+    X_UI_FONT_MODIFIERS
+#undef X
+} UiFontModifierFlags;
+
+
+/*
+ * Each font theme is an array of font sets in priority order
+ * from highest priority to lowest priority in usage. If a
+ * codepoint is not found in the a font set, the next font set in
+ * terms of priority is searched.
+ */
+typedef struct UI_FONT_THEME_T {
+    FontSet* data;
+    i64 len;
+} UiFontSets;
+
 typedef struct UI_CREATE_INFO_T {
     i64 memory_cap;
     const Framebuffer *initial_canvas;
     f32 viewport_aspect_ratio;
 
-    // The font handle lifetimes must be managed externally
-    struct {
-        FontHandle **data;
-        i64 len;
-    } fonts;
+    /*
+     * A font theme can represent the sets of fonts used
+     * for text sections such as Titles, Subtitles, Heading 1,
+     * Heading 2, Body, etc.. These themes are defined user-side
+     * and are indexed through the lower 8-bits of the fontId
+     * parameter of CLAY_TEXT.
+     */
+    const struct {
+        UiFontSets *data;
+        /*
+         * The fontId parameter of CLAY_TEXT permits only a maximum of 255 font themes to be indexed
+         * using the lower 8-bits, with the upper 8-bits used for modifier flags.
+         */
+        u8 len;
+    } font_themes;
 } UiCreateInfo;
 
 typedef struct UI_BEGIN_LAYOUT_INFO_T {

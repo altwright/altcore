@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <uchar.h>
 #include <string.h>
+#include "maths.h"
 
 #define STB_SPRINTF_IMPLEMENTATION
 #include "libs/stb_sprintf.h"
@@ -99,4 +100,21 @@ const char *utf8_next(const char *current, i64 max_bytes) {
     } while ((*utf8 & 0xC0) == 0x80);
 
     return (const char *) utf8;
+}
+
+i64 utf8_size(const char* current, i64 max_bytes) {
+    i64 size = 0;
+    auto utf8 = (const char8_t *) current;
+
+    max_bytes = CLAMP(max_bytes, 0, 4);
+
+    for (i64 byte_idx = 0; byte_idx < max_bytes; byte_idx++) {
+        utf8++;
+        size++;
+        if ((*utf8 & 0xC0) != 0x80) {
+            break;
+        }
+    }
+
+    return size;
 }

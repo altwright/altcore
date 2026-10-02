@@ -36,4 +36,6 @@ void font_impl_get_codepoint_bitmap(
     i32 *out_bitmap_height
 );
 
+i32 font_impl_get_kerning_advance(FontHandle *font, const char* prev_codepoint, const char* next_codepoint);
+
 #endif //ALTCORE_FONTS_IMPL_H

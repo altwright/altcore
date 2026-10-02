@@ -17,6 +17,27 @@ typedef struct FONT_LOAD_INFO_T {
     } ttf;
 } FontLoadInfo;
 
+typedef enum FONT_STYLE_E {
+#define X_FONT_STYLES \
+    X(REGULAR) \
+    X(ITALIC) \
+    X(BOLD) \
+    X(BOLD_ITALIC) \
+    X(COUNT)
+#define X(style) \
+    FONT_STYLE_##style,
+    X_FONT_STYLES
+#undef X
+} FontStyle;
+
+typedef struct FONT_SET_T {
+    FontHandle *styles[FONT_STYLE_COUNT];
+} FontSet;
+
+typedef struct FONT_SETS_T {
+    ARRAY_FIELDS(FontSet)
+} FontSets;
+
 FontHandle *font_load(const FontLoadInfo *info);
 
 void font_unload(FontHandle *font);
