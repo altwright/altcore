@@ -218,7 +218,9 @@ f32x2 font_measure_text(
         }
 
         if (codepoint_info->glyph_idx) {
-            width -= scale_factor * (f32) codepoint_info->left_side_bearing_units;
+            if (utf8 > line.start) {
+                width -= scale_factor * (f32) codepoint_info->left_side_bearing_units;
+            }
             width += scale_factor * (f32) codepoint_info->advance_width_units;
             width += scale_factor * (f32) font_impl_get_kerning_advance(font, prev_utf8, utf8);
 

@@ -86,11 +86,11 @@ static f32x4 clay_to_render_rect(Clay_BoundingBox box) {
 
 static FontStyle read_font_modifier_flags(u16 font_mod_flags) {
     FontStyle font_style = FONT_STYLE_REGULAR;
-    if ((font_mod_flags & UI_FONT_MODIFIER_FLAG_ITALIC) && (font_mod_flags & UI_FONT_MODIFIER_FLAG_BOLD)) {
+    if ((font_mod_flags & UI_FONT_MODIFIER_ITALIC_FLAG) && (font_mod_flags & UI_FONT_MODIFIER_BOLD_FLAG)) {
         font_style = FONT_STYLE_BOLD_ITALIC;
-    } else if (font_mod_flags & UI_FONT_MODIFIER_FLAG_ITALIC) {
+    } else if (font_mod_flags & UI_FONT_MODIFIER_ITALIC_FLAG) {
         font_style = FONT_STYLE_ITALIC;
-    } else if (font_mod_flags & UI_FONT_MODIFIER_FLAG_BOLD) {
+    } else if (font_mod_flags & UI_FONT_MODIFIER_BOLD_FLAG) {
         font_style = FONT_STYLE_BOLD;
     }
 

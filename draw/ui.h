@@ -25,7 +25,7 @@ typedef enum UI_FONT_MODIFIER_E : i32 {
 
 typedef enum UI_FONT_MODIFIER_FLAGS_E : u16 {
 #define X(mod) \
-    UI_FONT_MODIFIER_FLAG_##mod = 1U << (UI_FONT_MODIFIER_##mod + 8),
+    UI_FONT_MODIFIER_##mod##_FLAG = 1U << (UI_FONT_MODIFIER_##mod + 8),
     X_UI_FONT_MODIFIERS
 #undef X
 } UiFontModifierFlags;

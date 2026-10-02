@@ -67,8 +67,10 @@ static void draw_text_line(
                                                &bitmap_height);
             }
 
-            i32 lsb = (i32) (scale_factor * (f32) font_impl_get_left_side_bearing(font, utf8));
-            cursor->x -= lsb;
+            if (utf8 > text.start) {
+                i32 lsb_px = (i32) (scale_factor * (f32) font_impl_get_left_side_bearing(font, utf8));
+                cursor->x -= lsb_px;
+            }
 
             PixelFormat px_format = dst_fb_info.data.pixel_buf.format;
             i32 px_size = (i32) pixel_size(px_format);
