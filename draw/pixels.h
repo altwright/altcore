@@ -76,6 +76,10 @@ typedef struct PIXEL_T {
 #define RGBA8_WHITE (rgba8){.r = 0xff, .g = 0xff, .b = 0xff, .a = 0xff}
 #endif
 
+#ifndef RGBA8_GREY
+#define RGBA8_GREY (rgba8){.r = 0x8f, .g = 0x8f, .b = 0x8f, .a = 0xff}
+#endif
+
 #ifndef RGBA8_YELLOW
 #define RGBA8_YELLOW (rgba8){.r = 0xff, .g = 0xff, .b = 0, .a = 0xff}
 #endif
