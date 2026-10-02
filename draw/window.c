@@ -112,16 +112,16 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
 
     bool disable_vsync = false;
 
-    for (i32 flag_idx = 0; flag_idx < WINDOW_FLAG_OPTION_COUNT; flag_idx++) {
-        WindowFlag flag = 1ULL << flag_idx;
+    for (i32 flag_idx = 0; flag_idx < WINDOW_OPTION_COUNT; flag_idx++) {
+        WindowOptionFlag flag = 1ULL << flag_idx;
 
         if (info->flags & flag) {
             switch (flag) {
-                case WINDOW_FLAG_RESIZABLE: {
+                case WINDOW_OPTION_RESIZABLE_FLAG: {
                     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, true);
                     break;
                 }
-                case WINDOW_FLAG_DISABLE_VSYNC: {
+                case WINDOW_OPTION_DISABLE_VSYNC_FLAG: {
                     disable_vsync = true;
                     break;
                 }

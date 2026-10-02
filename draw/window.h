@@ -28,31 +28,31 @@ typedef enum WINDOW_MODE_E {
 #undef X
 } WindowMode;
 
-typedef enum WINDOW_FLAG_OPTION_E {
-#ifndef X_WINDOW_FLAG_OPTIONS
-#define X_WINDOW_FLAG_OPTIONS \
+typedef enum WINDOW_OPTION_E {
+#ifndef X_WINDOW_OPTIONS
+#define X_WINDOW_OPTIONS \
     X(RESIZABLE) \
     X(DISABLE_VSYNC) \
     X(COUNT)
 #endif
 #ifndef X
 #define X(option) \
-    WINDOW_FLAG_OPTION_##option,
+    WINDOW_OPTION_##option,
 #endif
-    X_WINDOW_FLAG_OPTIONS
+    X_WINDOW_OPTIONS
 #undef X
-} WindowFlagOption;
+} WindowOption;
 
-typedef enum WINDOW_FLAG_E : u64 {
+typedef enum WINDOW_OPTION_FLAG_E : u64 {
 #ifndef X
 #define X(flag) \
-    WINDOW_FLAG_##flag = 1ULL << WINDOW_FLAG_OPTION_##flag,
+    WINDOW_OPTION_##flag##_FLAG = 1ULL << WINDOW_OPTION_##flag,
 #endif
-    X_WINDOW_FLAG_OPTIONS
+    X_WINDOW_OPTIONS
 #undef X
-} WindowFlag;
+} WindowOptionFlag;
 
-typedef u64 WindowFlags;
+typedef WindowOptionFlag WindowOptionFlags;
 
 typedef enum SWAPCHAIN_MODE_E {
 #ifndef X_SWAPCHAIN_MODES
@@ -75,7 +75,7 @@ typedef struct WINDOW_CREATE_INFO_T {
     i32x2 pos;
     i32 display_idx;
     WindowMode mode;
-    WindowFlags flags;
+    WindowOptionFlags flags;
 } WindowCreateInfo;
 
 typedef struct DISPLAY_INFO_T {

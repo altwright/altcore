@@ -297,17 +297,17 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
 
     Clay_SetPointerState(
         (Clay_Vector2){
-            .x = layout_info->pointer_pos.x - ui->current_canvas.offset.x,
-            .y = layout_info->pointer_pos.y - ui->current_canvas.offset.y,
+            .x = layout_info->mouse.pointer.pos.x - ui->current_canvas.offset.x,
+            .y = layout_info->mouse.pointer.pos.y - ui->current_canvas.offset.y,
         },
-        layout_info->pointer_pressed
+        layout_info->mouse.pointer.pressed
     );
 
     Clay_UpdateScrollContainers(
         true,
         (Clay_Vector2){
-            .x = layout_info->scroll_delta.x,
-            .y = layout_info->scroll_delta.y,
+            .x = layout_info->mouse.scroll_delta.x,
+            .y = layout_info->mouse.scroll_delta.y,
         },
         layout_info->frame_elapsed_time_s
     );
@@ -535,7 +535,7 @@ u64 ui_get_locale(UiContext *ui) {
     return ui->current_locale;
 }
 
-u16 ui_px_height(UiContext *ui, f32 pct) {
+u16 ui_px_height(UiContext *ui, f64 pct) {
     if (!ui->current_canvas.fb) {
         return 0;
     }
@@ -552,7 +552,7 @@ u16 ui_px_height(UiContext *ui, f32 pct) {
     return MAX(1, px_height);
 }
 
-u16 ui_px_width(UiContext *ui, f32 pct) {
+u16 ui_px_width(UiContext *ui, f64 pct) {
     if (!ui->current_canvas.fb) {
         return 0;
     }

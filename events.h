@@ -28,7 +28,7 @@ typedef enum EVENT_SOURCE_E {
 typedef enum EVENT_SOURCE_FLAG_E : u64 {
 #ifndef X
 #define X(source) \
-    EVENT_SOURCE_FLAG_##source = 1ULL << EVENT_SOURCE_##source,
+    EVENT_SOURCE_##source##_FLAG = 1ULL << EVENT_SOURCE_##source,
 #endif
     X_EVENT_SOURCES
 #undef X
@@ -236,8 +236,18 @@ typedef enum MOUSE_EVENT_TYPE_E {
 #undef X
 } MouseEventType;
 
+typedef struct MOUSE_EVENT_MOVE_DATA_T {
+    WindowHandle *window;
+    f32x2 pos;
+    f32x2 delta;
+} MouseEventMoveData;
+
 typedef struct MOUSE_EVENT_T {
     MouseEventType type;
+
+    union {
+        MouseEventMoveData move;
+    } data;
 } MouseEvent;
 
 typedef struct EVENT_T {

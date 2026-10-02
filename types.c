@@ -58,23 +58,17 @@ void array_push(
     void **data_ptr,
     i64 *len,
     i64 *cap,
-    i64 data_elem_size,
-    i64 new_elem_size,
+    i64 elem_size,
     const void *new_elem,
     struct ARENA_T *arena
 ) {
-    assert(data_ptr && *data_ptr);
-    assert(data_elem_size == new_elem_size);
-    assert(*len >= 0);
-    assert(*len <= *cap);
-
     while (*len >= *cap) {
-        array_expand(data_ptr, data_elem_size, len, cap, arena);
+        array_expand(data_ptr, elem_size, len, cap, arena);
     }
 
     u8 *data = *data_ptr;
-    u8 *new_elem_bytes = data + (data_elem_size * (*len));
-    memcpy(new_elem_bytes, new_elem, new_elem_size);
+    u8 *new_elem_bytes = data + (elem_size * (*len));
+    memcpy(new_elem_bytes, new_elem, elem_size);
 
     (*len)++;
 }

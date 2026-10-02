@@ -45,34 +45,34 @@ void events_init(const EventsInitInfo *info) {
 void events_poll() {
     g_events_q.count = g_events_q.head_idx = 0;
 
-    SDL_Event event;
+    SDL_Event sdl_event;
 
-    while (SDL_PollEvent(&event)) {
+    while (SDL_PollEvent(&sdl_event)) {
         Event e = {};
         bool handled = true;
-        switch (event.type) {
+        switch (sdl_event.type) {
             case SDL_EVENT_WINDOW_RESIZED:
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
-                if (!(g_event_source_flags & EVENT_SOURCE_FLAG_WINDOW)) {
+                if (!(g_event_source_flags & EVENT_SOURCE_WINDOW_FLAG)) {
                     handled = false;
                     break;
                 }
 
                 WindowEvent we = {};
 
-                switch (event.type) {
+                switch (sdl_event.type) {
                     case SDL_EVENT_WINDOW_RESIZED: {
                         we.type = WINDOW_EVENT_RESIZE;
                         we.data.resize.new_size = (i32x2){
-                            .width = event.window.data1,
-                            .height = event.window.data2,
+                            .width = sdl_event.window.data1,
+                            .height = sdl_event.window.data2,
                         };
-                        we.data.resize.window = window_impl_get_handle_from_id(event.window.windowID);
+                        we.data.resize.window = window_impl_get_handle_from_id(sdl_event.window.windowID);
                         break;
                     }
                     case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
                         we.type = WINDOW_EVENT_CLOSE;
-                        we.data.close.window = window_impl_get_handle_from_id(event.window.windowID);
+                        we.data.close.window = window_impl_get_handle_from_id(sdl_event.window.windowID);
                         break;
                     }
                     default:
@@ -84,16 +84,18 @@ void events_poll() {
                 e.data.window = we;
                 break;
             }
+            case SDL_EVENT_KEYBOARD_ADDED:
+            case SDL_EVENT_KEYBOARD_REMOVED:
             case SDL_EVENT_KEY_DOWN:
             case SDL_EVENT_KEY_UP: {
-                if (!(g_event_source_flags & EVENT_SOURCE_FLAG_KEYBOARD)) {
+                if (!(g_event_source_flags & EVENT_SOURCE_KEYBOARD_FLAG)) {
                     handled = false;
                     break;
                 }
 
                 e.source = EVENT_SOURCE_KEYBOARD;
 
-                switch (event.type) {
+                switch (sdl_event.type) {
                     case SDL_EVENT_KEY_DOWN: {
                         e.data.keyboard.type = KEYBOARD_EVENT_KEY_PRESS;
                         break;
@@ -109,7 +111,7 @@ void events_poll() {
 
                 KeyboardKey *key = &e.data.keyboard.key;
 
-                switch (event.key.key) {
+                switch (sdl_event.key.key) {
                     case SDLK_ESCAPE: *key = KEYBOARD_KEY_ESCAPE;
                         break;
                     case SDLK_F1: *key = KEYBOARD_KEY_F1;
@@ -284,6 +286,44 @@ void events_poll() {
                         break;
                     case SDLK_RIGHT: *key = KEYBOARD_KEY_ARROW_RIGHT;
                         break;
+                    default:
+                        handled = false;
+                        break;
+                }
+
+                break;
+            }
+            case SDL_EVENT_MOUSE_MOTION:
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+            case SDL_EVENT_MOUSE_BUTTON_UP:
+            case SDL_EVENT_MOUSE_WHEEL:
+            case SDL_EVENT_MOUSE_ADDED:
+            case SDL_EVENT_MOUSE_REMOVED: {
+                if (!(g_event_source_flags & EVENT_SOURCE_MOUSE_FLAG)) {
+                    handled = false;
+                    break;
+                }
+
+                e.source = EVENT_SOURCE_MOUSE;
+
+                switch (sdl_event.type) {
+                    case SDL_EVENT_MOUSE_MOTION: {
+                        SDL_MouseMotionEvent *sdl_data = &sdl_event.motion;
+                        e.data.mouse.type = MOUSE_EVENT_TYPE_MOVE;
+                        e.data.mouse.data.move = (MouseEventMoveData){
+                            .window = window_impl_get_handle_from_id(sdl_data->windowID),
+                            .pos = {
+                                .x = sdl_data->x,
+                                .y = sdl_data->y,
+                            },
+                            .delta = {
+                                .x = sdl_data->xrel,
+                                .y = sdl_data->yrel,
+                            }
+                        };
+
+                        break;
+                    }
                     default:
                         handled = false;
                         break;

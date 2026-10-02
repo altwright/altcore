@@ -52,6 +52,42 @@ typedef struct PIXEL_T {
     u8 *start;
 } Pixel;
 
+#ifndef RGBA8_NIL
+#define RGBA8_NIL (rgba8){.r = 0, .g = 0, .b = 0, .a = 0}
+#endif
+
+#ifndef RGBA8_RED
+#define RGBA8_RED (rgba8){.r = 0xff, .g = 0, .b = 0, .a = 0xff}
+#endif
+
+#ifndef RGBA8_GREEN
+#define RGBA8_GREEN (rgba8){.r = 0xff, .g = 0xff, .b = 0, .a = 0xff}
+#endif
+
+#ifndef RGBA8_BLUE
+#define RGBA8_BLUE (rgba8){.r = 0, .g = 0, .b = 0xff, .a = 0xff}
+#endif
+
+#ifndef RGBA8_BLACK
+#define RGBA8_BLACK (rgba8){.r = 0, .g = 0, .b = 0, .a = 0xff}
+#endif
+
+#ifndef RGBA8_WHITE
+#define RGBA8_WHITE (rgba8){.r = 0xff, .g = 0xff, .b = 0xff, .a = 0xff}
+#endif
+
+#ifndef RGBA8_YELLOW
+#define RGBA8_YELLOW (rgba8){.r = 0xff, .g = 0xff, .b = 0, .a = 0xff}
+#endif
+
+#ifndef RGBA8_MAGENTA
+#define RGBA8_MAGENTA (rgba8){.r = 0xff, .g = 0, .b = 0xff, .a = 0xff}
+#endif
+
+#ifndef RGBA8_CYAN
+#define RGBA8_CYAN (rgba8){.r = 0, .g = 0xff, .b = 0xff, .a = 0xff}
+#endif
+
 i64 pixel_size(PixelFormat format);
 
 void pixel_set(Pixel *dst_px, const Pixel *src_px);

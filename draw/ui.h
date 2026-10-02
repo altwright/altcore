@@ -38,7 +38,7 @@ typedef enum UI_FONT_MODIFIER_FLAGS_E : u16 {
  * terms of priority is searched.
  */
 typedef struct UI_FONT_THEME_T {
-    FontSet* data;
+    FontSet *data;
     i64 len;
 } UiFontSets;
 
@@ -64,11 +64,18 @@ typedef struct UI_CREATE_INFO_T {
     } font_themes;
 } UiCreateInfo;
 
+typedef struct UI_MOUSE_INFO_T {
+    struct {
+        f32x2 pos;
+        bool pressed;
+    } pointer;
+
+    f32x2 scroll_delta;
+} UiMouseInfo;
+
 typedef struct UI_BEGIN_LAYOUT_INFO_T {
     Framebuffer *canvas;
-    f32x2 pointer_pos;
-    bool pointer_pressed;
-    f32x2 scroll_delta;
+    UiMouseInfo mouse;
     f32 frame_elapsed_time_s;
 } UiBeginLayoutInfo;
 
@@ -90,8 +97,8 @@ void ui_set_locale(UiContext *ui, u64 loc_key);
 
 u64 ui_get_locale(UiContext *ui);
 
-u16 ui_px_width(UiContext *ui, f32 pct);
+u16 ui_px_width(UiContext *ui, f64 pct);
 
-u16 ui_px_height(UiContext *ui, f32 pct);
+u16 ui_px_height(UiContext *ui, f64 pct);
 
 #endif //ALTCORE_UI_H
