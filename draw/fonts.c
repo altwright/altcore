@@ -181,6 +181,7 @@ void font_unload(FontHandle *font) {
     arena_free(font->arena);
     alt_free(font);
 }
+
 static CodepointInfo *get_non_ascii_info(FontHandle *font, const char *utf8) {
     i32 unicode = 0;
     i64 unicode_size = utf8_size(utf8, 4);
@@ -218,14 +219,26 @@ f32x2 font_measure_text(
         }
 
         if (codepoint_info->glyph_idx) {
-            if (utf8 > line.start) {
-                width -= scale_factor * (f32) codepoint_info->left_side_bearing_units;
+            if (utf8 == line.start) {
+                f32 lsb_px = scale_factor * (f32) codepoint_info->left_side_bearing_units;
+                if (lsb_px < 0) {
+                    width -= lsb_px;
+                }
             }
+
             width += scale_factor * (f32) codepoint_info->advance_width_units;
             width += scale_factor * (f32) font_impl_get_kerning_advance(font, prev_utf8, utf8);
 
             if (utf8 + utf8_size(utf8, remaining_bytes) < line.start + line.len) {
                 width += (f32) letter_spacing_px;
+            } else {
+                f32 rsb_px = scale_factor * (f32) (
+                                 codepoint_info->advance_width_units - (
+                                     codepoint_info->left_side_bearing_units + (
+                                         codepoint_info->bbox.x1 - codepoint_info->bbox.x0)));
+                if (rsb_px < 0) {
+                    width -= rsb_px;
+                }
             }
 
             prev_utf8 = utf8;
@@ -284,7 +297,6 @@ i32 font_impl_get_glyph_idx(FontHandle *font, const char *codepoint) {
 
     return glyph_idx;
 }
-
 
 
 i32 font_impl_get_left_side_bearing(FontHandle *font, const char *codepoint) {
