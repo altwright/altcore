@@ -27,6 +27,7 @@ set(HEADER_FILEPATHS
         draw/framebuffer.h
         draw/renderer.h
         draw/ui.h
+        draw/ui/widgets.h
         draw/fonts.h
         draw/lights.h
         draw/image.h
@@ -61,6 +62,7 @@ add_library(${PROJECT_NAME}
         draw/renderer.c
         draw/pixels.c
         draw/ui.c
+        draw/ui/widgets.c
         draw/fonts.c
         draw/image.c
         draw/cmds/clear.c

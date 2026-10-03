@@ -224,7 +224,7 @@ void events_poll() {
                         break;
                     case SDLK_Z: *key = KEYBOARD_KEY_Z;
                         break;
-                    case SDLK_X: *key = KEYBOARD_KEY_X_KEY;
+                    case SDLK_X: *key = KEYBOARD_KEY_X;
                         break;
                     case SDLK_C: *key = KEYBOARD_KEY_C;
                         break;
@@ -272,7 +272,7 @@ void events_poll() {
                         break;
                     case SDLK_PAGEUP: *key = KEYBOARD_KEY_PAGE_UP;
                         break;
-                    case SDLK_DELETE: *key = KEYBOARD_KEY_DELETE_KEY;
+                    case SDLK_DELETE: *key = KEYBOARD_KEY_DELETE;
                         break;
                     case SDLK_END: *key = KEYBOARD_KEY_END;
                         break;

@@ -171,7 +171,7 @@ typedef enum KEYBOARD_KEY_E {
     /* Bottom alphabetic row */ \
     X(LEFT_SHIFT)    \
     X(Z)             \
-    X(X_KEY)         \
+    X(X)             \
     X(C)             \
     X(V)             \
     X(B)             \
@@ -197,15 +197,14 @@ typedef enum KEYBOARD_KEY_E {
     X(INSERT)        \
     X(HOME)          \
     X(PAGE_UP)       \
-    X(DELETE_KEY)    \
+    X(DELETE)        \
     X(END)           \
     X(PAGE_DOWN)     \
     /* Arrow keys */ \
     X(ARROW_UP)      \
     X(ARROW_LEFT)    \
     X(ARROW_DOWN)    \
-    X(ARROW_RIGHT) \
-    X(COUNT)
+    X(ARROW_RIGHT)
 #endif
 #ifndef X
 #define X(key) \
@@ -213,6 +212,7 @@ typedef enum KEYBOARD_KEY_E {
 #endif
     X_KEYBOARD_KEYS
 #undef X
+    KEYBOARD_KEY_COUNT
 } KeyboardKey;
 
 typedef struct KEYBOARD_EVENT_T {

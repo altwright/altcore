@@ -97,7 +97,7 @@ static FontStyle read_font_modifier_flags(u16 font_mod_flags) {
     return font_style;
 }
 
-static Clay_Dimensions ui_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data) {
+Clay_Dimensions ui_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data) {
     UiContext *ui = user_data;
     u16 font_theme_idx = config->fontId & 0xff;
     u16 font_mod_flags = config->fontId & ~font_theme_idx;
