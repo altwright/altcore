@@ -120,33 +120,51 @@ static void draw_text_line(
     }
 }
 
+f32x2 draw_text_impl_get_start_cursor(
+    string_view text,
+    FontSets *font_sets,
+    FontStyle font_style,
+    i32 font_height_px,
+    f32 row_height
+) {
+    f32x2 cursor = {.x = 0, .y = row_height};
+
+    STRING_VIEW_FOR(utf8, &text) {
+        i64 current_font_set_idx = 0;
+        FontHandle *font = ARRAY_GET(font_sets, current_font_set_idx)->styles[font_style];
+        while (font_impl_get_glyph_idx(font, utf8) <= 0) {
+            current_font_set_idx++;
+            if (current_font_set_idx >= font_sets->len) {
+                break;
+            }
+            font = ARRAY_GET(font_sets, current_font_set_idx)->styles[font_style];
+        }
+
+        f32 scale_factor = font_impl_get_scale_factor(font, font_height_px);
+
+        i32 max_x0, max_x1, max_y0, max_y1;
+        font_impl_get_max_bbox(font, &max_x0, &max_y0, &max_x1, &max_y1);
+
+        f32 max_y0_px = scale_factor * (f32) max_y0;
+        cursor.y = MIN(cursor.y, row_height + max_y0_px);
+    }
+
+    return cursor;
+}
+
 void soft_cmd_draw_text(RenderCmdDrawText *data) {
     FramebufferInfo px_buf_info = framebuffer_get_info(data->dst_fb);
     if (px_buf_info.type != FRAMEBUFFER_TYPE_PIXEL) {
         crash_msg("Expected pixel framebuffer\n");
     }
 
-    i32x2 cursor = {.x = 0, .y = (i32)data->dst_fb_region.height};
-
-    STRING_VIEW_FOR(utf8, &data->text) {
-        i64 current_font_set_idx = 0;
-        FontHandle *font = ARRAY_GET(data->font_sets, current_font_set_idx)->styles[data->font_style];
-        while (font_impl_get_glyph_idx(font, utf8) <= 0) {
-            current_font_set_idx++;
-            if (current_font_set_idx >= data->font_sets->len) {
-                break;
-            }
-            font = ARRAY_GET(data->font_sets, current_font_set_idx)->styles[data->font_style];
-        }
-
-        f32 scale_factor = font_impl_get_scale_factor(font, data->font_height_px);
-
-        i32 max_x0, max_x1, max_y0, max_y1;
-        font_impl_get_max_bbox(font, &max_x0, &max_y0, &max_x1, &max_y1);
-
-        max_y0 = (i32) (scale_factor * (f32) max_y0);
-        cursor.y = MIN(cursor.y, data->dst_fb_region.height + max_y0);
-    }
+    i32x2 cursor = ftoi32x2(
+        draw_text_impl_get_start_cursor(
+            data->text,
+            data->font_sets,
+            data->font_style,
+            data->font_height_px,
+            data->dst_fb_region.height));
 
     const char *prev_text_start = data->text.start;
     i64 prev_font_set_idx = 0;

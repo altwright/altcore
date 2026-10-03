@@ -4,17 +4,30 @@
 
 #include "widgets.h"
 
+#include <ctype.h>
+
 #include "../ui.impl.h"
 #include "../../memory.h"
+#include "../../debug.h"
+#include "../../maths.h"
+#include "../cmds/draw_text.impl.h"
 
 #define STB_TEXTEDIT_CHARTYPE char
 #define STB_TEXTEDIT_POSITIONTYPE i32
 
 #include "../../../libs/stb_textedit.h"
 
+typedef struct SINGLE_LINE_DATA_T {
+    f32x2 row_size_px;
+} SingleLineData;
+
 struct WIDGET_TEXT_EDIT_HANDLE {
     STB_TexteditState stb_state;
-    i64 edit_str_codepoint_count;
+    bool is_multi_line;
+
+    union {
+        SingleLineData single;
+    } data;
 };
 
 typedef enum KEY_MODIFIER_E : i32 {
@@ -26,6 +39,7 @@ typedef enum KEY_MODIFIER_E : i32 {
     KEY_MODIFIER_##mod,
     X_KEY_MODIFIERS
 #undef X
+    KEY_MODIFIER_COUNT
 } KeyModifier;
 
 typedef enum KEY_MODIFIER_FLAG_E : u64 {
@@ -62,23 +76,384 @@ typedef enum KEY_MODIFIER_FLAG_E : u64 {
 #define STB_TEXTEDIT_LAYOUTROW(r, obj, idx) layout_row((r), (obj), (idx))
 #define STB_TEXTEDIT_GETWIDTH(obj, n, i) get_width((obj), (n), (i))
 
-static void layout_row(StbTexteditRow *layout, WidgetTextEditInfo *info, i32 char_idx) {
+static void layout_row(StbTexteditRow *layout, WidgetTextEditInfo *info, i32 start_idx) {
+    if (!info->handle->is_multi_line) {
+        layout->num_chars = (i32) info->edit_str->len - start_idx;
+        Clay_Dimensions pre_dim = ui_impl_clay_measure_text(
+            (Clay_StringSlice){
+                .baseChars = info->edit_str->data,
+                .chars = info->edit_str->data,
+                .length = start_idx,
+            },
+            &info->text_config,
+            info->ui
+        );
+
+        layout->x0 = pre_dim.width;
+
+        Clay_Dimensions post_dim = ui_impl_clay_measure_text(
+            (Clay_StringSlice){
+                .baseChars = info->edit_str->data,
+                .chars = &info->edit_str->data[start_idx],
+                .length = layout->num_chars,
+            },
+            &info->text_config,
+            info->ui
+        );
+
+        layout->x1 = layout->x0 + post_dim.width;
+
+        f32 row_height = MAX(pre_dim.height, post_dim.height);
+
+        u16 font_theme_idx = info->text_config.fontId & 0xff;
+        u16 font_mod_flags = info->text_config.fontId & ~font_theme_idx;
+
+        f32x2 start_cursor = draw_text_impl_get_start_cursor(
+            (string_view){
+                .start = info->edit_str->data,
+                .len = info->edit_str->len,
+            },
+            ui_impl_get_font_sets(info->ui, font_theme_idx),
+            ui_impl_read_font_modifier_flags(font_mod_flags),
+            info->text_config.fontSize,
+            row_height
+        );
+
+        layout->ymin = start_cursor.y;
+        layout->ymax = row_height - start_cursor.y;
+
+        layout->baseline_y_delta = layout->ymin;
+    } else {
+        crash_msg("Multi-line layout not implemented\n");
+    }
 }
 
 static float get_width(WidgetTextEditInfo *info, i32 start_idx, i32 current_idx) {
-    return 0;
+    float x_delta = 0;
+
+    if (!info->handle->is_multi_line) {
+        Clay_Dimensions dim = ui_impl_clay_measure_text(
+            (Clay_StringSlice){
+                .baseChars = info->edit_str->data,
+                .chars = &info->edit_str->data[start_idx],
+                .length = current_idx - start_idx,
+            },
+            &info->text_config,
+            info->ui
+        );
+
+        x_delta = dim.width;
+    } else {
+        crash_msg("Multi-line layout not implemented\n");
+    }
+
+    return x_delta;
 }
 
 static int key_to_text(u64 key) {
-    return -1;
+    int codepoint = -1;
+
+    bool shift_pressed = key & KEY_MODIFIER_SHIFT_FLAG;
+    key &= ~(KEY_MODIFIER_SHIFT_FLAG | KEY_MODIFIER_CTRL_FLAG | KEY_MODIFIER_ALT_FLAG);
+
+    switch ((KeyboardKey) key) {
+        case KEYBOARD_KEY_A: {
+            codepoint = 'a';
+            break;
+        }
+        case KEYBOARD_KEY_B: {
+            codepoint = 'b';
+            break;
+        }
+        case KEYBOARD_KEY_C: {
+            codepoint = 'c';
+            break;
+        }
+        case KEYBOARD_KEY_D: {
+            codepoint = 'd';
+            break;
+        }
+        case KEYBOARD_KEY_E: {
+            codepoint = 'e';
+            break;
+        }
+        case KEYBOARD_KEY_F: {
+            codepoint = 'f';
+            break;
+        }
+        case KEYBOARD_KEY_G: {
+            codepoint = 'g';
+            break;
+        }
+        case KEYBOARD_KEY_H: {
+            codepoint = 'h';
+            break;
+        }
+        case KEYBOARD_KEY_I: {
+            codepoint = 'i';
+            break;
+        }
+        case KEYBOARD_KEY_J: {
+            codepoint = 'j';
+            break;
+        }
+        case KEYBOARD_KEY_K: {
+            codepoint = 'k';
+            break;
+        }
+        case KEYBOARD_KEY_L: {
+            codepoint = 'l';
+            break;
+        }
+        case KEYBOARD_KEY_M: {
+            codepoint = 'm';
+            break;
+        }
+        case KEYBOARD_KEY_N: {
+            codepoint = 'n';
+            break;
+        }
+        case KEYBOARD_KEY_O: {
+            codepoint = 'o';
+            break;
+        }
+        case KEYBOARD_KEY_P: {
+            codepoint = 'p';
+            break;
+        }
+        case KEYBOARD_KEY_Q: {
+            codepoint = 'q';
+            break;
+        }
+        case KEYBOARD_KEY_R: {
+            codepoint = 'r';
+            break;
+        }
+        case KEYBOARD_KEY_S: {
+            codepoint = 's';
+            break;
+        }
+        case KEYBOARD_KEY_T: {
+            codepoint = 't';
+            break;
+        }
+        case KEYBOARD_KEY_U: {
+            codepoint = 'u';
+            break;
+        }
+        case KEYBOARD_KEY_V: {
+            codepoint = 'v';
+            break;
+        }
+        case KEYBOARD_KEY_W: {
+            codepoint = 'w';
+            break;
+        }
+        case KEYBOARD_KEY_X: {
+            codepoint = 'x';
+            break;
+        }
+        case KEYBOARD_KEY_Y: {
+            codepoint = 'y';
+            break;
+        }
+        case KEYBOARD_KEY_Z: {
+            codepoint = 'z';
+            break;
+        }
+        case KEYBOARD_KEY_NUM_0: {
+            if (shift_pressed) {
+                codepoint = ')';
+            } else {
+                codepoint = '0';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_NUM_1: {
+            if (shift_pressed) {
+                codepoint = '!';
+            } else {
+                codepoint = '1';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_NUM_2: {
+            if (shift_pressed) {
+                codepoint = '@';
+            } else {
+                codepoint = '2';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_NUM_3: {
+            if (shift_pressed) {
+                codepoint = '#';
+            } else {
+                codepoint = '3';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_NUM_4: {
+            if (shift_pressed) {
+                codepoint = '$';
+            } else {
+                codepoint = '4';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_NUM_5: {
+            if (shift_pressed) {
+                codepoint = '%';
+            } else {
+                codepoint = '5';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_NUM_6: {
+            if (shift_pressed) {
+                codepoint = '^';
+            } else {
+                codepoint = '6';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_NUM_7: {
+            if (shift_pressed) {
+                codepoint = '&';
+            } else {
+                codepoint = '7';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_NUM_8: {
+            if (shift_pressed) {
+                codepoint = '*';
+            } else {
+                codepoint = '8';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_NUM_9: {
+            if (shift_pressed) {
+                codepoint = '(';
+            } else {
+                codepoint = '9';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_MINUS: {
+            if (shift_pressed) {
+                codepoint = '_';
+            } else {
+                codepoint = '-';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_EQUALS: {
+            if (shift_pressed) {
+                codepoint = '+';
+            } else {
+                codepoint = '=';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_LEFT_BRACKET: {
+            if (shift_pressed) {
+                codepoint = '{';
+            } else {
+                codepoint = '[';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_RIGHT_BRACKET: {
+            if (shift_pressed) {
+                codepoint = '}';
+            } else {
+                codepoint = ']';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_BACKSLASH: {
+            if (shift_pressed) {
+                codepoint = '|';
+            } else {
+                codepoint = '\\';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_SEMICOLON: {
+            if (shift_pressed) {
+                codepoint = ':';
+            } else {
+                codepoint = ';';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_APOSTROPHE: {
+            if (shift_pressed) {
+                codepoint = '"';
+            } else {
+                codepoint = '\'';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_BACKTICK: {
+            if (shift_pressed) {
+                codepoint = '~';
+            } else {
+                codepoint = '`';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_COMMA: {
+            if (shift_pressed) {
+                codepoint = '<';
+            } else {
+                codepoint = ',';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_PERIOD: {
+            if (shift_pressed) {
+                codepoint = '>';
+            } else {
+                codepoint = '.';
+            }
+            break;
+        }
+        case KEYBOARD_KEY_SLASH: {
+            if (shift_pressed) {
+                codepoint = '?';
+            } else {
+                codepoint = '/';
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    if (codepoint >= 0 && shift_pressed) {
+        if (isalpha(codepoint)) {
+            codepoint = toupper(codepoint);
+        }
+    }
+
+    return codepoint;
 }
 
 static void delete_chars(WidgetTextEditInfo *info, i32 start_idx, i32 num_chars) {
-
+    string_del(info->edit_str, start_idx, num_chars);
 }
 
-static int insert_chars(WidgetTextEditInfo *info, i32 start_idx, const char* chars, i32 chars_len) {
-    return 0;
+static int insert_chars(WidgetTextEditInfo *info, i32 start_idx, const char *chars, i32 chars_len) {
+    if (info->edit_str_cap_fixed && (info->edit_str->cap - (info->edit_str->len + 1)) < chars_len) {
+        return 0;
+    }
+
+    string_put(info->edit_str, start_idx, "%.*s", chars_len, chars);
+
+    return 1;
 }
 
 #define STB_TEXTEDIT_IMPLEMENTATION
@@ -86,7 +461,9 @@ static int insert_chars(WidgetTextEditInfo *info, i32 start_idx, const char* cha
 
 WidgetTextEditHandle *widget_text_edit_create(bool multi_line) {
     WidgetTextEditHandle *handle = alt_malloc(sizeof(WidgetTextEditHandle));
-    *handle = (WidgetTextEditHandle){};
+    *handle = (WidgetTextEditHandle){
+        .is_multi_line = multi_line,
+    };
 
     stb_textedit_initialize_state(&handle->stb_state, !multi_line);
 
@@ -95,4 +472,25 @@ WidgetTextEditHandle *widget_text_edit_create(bool multi_line) {
 
 void widget_text_edit_destroy(WidgetTextEditHandle *handle) {
     alt_free(handle);
+}
+
+void widget_text_edit_ui(WidgetTextEditInfo *info) {
+    STB_TexteditState *stb_state = &info->handle->stb_state;
+}
+
+void widget_text_edit_click(WidgetTextEditInfo *info, f32x2 rel_pos) {
+}
+
+void widget_text_edit_drag(WidgetTextEditInfo *info, f32x2 rel_pos) {
+}
+
+i64 widget_text_edit_cut(WidgetTextEditInfo *info, string *out_str) {
+    return 0;
+}
+
+i64 widget_text_edit_paste(WidgetTextEditInfo *info, const string *in_str) {
+    return 0;
+}
+
+void widget_text_edit_key_action(WidgetTextEditInfo *info, WidgetTextEditKeyInput key_input) {
 }

@@ -19,6 +19,9 @@ typedef struct WIDGET_TEXT_EDIT_INFO_T {
     string *edit_str;
     bool edit_str_cap_fixed;
     Clay_String placeholder_str;
+    rgba8 selection_color;
+    rgba8 cursor_color;
+    u16 cursor_width_px;
 } WidgetTextEditInfo;
 
 typedef struct WIDGET_TEXT_EDIT_KEY_INPUT_T {
@@ -41,8 +44,10 @@ void widget_text_edit_click(WidgetTextEditInfo *info, f32x2 rel_pos);
 
 void widget_text_edit_drag(WidgetTextEditInfo *info, f32x2 rel_pos);
 
+// Returns number of bytes in selection, if it exists
 i64 widget_text_edit_cut(WidgetTextEditInfo *info, string *out_str);
 
+// Returns number of bytes pasted into selection, if it exists
 i64 widget_text_edit_paste(WidgetTextEditInfo *info, const string *in_str);
 
 void widget_text_edit_key_action(WidgetTextEditInfo *info, WidgetTextEditKeyInput key_input);

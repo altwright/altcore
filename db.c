@@ -76,9 +76,9 @@ static string build_folder_path(Arena *arena, const char **nested_folders, i64 n
     ARRAY_MAKE(&folder_path);
 
     for (i64 nested_folder_idx = 0; nested_folder_idx < nested_folders_len; nested_folder_idx++) {
-        string_cat(&folder_path, "%s", nested_folders[nested_folder_idx]);
+        string_push(&folder_path, "%s", nested_folders[nested_folder_idx]);
         if (nested_folder_idx < nested_folders_len - 1) {
-            string_cat(&folder_path, "/");
+            string_push(&folder_path, "/");
         }
     }
 

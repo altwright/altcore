@@ -7,6 +7,10 @@
 
 #include "ui.h"
 
-Clay_Dimensions ui_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data);
+Clay_Dimensions ui_impl_clay_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data);
+
+FontSets *ui_impl_get_font_sets(UiContext *ui, i32 font_theme_idx);
+
+FontStyle ui_impl_read_font_modifier_flags(u16 font_mod_flags);
 
 #endif //BRITANNICUS_UI_IMPL_H

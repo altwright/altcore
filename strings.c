@@ -8,6 +8,7 @@
 #include <uchar.h>
 #include <string.h>
 #include "maths.h"
+#include "debug.h"
 
 #define STB_SPRINTF_IMPLEMENTATION
 #include "libs/stb_sprintf.h"
@@ -40,7 +41,7 @@ string string_make(Arena *arena, const char *fmt, ...) {
     return str;
 }
 
-void string_cat(string *str, const char *fmt, ...) {
+void string_push(string *str, const char *fmt, ...) {
     va_list args_read = {}, args_write = {};
     va_start(args_read);
     va_start(args_write);
@@ -54,14 +55,15 @@ void string_cat(string *str, const char *fmt, ...) {
 
     if (new_cap > str->cap) {
         char *new_data = arena_alloc(str->arena, new_cap);
-        assert(new_data);
         memcpy(new_data, str->data, str->len + 1);
         str->data = new_data;
         str->cap = new_cap;
     }
 
     i32 written_len = stbsp_vsnprintf(str->data + str->len, len + 1, fmt, args_write);
-    assert(written_len == len);
+    if (written_len != len) {
+        crash_msg("Written length %d does not match expected length %d", written_len, len);
+    }
 
     str->len += len;
 
@@ -81,10 +83,65 @@ string string_dup(Arena *arena, const string *str) {
     };
 
     new_str.data = arena_alloc(arena, new_str.cap);
-    assert(new_str.data);
     memcpy(new_str.data, str->data, str->len + 1);
 
     return new_str;
+}
+
+void string_del(string *str, i64 start_idx, i64 num_chars) {
+    if (start_idx < 0 || num_chars < 0) {
+        crash_msg("Invalid start_idx %d or num_chars %d\n", start_idx, num_chars);
+    }
+
+    if (start_idx >= str->len) {
+        start_idx = str->len - 1;
+    }
+
+    if (start_idx + num_chars > str->len) {
+        num_chars = str->len - start_idx;
+    }
+
+    for (i64 c_idx = start_idx + num_chars; c_idx <= str->len; c_idx++) {
+        str->data[c_idx - num_chars] = str->data[c_idx];
+    }
+
+    str->len -= num_chars;
+    str->data[str->len] = '\0';
+}
+
+void string_put(string *str, i64 start_idx, const char *fmt, ...) {
+    va_list args_read = {}, args_write = {};
+    va_start(args_read);
+    va_start(args_write);
+
+    i32 len = stbsp_vsnprintf(nullptr, 0, fmt, args_read);
+
+    i64 new_cap = str->cap;
+    while ((len + 1) > (new_cap - str->len)) {
+        new_cap *= 2;
+    }
+
+    if (new_cap > str->cap) {
+        char *new_data = arena_alloc(str->arena, new_cap);
+        memcpy(new_data, str->data, str->len + 1);
+        str->data = new_data;
+        str->cap = new_cap;
+    }
+
+    for (i64 c_idx = str->len; c_idx >= start_idx; c_idx--) {
+        str->data[c_idx + len] = str->data[c_idx];
+    }
+
+    i32 written_len = stbsp_vsnprintf(str->data + start_idx, len, fmt, args_write);
+    if (written_len != len) {
+        crash_msg("Written length %d does not match expected length %d", written_len, len);
+    }
+
+    str->len += len;
+    str->data[str->len] = '\0';
+
+    va_end(args_read);
+    va_end(args_write);
 }
 
 const char *utf8_next(const char *current, i64 max_bytes) {

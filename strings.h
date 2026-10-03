@@ -27,11 +27,15 @@ typedef struct STRING_VIEWS_T {
 
 string string_make(Arena *arena, const char *fmt, ...);
 
-void string_cat(string *str, const char *fmt, ...);
-
 bool string_empty(const string *str);
 
+void string_push(string *str, const char *fmt, ...);
+
 string string_dup(Arena *arena, const string *str);
+
+void string_del(string *str, i64 start_idx, i64 num_chars);
+
+void string_put(string *str, i64 start_idx, const char *fmt, ...);
 
 #ifndef STRING_FOR
 #define STRING_FOR(ptr_var, string_ptr) \
@@ -53,7 +57,7 @@ string string_dup(Arena *arena, const string *str);
 
 const char *utf8_next(const char *current, i64 max_bytes);
 
-i64 utf8_size(const char* current, i64 max_bytes);
+i64 utf8_size(const char *current, i64 max_bytes);
 
 u32 utf8_to_unicode(const char *current, i64 max_bytes);
 

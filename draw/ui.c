@@ -84,7 +84,7 @@ static f32x4 clay_to_render_rect(Clay_BoundingBox box) {
     };
 }
 
-static FontStyle read_font_modifier_flags(u16 font_mod_flags) {
+FontStyle ui_impl_read_font_modifier_flags(u16 font_mod_flags) {
     FontStyle font_style = FONT_STYLE_REGULAR;
     if ((font_mod_flags & UI_FONT_MODIFIER_ITALIC_FLAG) && (font_mod_flags & UI_FONT_MODIFIER_BOLD_FLAG)) {
         font_style = FONT_STYLE_BOLD_ITALIC;
@@ -97,14 +97,14 @@ static FontStyle read_font_modifier_flags(u16 font_mod_flags) {
     return font_style;
 }
 
-Clay_Dimensions ui_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data) {
+Clay_Dimensions ui_impl_clay_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data) {
     UiContext *ui = user_data;
     u16 font_theme_idx = config->fontId & 0xff;
     u16 font_mod_flags = config->fontId & ~font_theme_idx;
 
     FontSets *font_theme = ARRAY_GET(&ui->font_themes, font_theme_idx);
 
-    FontStyle font_style = read_font_modifier_flags(font_mod_flags);
+    FontStyle font_style = ui_impl_read_font_modifier_flags(font_mod_flags);
 
     string_view full_txt_line = {
         .start = text.chars,
@@ -312,7 +312,7 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
         layout_info->frame_elapsed_time_s
     );
 
-    Clay_SetMeasureTextFunction(ui_measure_text, ui);
+    Clay_SetMeasureTextFunction(ui_impl_clay_measure_text, ui);
 
     Clay_BeginLayout();
 }
@@ -395,7 +395,7 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 u16 font_style_flags = clay_cmd->renderData.text.fontId & ~font_theme_idx;
 
                 render_cmd_data->font_sets = ARRAY_GET(&ui->font_themes, font_theme_idx);
-                render_cmd_data->font_style = read_font_modifier_flags(font_style_flags);
+                render_cmd_data->font_style = ui_impl_read_font_modifier_flags(font_style_flags);
 
                 render_cmd_data->text_color = clay_to_render_color(
                     clay_cmd->renderData.text.textColor
@@ -567,4 +567,8 @@ u16 ui_px_width(UiContext *ui, f64 pct) {
     i32 px_width = (i32) ((f32) canvas_size.width * pct);
 
     return MAX(1, px_width);
+}
+
+FontSets *ui_impl_get_font_sets(UiContext *ui, i32 font_theme_idx) {
+    return ARRAY_GET(&ui->font_themes, font_theme_idx);
 }
