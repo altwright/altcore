@@ -58,8 +58,9 @@ typedef struct COMPONENT_ARRAYS_T {
 } ComponentArrays;
 
 struct ECS_HANDLE_T {
-    Arena* arena;
+    Arena *arena;
     u64 tick_counter;
+    f64 tick_len_s;
     u64 entity_counter;
     EntityMap entity_map;
     EntityPtrs entity_ptrs;
@@ -185,7 +186,7 @@ static void component_array_del(
     component_array->len--;
 }
 
-static void component_array_free(ComponentArray* component_array) {
+static void component_array_free(ComponentArray *component_array) {
     if (component_array->arena) {
         arena_free(component_array->arena);
     }
@@ -201,6 +202,7 @@ EcsHandle *ecs_create(const EcsCreateInfo *info) {
         .arena = arena_make(64 * MIBIBYTE),
         .tick_counter = 0,
         .entity_counter = 0,
+        .tick_len_s = info->tick_len_s,
     };
 
     ecs->entity_map = (EntityMap){
@@ -321,6 +323,14 @@ void ecs_tick(EcsHandle *ecs) {
             }
         }
     }
+}
+
+u64 ecs_get_current_tick(EcsHandle *ecs) {
+    return ecs->tick_counter;
+}
+
+f64 ecs_get_tick_len_s(EcsHandle *ecs) {
+    return ecs->tick_len_s;
 }
 
 EntityID ecs_entity_create(EcsHandle *ecs, const EntityCreateInfo *info) {

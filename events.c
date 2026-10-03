@@ -324,6 +324,36 @@ void events_poll() {
 
                         break;
                     }
+                    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                    case SDL_EVENT_MOUSE_BUTTON_UP: {
+                        SDL_MouseButtonEvent *sdl_data = &sdl_event.button;
+
+                        e.data.mouse.type = MOUSE_EVENT_TYPE_PRESS;
+                        MouseEventPressData *press_data = &e.data.mouse.data.press;
+                        *press_data = (MouseEventPressData){
+                            .pressed = sdl_event.button.down
+                        };
+
+                        switch (sdl_data->button) {
+                            case SDL_BUTTON_LEFT: {
+                                press_data->button = MOUSE_BUTTON_LEFT;
+                                break;
+                            }
+                            case SDL_BUTTON_RIGHT: {
+                                press_data->button = MOUSE_BUTTON_RIGHT;
+                                break;
+                            }
+                            case SDL_BUTTON_MIDDLE: {
+                                press_data->button = MOUSE_BUTTON_MIDDLE;
+                                break;
+                            }
+                            default:
+                                handled = false;
+                                break;
+                        }
+
+                        break;
+                    }
                     default:
                         handled = false;
                         break;

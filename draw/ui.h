@@ -64,13 +64,46 @@ typedef struct UI_CREATE_INFO_T {
     } font_themes;
 } UiCreateInfo;
 
+typedef enum UI_MOUSE_POINTER_ACTION_E : i32 {
+#define X_UI_MOUSE_POINTER_ACTIONS \
+    X(LEFT_CLICK) \
+    X(RIGHT_CLICK) \
+    X(MIDDLE_CLICK) \
+    X(DOUBLE_CLICK)
+#define X(action) \
+    UI_MOUSE_POINTER_ACTION_##action,
+    X_UI_MOUSE_POINTER_ACTIONS
+#undef X
+    UI_MOUSE_POINTER_ACTION_COUNT
+} UiMousePointerAction;
+
+typedef enum UI_MOUSE_POINTER_ACTION_FLAG_E : u64 {
+#define X(action) \
+    UI_MOUSE_POINTER_ACTION_##action##_FLAG = 1ULL << UI_MOUSE_POINTER_ACTION_##action,
+    X_UI_MOUSE_POINTER_ACTIONS
+#undef X
+} UiMousePointerActionFlag;
+
+typedef UiMousePointerActionFlag UiMousePointerActionFlags;
+
 typedef struct UI_MOUSE_INFO_T {
     struct {
-        f32x2 pos;
-        bool pressed;
+        struct {
+            f32x2 prev_tick;
+            f32x2 current_tick;
+        } pos;
+
+        struct {
+            UiMousePointerActionFlags prev_tick;
+            UiMousePointerActionFlags current_tick;
+        } pressed;
     } pointer;
 
     f32x2 scroll_delta;
+
+    struct {
+        u64 last_left_click_tick;
+    } trackers;
 } UiMouseInfo;
 
 typedef struct UI_BEGIN_LAYOUT_INFO_T {

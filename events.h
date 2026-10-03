@@ -224,7 +224,7 @@ typedef enum MOUSE_EVENT_TYPE_E {
 #ifndef X_MOUSE_EVENT_TYPES
 #define X_MOUSE_EVENT_TYPES \
     X(MOVE) \
-    X(CLICK) \
+    X(PRESS) \
     X(SCROLL) \
     X(COUNT)
 #endif
@@ -242,11 +242,38 @@ typedef struct MOUSE_EVENT_MOVE_DATA_T {
     f32x2 delta;
 } MouseEventMoveData;
 
+typedef enum MOUSE_BUTTON_E : i32 {
+#define X_MOUSE_BUTTONS\
+    X(LEFT) \
+    X(RIGHT) \
+    X(MIDDLE)
+#define X(button) \
+    MOUSE_BUTTON_##button,
+    X_MOUSE_BUTTONS
+#undef X
+    MOUSE_BUTTON_COUNT
+} MouseButton;
+
+typedef enum MOUSE_BUTTON_FLAG_E : u64 {
+#define X(button) \
+    MOUSE_BUTTON_##button##_FLAG = 1ULL << MOUSE_BUTTON_##button,
+    X_MOUSE_BUTTONS
+#undef X
+} MouseButtonFlag;
+
+typedef MouseButtonFlag MouseButtonFlags;
+
+typedef struct MOUSE_EVENT_PRESS_DATA_T {
+    MouseButton button;
+    bool pressed;
+} MouseEventPressData;
+
 typedef struct MOUSE_EVENT_T {
     MouseEventType type;
 
     union {
         MouseEventMoveData move;
+        MouseEventPressData press;
     } data;
 } MouseEvent;
 

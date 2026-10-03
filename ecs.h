@@ -143,6 +143,10 @@ void ecs_set_entity_fn_ptrs(EcsHandle *ecs, EntityFnPtrs *fn_ptrs, i64 fn_ptrs_l
 
 void ecs_tick(EcsHandle *ecs);
 
+u64 ecs_get_current_tick(EcsHandle *ecs);
+
+f64 ecs_get_tick_len_s(EcsHandle *ecs);
+
 EntityID ecs_entity_create(EcsHandle *ecs, const EntityCreateInfo *info);
 
 bool ecs_entity_exists(EcsHandle *ecs, EntityID eid);
