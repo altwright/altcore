@@ -89,20 +89,20 @@ typedef UiMousePointerActionFlag UiMousePointerActionFlags;
 typedef struct UI_MOUSE_INFO_T {
     struct {
         struct {
-            f32x2 prev_tick;
-            f32x2 current_tick;
+            f32x2 prev_frame;
+            f32x2 curr_frame;
         } pos;
 
         struct {
-            UiMousePointerActionFlags prev_tick;
-            UiMousePointerActionFlags current_tick;
+            UiMousePointerActionFlags prev_frame;
+            UiMousePointerActionFlags curr_frame;
         } pressed;
     } pointer;
 
     f32x2 scroll_delta;
 
     struct {
-        u64 last_left_click_tick;
+        u64 last_left_click_time_ns;
     } trackers;
 } UiMouseInfo;
 

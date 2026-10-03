@@ -297,10 +297,10 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
 
     Clay_SetPointerState(
         (Clay_Vector2){
-            .x = layout_info->mouse.pointer.pos.current_tick.x - ui->current_canvas.offset.x,
-            .y = layout_info->mouse.pointer.pos.current_tick.y - ui->current_canvas.offset.y,
+            .x = layout_info->mouse.pointer.pos.curr_frame.x - ui->current_canvas.offset.x,
+            .y = layout_info->mouse.pointer.pos.curr_frame.y - ui->current_canvas.offset.y,
         },
-        layout_info->mouse.pointer.pressed.current_tick != 0
+        layout_info->mouse.pointer.pressed.curr_frame != 0
     );
 
     Clay_UpdateScrollContainers(

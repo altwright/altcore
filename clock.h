@@ -7,6 +7,10 @@
 
 #include "types.h"
 
+#ifndef S_TO_NS
+#define S_TO_NS(s) ((u64)((s) * 1000000000))
+#endif
+
 void clock_init();
 
 void clock_deinit();
