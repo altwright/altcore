@@ -61,4 +61,12 @@ f32x4 f32x4_scale(f32x4 src, f32 scale);
 
 f32x4 f32x4_add(f32x4 left, f32x4 right);
 
+f32x4 f32x4_union(f32x4 left, f32x4 right);
+
+f32x4 f32x4_intersect(f32x4 left, f32x4 right);
+
+i32x4 i32x4_union(i32x4 left, i32x4 right);
+
+i32x4 i32x4_intersect(i32x4 left, i32x4 right);
+
 #endif //ALTCORE_MATHS_H

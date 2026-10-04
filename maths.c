@@ -51,3 +51,51 @@ f32x4 f32x4_add(f32x4 left, f32x4 right) {
         .w = left.w + right.w,
     };
 }
+
+f32x4 f32x4_union(f32x4 left, f32x4 right) {
+    f32x4 union_area = {};
+
+    f32 start_x = MIN(left.start_x, right.start_x);
+    f32 start_y = MIN(left.start_y, right.start_y);
+    f32 end_x = MAX(left.start_x + left.width, right.start_x + right.width);
+    f32 end_y = MAX(left.start_y + left.height, right.start_y + right.height);
+
+    if (start_x < end_x && start_y < end_y) {
+        union_area = (f32x4){
+            .start_x = start_x,
+            .start_y = start_y,
+            .width = end_x - start_x,
+            .height = end_y - start_y
+        };
+    }
+
+    return union_area;
+}
+
+f32x4 f32x4_intersect(f32x4 left, f32x4 right) {
+    f32x4 intersect_area = {};
+
+    f32 start_x = MAX(left.start_x, right.start_x);
+    f32 start_y = MAX(left.start_y, right.start_y);
+    f32 end_x = MIN(left.start_x + left.width, right.start_x + right.width);
+    f32 end_y = MIN(left.start_y + left.height, right.start_y + right.height);
+
+    if (start_x < end_x && start_y < end_y) {
+        intersect_area = (f32x4){
+            .start_x = start_x,
+            .start_y = start_y,
+            .width = end_x - start_x,
+            .height = end_y - start_y
+        };
+    }
+
+    return intersect_area;
+}
+
+i32x4 i32x4_union(i32x4 left, i32x4 right) {
+    return ftoi32x4(f32x4_union(itof32x4(left), itof32x4(right)));
+}
+
+i32x4 i32x4_intersect(i32x4 left, i32x4 right) {
+    return ftoi32x4(f32x4_intersect(itof32x4(left), itof32x4(right)));
+}

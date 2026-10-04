@@ -23,9 +23,23 @@ static void draw_text_line(
     i32x2 *cursor
 ) {
     FramebufferInfo dst_fb_info = framebuffer_get_info(dst_fb);
+    i32x2 dst_fb_size = dst_fb_info.data.pixel_buf.size;
     u8 *dst_fb_bytes = framebuffer_impl_get_bytes(dst_fb);
     stbtt_fontinfo *font_info = font_impl_get_info(font);
     f32 scale_factor = font_impl_get_scale_factor(font, font_height_px);
+
+    i32x4 dst_fb_scissor = dst_fb_info.data.pixel_buf.scissor;
+
+    i32x4 dst_fb_intersect = i32x4_intersect(
+        (i32x4){
+            .start_x = 0,
+            .start_y = 0,
+            .width = dst_fb_size.width,
+            .height = dst_fb_size.height
+        },
+        dst_fb_region
+    );
+    dst_fb_intersect = i32x4_intersect(dst_fb_intersect, dst_fb_scissor);
 
     const char *prev_utf8 = nullptr;
     STRING_VIEW_FOR(utf8, &text) {
@@ -81,11 +95,14 @@ static void draw_text_line(
                         continue;
                     }
 
-                    i32 dst_y_idx = dst_fb_region.y + (cursor->y + y0 + bitmap_row_idx);
-                    i32 dst_x_idx = dst_fb_region.x + (cursor->x + x0 + bitmap_col_idx);
+                    i32 dst_y_idx = dst_fb_region.start_y + (cursor->y + y0 + bitmap_row_idx);
+                    i32 dst_x_idx = dst_fb_region.start_x + (cursor->x + x0 + bitmap_col_idx);
 
-                    if (dst_y_idx >= dst_fb_region.y + dst_fb_region.height
-                        || dst_x_idx >= dst_fb_region.x + dst_fb_region.width) {
+                    if (dst_y_idx < dst_fb_intersect.start_y
+                        || dst_x_idx < dst_fb_intersect.start_x
+                        || dst_y_idx >= dst_fb_intersect.start_y + dst_fb_intersect.height
+                        || dst_x_idx >= dst_fb_intersect.start_x + dst_fb_intersect.width
+                    ) {
                         continue;
                     }
 

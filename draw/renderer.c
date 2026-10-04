@@ -15,6 +15,7 @@
 #include "cmds/present.h"
 #include "cmds/draw_rect.h"
 #include "cmds/draw_text.h"
+#include "cmds/scissor.h"
 
 struct RENDERER_T {
     RendererType type;
@@ -134,6 +135,13 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                         RenderCmdDrawText *data = &cmd->data.draw_text;
 
                         soft_cmd_draw_text(data);
+
+                        break;
+                    }
+                    case RENDER_CMD_TYPE_SCISSOR: {
+                        RenderCmdScissor *data = &cmd->data.scissor;
+
+                        soft_cmd_scissor(data);
 
                         break;
                     }

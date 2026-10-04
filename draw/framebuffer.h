@@ -61,6 +61,5 @@ void framebuffer_destroy(Framebuffer *fb);
 
 FramebufferInfo framebuffer_get_info(const Framebuffer *fb);
 
-void framebuffer_set_scissor(Framebuffer *fb, f32x4 region);
 
 #endif //ALTCORE_FRAMEBUFFER_H

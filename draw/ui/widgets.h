@@ -18,10 +18,8 @@ typedef struct WIDGET_TEXT_EDIT_INFO_T {
     Clay_TextElementConfig text_config;
     string *edit_str;
     bool edit_str_cap_fixed;
-    Clay_String placeholder_str;
     rgba8 selection_color;
     rgba8 cursor_color;
-    u16 cursor_width_px;
 } WidgetTextEditInfo;
 
 typedef struct WIDGET_TEXT_EDIT_KEY_INPUT_T {

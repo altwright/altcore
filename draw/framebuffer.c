@@ -107,7 +107,7 @@ u8 *framebuffer_impl_get_bytes(Framebuffer *fb) {
     return bytes;
 }
 
-void framebuffer_set_scissor(Framebuffer *fb, f32x4 region) {
+void framebuffer_impl_set_scissor(Framebuffer *fb, f32x4 region) {
     switch (fb->type) {
         case FRAMEBUFFER_TYPE_PIXEL: {
             fb->data.pixel_buf.scissor = ftoi32x4(region);
