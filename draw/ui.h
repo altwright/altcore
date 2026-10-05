@@ -134,4 +134,12 @@ u16 ui_px_width(UiContext *ui, f64 pct);
 
 u16 ui_px_height(UiContext *ui, f64 pct);
 
+bool ui_elem_double_clicked(UiMouseInfo *info, bool this_frame);
+
+bool ui_elem_left_clicked(UiMouseInfo *info, bool this_frame);
+
+bool ui_elem_middle_clicked(UiMouseInfo *info, bool this_frame);
+
+bool ui_elem_right_clicked(UiMouseInfo *info, bool this_frame);
+
 #endif //ALTCORE_UI_H

@@ -12,15 +12,19 @@
 
 typedef struct WIDGET_TEXT_EDIT_HANDLE WidgetTextEditHandle;
 
-typedef struct WIDGET_TEXT_EDIT_INFO_T {
+typedef struct WIDGET_TEXT_EDIT_STRING_T {
     WidgetTextEditHandle *handle;
+    string chars;
     UiContext *ui;
-    Clay_TextElementConfig text_config;
-    string *edit_str;
-    bool edit_str_cap_fixed;
+    Clay_TextElementConfig config;
+} WidgetTextEditString;
+
+typedef struct WIDGET_TEXT_EDIT_INFO_T {
+    WidgetTextEditString *text;
+    Clay_ElementId parent_id;
     rgba8 selection_color;
     rgba8 cursor_color;
-} WidgetTextEditInfo;
+} WidgetTextEditUiInfo;
 
 typedef struct WIDGET_TEXT_EDIT_KEY_INPUT_T {
     KeyboardKey key;
@@ -36,18 +40,18 @@ WidgetTextEditHandle *widget_text_edit_create(bool multi_line);
 
 void widget_text_edit_destroy(WidgetTextEditHandle *handle);
 
-void widget_text_edit_ui(WidgetTextEditInfo *info);
+void widget_text_edit_ui(WidgetTextEditUiInfo *info);
 
-void widget_text_edit_click(WidgetTextEditInfo *info, f32x2 rel_pos);
+void widget_text_edit_click(WidgetTextEditString *text, f32x2 rel_pos);
 
-void widget_text_edit_drag(WidgetTextEditInfo *info, f32x2 rel_pos);
+void widget_text_edit_drag(WidgetTextEditString *text, f32x2 rel_pos);
 
 // Returns number of bytes in selection, if it exists
-i64 widget_text_edit_cut(WidgetTextEditInfo *info, string *out_str);
+i64 widget_text_edit_cut(WidgetTextEditString *text, string *out_str);
 
 // Returns number of bytes pasted into selection, if it exists
-i64 widget_text_edit_paste(WidgetTextEditInfo *info, const string *in_str);
+i64 widget_text_edit_paste(WidgetTextEditString *text, const string *in_str);
 
-void widget_text_edit_key_action(WidgetTextEditInfo *info, WidgetTextEditKeyInput key_input);
+void widget_text_edit_key_action(WidgetTextEditString *text, WidgetTextEditKeyInput key_input);
 
 #endif //BRITANNICUS_WIDGETS_H

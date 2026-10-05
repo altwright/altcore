@@ -572,3 +572,28 @@ u16 ui_px_width(UiContext *ui, f64 pct) {
 FontSets *ui_impl_get_font_sets(UiContext *ui, i32 font_theme_idx) {
     return ARRAY_GET(&ui->font_themes, font_theme_idx);
 }
+
+static bool elem_clicked(UiMouseInfo *info, bool this_frame, UiMousePointerActionFlag action) {
+    bool clicked = Clay_Hovered() && (info->pointer.pressed.curr_frame & action);
+    if (this_frame) {
+        clicked = clicked && (info->pointer.pressed.prev_frame & action);
+    }
+
+    return clicked;
+}
+
+bool ui_elem_double_clicked(UiMouseInfo *info, bool this_frame) {
+    return elem_clicked(info, this_frame, UI_MOUSE_POINTER_ACTION_DOUBLE_CLICK_FLAG);
+}
+
+bool ui_elem_left_clicked(UiMouseInfo *info, bool this_frame) {
+    return elem_clicked(info, this_frame, UI_MOUSE_POINTER_ACTION_LEFT_CLICK_FLAG);
+}
+
+bool ui_elem_right_clicked(UiMouseInfo *info, bool this_frame) {
+    return elem_clicked(info, this_frame, UI_MOUSE_POINTER_ACTION_RIGHT_CLICK_FLAG);
+}
+
+bool ui_elem_middle_clicked(UiMouseInfo *info, bool this_frame) {
+    return elem_clicked(info, this_frame, UI_MOUSE_POINTER_ACTION_MIDDLE_CLICK_FLAG);
+}

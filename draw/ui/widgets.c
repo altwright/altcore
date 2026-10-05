@@ -66,9 +66,9 @@ typedef enum KEY_MODIFIER_FLAG_E : u64 {
 #define STB_TEXTEDIT_K_UNDO ((u64)KEY_MODIFIER_CTRL_FLAG | KEYBOARD_KEY_Z)
 #define STB_TEXTEDIT_K_REDO ((u64)KEY_MODIFIER_CTRL_FLAG | KEYBOARD_KEY_Y)
 
-#define STB_TEXTEDIT_STRING WidgetTextEditInfo
-#define STB_TEXTEDIT_STRINGLEN(obj) ((obj)->edit_str->len)
-#define STB_TEXTEDIT_GETCHAR(obj, idx) ((obj)->edit_str->data[(idx)])
+#define STB_TEXTEDIT_STRING WidgetTextEditString
+#define STB_TEXTEDIT_STRINGLEN(obj) ((obj)->chars.len)
+#define STB_TEXTEDIT_GETCHAR(obj, idx) ((obj)->chars.data[(idx)])
 #define STB_TEXTEDIT_NEWLINE ((int)'\n')
 #define STB_TEXTEDIT_DELETECHARS(obj, i, n) delete_chars((obj), (i), (n))
 #define STB_TEXTEDIT_INSERTCHARS(obj, i, c, n) insert_chars((obj), (i), (c), (n))
@@ -76,46 +76,46 @@ typedef enum KEY_MODIFIER_FLAG_E : u64 {
 #define STB_TEXTEDIT_LAYOUTROW(r, obj, idx) layout_row((r), (obj), (idx))
 #define STB_TEXTEDIT_GETWIDTH(obj, n, i) get_width((obj), (n), (i))
 
-static void layout_row(StbTexteditRow *layout, WidgetTextEditInfo *info, i32 start_idx) {
-    if (!info->handle->is_multi_line) {
-        layout->num_chars = (i32) info->edit_str->len - start_idx;
+static void layout_row(StbTexteditRow *layout, WidgetTextEditString *text, i32 start_idx) {
+    if (!text->handle->is_multi_line) {
+        layout->num_chars = (i32) text->chars.len - start_idx;
         Clay_Dimensions pre_dim = ui_impl_clay_measure_text(
             (Clay_StringSlice){
-                .baseChars = info->edit_str->data,
-                .chars = info->edit_str->data,
+                .baseChars = text->chars.data,
+                .chars = text->chars.data,
                 .length = start_idx,
             },
-            &info->text_config,
-            info->ui
+            &text->config,
+            text->ui
         );
 
         layout->x0 = pre_dim.width;
 
         Clay_Dimensions post_dim = ui_impl_clay_measure_text(
             (Clay_StringSlice){
-                .baseChars = info->edit_str->data,
-                .chars = &info->edit_str->data[start_idx],
+                .baseChars = text->chars.data,
+                .chars = &text->chars.data[start_idx],
                 .length = layout->num_chars,
             },
-            &info->text_config,
-            info->ui
+            &text->config,
+            text->ui
         );
 
         layout->x1 = layout->x0 + post_dim.width;
 
         f32 row_height = MAX(pre_dim.height, post_dim.height);
 
-        u16 font_theme_idx = info->text_config.fontId & 0xff;
-        u16 font_mod_flags = info->text_config.fontId & ~font_theme_idx;
+        u16 font_theme_idx = text->config.fontId & 0xff;
+        u16 font_mod_flags = text->config.fontId & ~font_theme_idx;
 
         f32x2 start_cursor = draw_text_impl_get_start_cursor(
             (string_view){
-                .start = info->edit_str->data,
-                .len = info->edit_str->len,
+                .start = text->chars.data,
+                .len = text->chars.len,
             },
-            ui_impl_get_font_sets(info->ui, font_theme_idx),
+            ui_impl_get_font_sets(text->ui, font_theme_idx),
             ui_impl_read_font_modifier_flags(font_mod_flags),
-            info->text_config.fontSize,
+            text->config.fontSize,
             row_height
         );
 
@@ -128,18 +128,18 @@ static void layout_row(StbTexteditRow *layout, WidgetTextEditInfo *info, i32 sta
     }
 }
 
-static float get_width(WidgetTextEditInfo *info, i32 start_idx, i32 current_idx) {
+static float get_width(WidgetTextEditString *text, i32 start_idx, i32 current_idx) {
     float x_delta = 0;
 
-    if (!info->handle->is_multi_line) {
+    if (!text->handle->is_multi_line) {
         Clay_Dimensions dim = ui_impl_clay_measure_text(
             (Clay_StringSlice){
-                .baseChars = info->edit_str->data,
-                .chars = &info->edit_str->data[start_idx],
+                .baseChars = text->chars.data,
+                .chars = &text->chars.data[start_idx],
                 .length = current_idx - start_idx,
             },
-            &info->text_config,
-            info->ui
+            &text->config,
+            text->ui
         );
 
         x_delta = dim.width;
@@ -429,6 +429,14 @@ static int key_to_text(u64 key) {
             }
             break;
         }
+        case KEYBOARD_KEY_SPACE: {
+            codepoint = ' ';
+            break;
+        }
+        case KEYBOARD_KEY_ENTER: {
+            codepoint = '\n';
+            break;
+        }
         default:
             break;
     }
@@ -442,18 +450,13 @@ static int key_to_text(u64 key) {
     return codepoint;
 }
 
-static void delete_chars(WidgetTextEditInfo *info, i32 start_idx, i32 num_chars) {
-    string_del(info->edit_str, start_idx, num_chars);
+static void delete_chars(WidgetTextEditString *text, i32 start_idx, i32 num_chars) {
+    string_del(&text->chars, start_idx, num_chars);
 }
 
-static int insert_chars(WidgetTextEditInfo *info, i32 start_idx, const char *chars, i32 chars_len) {
-    if (info->edit_str_cap_fixed && (info->edit_str->cap - (info->edit_str->len + 1)) < chars_len) {
-        return 0;
-    }
-
-    string_put(info->edit_str, start_idx, "%.*s", chars_len, chars);
-
-    return 1;
+static int insert_chars(WidgetTextEditString *text, i32 start_idx, const char *chars, i32 chars_len) {
+    string_put(&text->chars, start_idx, "%.*s", chars_len, chars);
+    return true;
 }
 
 #define STB_TEXTEDIT_IMPLEMENTATION
@@ -474,23 +477,91 @@ void widget_text_edit_destroy(WidgetTextEditHandle *handle) {
     alt_free(handle);
 }
 
-void widget_text_edit_ui(WidgetTextEditInfo *info) {
-    STB_TexteditState *stb_state = &info->handle->stb_state;
+void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
+    STB_TexteditState *edit_state = &info->text->handle->stb_state;
+
+    if (!info->text->handle->is_multi_line) {
+        Clay_ElementData parent_data = Clay_GetElementData(info->parent_id);
+        if (!parent_data.found) {
+            crash_msg("Parent ID %.*s invalid\n", info->parent_id.stringId.length, info->parent_id.stringId.chars);
+        }
+
+        Clay_String clay_edit_str = {
+            .isStaticallyAllocated = false,
+            .chars = info->text->chars.data,
+            .length = (i32) info->text->chars.len,
+        };
+
+        //@formatter:off
+        CLAY_TEXT(clay_edit_str, &info->text->config);
+
+        Clay_Dimensions post_dim = ui_impl_clay_measure_text(
+            (Clay_StringSlice){
+                .baseChars = info->text->chars.data,
+                .chars = &info->text->chars.data[edit_state->cursor],
+                .length = (i32)info->text->chars.len - edit_state->cursor, //edit_state->cursor,
+            },
+            &info->text->config,
+            info->text->ui
+        );
+
+        CLAY({
+            .backgroundColor = ui_color(info->cursor_color),
+            .floating = {
+                .attachPoints = {
+                    .element = CLAY_ATTACH_POINT_RIGHT_TOP,
+                    .parent = CLAY_ATTACH_POINT_RIGHT_TOP,
+                },
+                .attachTo = CLAY_ATTACH_TO_PARENT,
+                .clipTo = CLAY_CLIP_TO_ATTACHED_PARENT,
+                .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
+                .offset = {
+                    .x = -post_dim.width,
+                }
+            },
+            .layout = {
+                .sizing = {
+                    .height = CLAY_SIZING_FIXED(parent_data.boundingBox.height),
+                    .width = CLAY_SIZING_FIXED(2),
+                }
+            }
+        }){}
+        //@formatter:on
+
+        //Clay_ScrollContainerData parent_scroll = Clay_GetScrollContainerData(info->parent_id);
+    } else {
+        crash_msg("Multi-line text edit ui is not implemented yet\n");
+    }
 }
 
-void widget_text_edit_click(WidgetTextEditInfo *info, f32x2 rel_pos) {
+void widget_text_edit_click(WidgetTextEditString *text, f32x2 rel_pos) {
 }
 
-void widget_text_edit_drag(WidgetTextEditInfo *info, f32x2 rel_pos) {
+void widget_text_edit_drag(WidgetTextEditString *text, f32x2 rel_pos) {
 }
 
-i64 widget_text_edit_cut(WidgetTextEditInfo *info, string *out_str) {
+i64 widget_text_edit_cut(WidgetTextEditString *text, string *out_str) {
     return 0;
 }
 
-i64 widget_text_edit_paste(WidgetTextEditInfo *info, const string *in_str) {
+i64 widget_text_edit_paste(WidgetTextEditString *text, const string *in_str) {
     return 0;
 }
 
-void widget_text_edit_key_action(WidgetTextEditInfo *info, WidgetTextEditKeyInput key_input) {
+void widget_text_edit_key_action(WidgetTextEditString *text, WidgetTextEditKeyInput key_input) {
+    u64 mod_key = key_input.key;
+
+    if (key_input.mods.shift) {
+        mod_key |= KEY_MODIFIER_SHIFT_FLAG;
+    }
+
+    if (key_input.mods.ctrl) {
+        mod_key |= KEY_MODIFIER_CTRL_FLAG;
+    }
+
+    if (key_input.mods.alt) {
+        mod_key |= KEY_MODIFIER_ALT_FLAG;
+    }
+
+    stb_textedit_key(text, &text->handle->stb_state, mod_key);
 }
