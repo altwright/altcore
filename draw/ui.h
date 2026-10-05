@@ -86,6 +86,7 @@ typedef enum UI_MOUSE_POINTER_ACTION_FLAG_E : u64 {
 
 typedef UiMousePointerActionFlag UiMousePointerActionFlags;
 
+// Mouse activity should be reflected per-frame
 typedef struct UI_MOUSE_INFO_T {
     struct {
         struct {
@@ -130,9 +131,9 @@ void ui_set_locale(UiContext *ui, u64 loc_key);
 
 u64 ui_get_locale(UiContext *ui);
 
-u16 ui_px_width(UiContext *ui, f64 pct);
+u16 ui_width_px(UiContext *ui, f64 pct);
 
-u16 ui_px_height(UiContext *ui, f64 pct);
+u16 ui_height_px(UiContext *ui, f64 pct);
 
 bool ui_elem_double_clicked(UiMouseInfo *info, bool this_frame);
 

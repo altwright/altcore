@@ -535,7 +535,7 @@ u64 ui_get_locale(UiContext *ui) {
     return ui->current_locale;
 }
 
-u16 ui_px_height(UiContext *ui, f64 pct) {
+u16 ui_height_px(UiContext *ui, f64 pct) {
     if (!ui->current_canvas.fb) {
         return 0;
     }
@@ -552,7 +552,7 @@ u16 ui_px_height(UiContext *ui, f64 pct) {
     return MAX(1, px_height);
 }
 
-u16 ui_px_width(UiContext *ui, f64 pct) {
+u16 ui_width_px(UiContext *ui, f64 pct) {
     if (!ui->current_canvas.fb) {
         return 0;
     }

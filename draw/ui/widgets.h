@@ -52,6 +52,6 @@ i64 widget_text_edit_cut(WidgetTextEditString *text, string *out_str);
 // Returns number of bytes pasted into selection, if it exists
 i64 widget_text_edit_paste(WidgetTextEditString *text, const string *in_str);
 
-void widget_text_edit_key_action(WidgetTextEditString *text, WidgetTextEditKeyInput key_input);
+void widget_text_edit_key_press(WidgetTextEditString *text, WidgetTextEditKeyInput key_input);
 
 #endif //BRITANNICUS_WIDGETS_H

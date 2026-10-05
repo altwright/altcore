@@ -548,7 +548,7 @@ i64 widget_text_edit_paste(WidgetTextEditString *text, const string *in_str) {
     return 0;
 }
 
-void widget_text_edit_key_action(WidgetTextEditString *text, WidgetTextEditKeyInput key_input) {
+void widget_text_edit_key_press(WidgetTextEditString *text, WidgetTextEditKeyInput key_input) {
     u64 mod_key = key_input.key;
 
     if (key_input.mods.shift) {
