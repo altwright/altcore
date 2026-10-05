@@ -15,6 +15,8 @@
 #define STB_TEXTEDIT_CHARTYPE char
 #define STB_TEXTEDIT_POSITIONTYPE i32
 
+#include <X11/Xdefs.h>
+
 #include "../../../libs/stb_textedit.h"
 
 typedef struct SINGLE_LINE_DATA_T {
@@ -119,35 +121,35 @@ static void layout_row(StbTexteditRow *layout, WidgetTextEditString *text, i32 s
             row_height
         );
 
-        layout->ymin = start_cursor.y;
-        layout->ymax = row_height - start_cursor.y;
+        layout->ymin = 0;
+        layout->ymax = row_height;
 
-        layout->baseline_y_delta = layout->ymin;
+        layout->baseline_y_delta = start_cursor.y;
     } else {
         crash_msg("Multi-line layout not implemented\n");
     }
 }
 
-static float get_width(WidgetTextEditString *text, i32 start_idx, i32 current_idx) {
-    float x_delta = 0;
+static float get_width(WidgetTextEditString *text, i32 base_idx, i32 current_idx) {
+    float char_width = 0;
 
     if (!text->handle->is_multi_line) {
         Clay_Dimensions dim = ui_impl_clay_measure_text(
             (Clay_StringSlice){
                 .baseChars = text->chars.data,
-                .chars = &text->chars.data[start_idx],
-                .length = current_idx - start_idx,
+                .chars = &text->chars.data[base_idx + current_idx],
+                .length = 1,
             },
             &text->config,
             text->ui
         );
 
-        x_delta = dim.width;
+        char_width = dim.width;
     } else {
         crash_msg("Multi-line layout not implemented\n");
     }
 
-    return x_delta;
+    return char_width;
 }
 
 static int key_to_text(u64 key) {
@@ -478,12 +480,76 @@ void widget_text_edit_destroy(WidgetTextEditHandle *handle) {
 }
 
 void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
+    //@formatter:off
     STB_TexteditState *edit_state = &info->text->handle->stb_state;
 
     if (!info->text->handle->is_multi_line) {
         Clay_ElementData parent_data = Clay_GetElementData(info->parent_id);
         if (!parent_data.found) {
             crash_msg("Parent ID %.*s invalid\n", info->parent_id.stringId.length, info->parent_id.stringId.chars);
+        }
+        f32x2 parent_top_left = {
+            .x = parent_data.boundingBox.x,
+            .y = parent_data.boundingBox.y,
+        };
+
+        f32x2 pointer_viewport_coord = ui_viewport_coord(info->text->ui, info->mouse->pointer.pos.curr_frame);
+
+        f32x2 pointer_rel_pos = f32x2_sub(pointer_viewport_coord, parent_top_left);
+
+        if (ui_elem_left_button(info->mouse, true, true)) {
+            widget_text_edit_click(info->text, pointer_rel_pos);
+        }
+
+        if (ui_elem_left_button(info->mouse, true, false)) {
+            widget_text_edit_drag(info->text, pointer_rel_pos);
+        }
+
+        if (edit_state->select_start != edit_state->select_end) {
+            i32 selection_start = MIN(edit_state->select_start, edit_state->select_end);
+            i32 selection_end = MAX(edit_state->select_start, edit_state->select_end);
+
+            Clay_Dimensions start_to_end_dim = ui_impl_clay_measure_text(
+                (Clay_StringSlice) {
+                    .baseChars = info->text->chars.data,
+                    .chars = &info->text->chars.data[selection_start],
+                    .length = selection_end - selection_start,
+                },
+                &info->text->config,
+                info->text->ui
+            );
+
+            Clay_Dimensions end_to_term_dim = ui_impl_clay_measure_text(
+                (Clay_StringSlice) {
+                    .baseChars = info->text->chars.data,
+                    .chars = &info->text->chars.data[selection_end],
+                    .length = (i32)info->text->chars.len - selection_end,
+                },
+                &info->text->config,
+                info->text->ui
+            );
+
+            CLAY({
+                .backgroundColor = ui_color(info->selection_color),
+                .floating = {
+                    .attachPoints = {
+                        .element = CLAY_ATTACH_POINT_RIGHT_TOP,
+                        .parent = CLAY_ATTACH_POINT_RIGHT_TOP,
+                    },
+                    .attachTo = CLAY_ATTACH_TO_PARENT,
+                    .clipTo = CLAY_CLIP_TO_ATTACHED_PARENT,
+                    .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
+                    .offset = {
+                        .x = -end_to_term_dim.width
+                    }
+                },
+                .layout = {
+                    .sizing = {
+                        .height = CLAY_SIZING_FIXED(parent_data.boundingBox.height),
+                        .width = CLAY_SIZING_FIXED(start_to_end_dim.width)
+                    }
+                }
+            }){}
         }
 
         Clay_String clay_edit_str = {
@@ -492,10 +558,9 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
             .length = (i32) info->text->chars.len,
         };
 
-        //@formatter:off
         CLAY_TEXT(clay_edit_str, &info->text->config);
 
-        Clay_Dimensions post_dim = ui_impl_clay_measure_text(
+        Clay_Dimensions post_cursor_dim = ui_impl_clay_measure_text(
             (Clay_StringSlice){
                 .baseChars = info->text->chars.data,
                 .chars = &info->text->chars.data[edit_state->cursor],
@@ -516,7 +581,7 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                 .clipTo = CLAY_CLIP_TO_ATTACHED_PARENT,
                 .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
                 .offset = {
-                    .x = -post_dim.width,
+                    .x = -post_cursor_dim.width,
                 }
             },
             .layout = {
@@ -526,18 +591,21 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                 }
             }
         }){}
-        //@formatter:on
 
         //Clay_ScrollContainerData parent_scroll = Clay_GetScrollContainerData(info->parent_id);
     } else {
         crash_msg("Multi-line text edit ui is not implemented yet\n");
     }
+
+    //@formatter:on
 }
 
 void widget_text_edit_click(WidgetTextEditString *text, f32x2 rel_pos) {
+    stb_textedit_click(text, &text->handle->stb_state, rel_pos.x, rel_pos.y);
 }
 
 void widget_text_edit_drag(WidgetTextEditString *text, f32x2 rel_pos) {
+    stb_textedit_drag(text, &text->handle->stb_state, rel_pos.x, rel_pos.y);
 }
 
 i64 widget_text_edit_cut(WidgetTextEditString *text, string *out_str) {
@@ -549,6 +617,10 @@ i64 widget_text_edit_paste(WidgetTextEditString *text, const string *in_str) {
 }
 
 void widget_text_edit_key_press(WidgetTextEditString *text, WidgetTextEditKeyInput key_input) {
+    if (!text->handle->is_multi_line && key_input.key == KEYBOARD_KEY_ENTER) {
+        return;
+    }
+
     u64 mod_key = key_input.key;
 
     if (key_input.mods.shift) {

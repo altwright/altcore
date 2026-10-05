@@ -569,31 +569,55 @@ u16 ui_width_px(UiContext *ui, f64 pct) {
     return MAX(1, px_width);
 }
 
+f32x2 ui_viewport_coord(UiContext *ui, f32x2 canvas_coord) {
+    return (f32x2){
+        .x = canvas_coord.x - ui->current_canvas.offset.x,
+        .y = canvas_coord.y - ui->current_canvas.offset.y,
+    };
+}
+
 FontSets *ui_impl_get_font_sets(UiContext *ui, i32 font_theme_idx) {
     return ARRAY_GET(&ui->font_themes, font_theme_idx);
 }
 
-static bool elem_clicked(UiMouseInfo *info, bool this_frame, UiMousePointerActionFlag action) {
+static bool pointer_pressed(UiMouseInfo *info, bool this_frame, UiMousePointerActionFlag action) {
     bool clicked = Clay_Hovered() && (info->pointer.pressed.curr_frame & action);
     if (this_frame) {
-        clicked = clicked && (info->pointer.pressed.prev_frame & action);
+        clicked = clicked && !(info->pointer.pressed.prev_frame & action);
     }
 
     return clicked;
 }
 
-bool ui_elem_double_clicked(UiMouseInfo *info, bool this_frame) {
-    return elem_clicked(info, this_frame, UI_MOUSE_POINTER_ACTION_DOUBLE_CLICK_FLAG);
+static bool pointer_released(UiMouseInfo *info, bool this_frame, UiMousePointerActionFlag action) {
+    bool released = Clay_Hovered() && !(info->pointer.pressed.curr_frame & action);
+    if (this_frame) {
+        released = released && (info->pointer.pressed.prev_frame & action);
+    }
+
+    return released;
 }
 
-bool ui_elem_left_clicked(UiMouseInfo *info, bool this_frame) {
-    return elem_clicked(info, this_frame, UI_MOUSE_POINTER_ACTION_LEFT_CLICK_FLAG);
+bool ui_elem_double_click(UiMouseInfo *info, bool is_pressed, bool this_frame) {
+    return is_pressed
+               ? pointer_pressed(info, this_frame, UI_MOUSE_POINTER_ACTION_DOUBLE_CLICK_FLAG)
+               : pointer_released(info, this_frame, UI_MOUSE_POINTER_ACTION_DOUBLE_CLICK_FLAG);
 }
 
-bool ui_elem_right_clicked(UiMouseInfo *info, bool this_frame) {
-    return elem_clicked(info, this_frame, UI_MOUSE_POINTER_ACTION_RIGHT_CLICK_FLAG);
+bool ui_elem_left_button(UiMouseInfo *info, bool is_pressed, bool this_frame) {
+    return is_pressed
+               ? pointer_pressed(info, this_frame, UI_MOUSE_POINTER_ACTION_LEFT_CLICK_FLAG)
+               : pointer_released(info, this_frame, UI_MOUSE_POINTER_ACTION_LEFT_CLICK_FLAG);
 }
 
-bool ui_elem_middle_clicked(UiMouseInfo *info, bool this_frame) {
-    return elem_clicked(info, this_frame, UI_MOUSE_POINTER_ACTION_MIDDLE_CLICK_FLAG);
+bool ui_elem_right_button(UiMouseInfo *info, bool is_pressed, bool this_frame) {
+    return is_pressed
+               ? pointer_pressed(info, this_frame, UI_MOUSE_POINTER_ACTION_RIGHT_CLICK_FLAG)
+               : pointer_released(info, this_frame, UI_MOUSE_POINTER_ACTION_RIGHT_CLICK_FLAG);
+}
+
+bool ui_elem_middle_button(UiMouseInfo *info, bool is_pressed, bool this_frame) {
+    return is_pressed
+               ? pointer_pressed(info, this_frame, UI_MOUSE_POINTER_ACTION_MIDDLE_CLICK_FLAG)
+               : pointer_released(info, this_frame, UI_MOUSE_POINTER_ACTION_MIDDLE_CLICK_FLAG);
 }

@@ -135,12 +135,14 @@ u16 ui_width_px(UiContext *ui, f64 pct);
 
 u16 ui_height_px(UiContext *ui, f64 pct);
 
-bool ui_elem_double_clicked(UiMouseInfo *info, bool this_frame);
+f32x2 ui_viewport_coord(UiContext *ui, f32x2 canvas_coord);
 
-bool ui_elem_left_clicked(UiMouseInfo *info, bool this_frame);
+bool ui_elem_double_click(UiMouseInfo *info, bool is_pressed, bool this_frame);
 
-bool ui_elem_middle_clicked(UiMouseInfo *info, bool this_frame);
+bool ui_elem_left_button(UiMouseInfo *info, bool is_pressed, bool this_frame);
 
-bool ui_elem_right_clicked(UiMouseInfo *info, bool this_frame);
+bool ui_elem_middle_button(UiMouseInfo *info, bool is_pressed, bool this_frame);
+
+bool ui_elem_right_button(UiMouseInfo *info, bool is_pressed, bool this_frame);
 
 #endif //ALTCORE_UI_H
