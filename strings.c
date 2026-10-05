@@ -46,10 +46,10 @@ void string_push(string *str, const char *fmt, ...) {
     va_start(args_read);
     va_start(args_write);
 
-    i32 len = stbsp_vsnprintf(nullptr, 0, fmt, args_read);
+    i32 push_len = stbsp_vsnprintf(nullptr, 0, fmt, args_read);
 
     i64 new_cap = str->cap;
-    while ((len + 1) > (new_cap - str->len)) {
+    while ((push_len + 1) > (new_cap - str->len)) {
         new_cap *= 2;
     }
 
@@ -60,12 +60,12 @@ void string_push(string *str, const char *fmt, ...) {
         str->cap = new_cap;
     }
 
-    i32 written_len = stbsp_vsnprintf(str->data + str->len, len + 1, fmt, args_write);
-    if (written_len != len) {
-        crash_msg("Written length %d does not match expected length %d", written_len, len);
+    i32 written_len = stbsp_vsnprintf(str->data + str->len, push_len + 1, fmt, args_write);
+    if (written_len != push_len) {
+        crash_msg("Written length %d does not match expected length %d", written_len, push_len);
     }
 
-    str->len += len;
+    str->len += push_len;
 
     va_end(args_read);
     va_end(args_write);
@@ -114,10 +114,10 @@ void string_put(string *str, i64 start_idx, const char *fmt, ...) {
     va_start(args_read);
     va_start(args_write);
 
-    i32 len = stbsp_vsnprintf(nullptr, 0, fmt, args_read);
+    i32 put_len = stbsp_vsnprintf(nullptr, 0, fmt, args_read);
 
     i64 new_cap = str->cap;
-    while ((len + 1) > (new_cap - str->len)) {
+    while ((put_len + 1) > (new_cap - str->len)) {
         new_cap *= 2;
     }
 
@@ -129,15 +129,17 @@ void string_put(string *str, i64 start_idx, const char *fmt, ...) {
     }
 
     for (i64 c_idx = str->len; c_idx >= start_idx; c_idx--) {
-        str->data[c_idx + len] = str->data[c_idx];
+        str->data[c_idx + put_len] = str->data[c_idx];
     }
 
-    i32 written_len = stbsp_vsnprintf(str->data + start_idx, len, fmt, args_write);
-    if (written_len != len) {
-        crash_msg("Written length %d does not match expected length %d", written_len, len);
+    char overwritten_c = str->data[start_idx + put_len];
+    i32 written_len = stbsp_vsnprintf(str->data + start_idx, put_len + 1, fmt, args_write);
+    if (written_len != put_len) {
+        crash_msg("Written length %d does not match expected length %d", written_len, put_len);
     }
+    str->data[start_idx + put_len] = overwritten_c;
 
-    str->len += len;
+    str->len += put_len;
     str->data[str->len] = '\0';
 
     va_end(args_read);
