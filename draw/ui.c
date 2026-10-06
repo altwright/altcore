@@ -8,6 +8,7 @@
 
 #include "fonts.impl.h"
 #include "framebuffer.impl.h"
+#include "ui.impl.h"
 #include "../../memory.h"
 #include "../../hashmap.h"
 #include "../../strings.h"
@@ -46,6 +47,8 @@ struct UI_CONTEXT_T {
     StringKeyMap string_key_map;
 
     FontThemes font_themes;
+
+    UiImplMeasureTextLineParams measure_text_line_params;
 };
 
 static void ui_error_handler(Clay_ErrorData err_data) {
@@ -98,7 +101,7 @@ FontStyle ui_impl_read_font_modifier_flags(u16 font_mod_flags) {
 }
 
 Clay_Dimensions ui_impl_clay_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data) {
-    UiContext *ui = user_data;
+    auto ui = (UiContext *) user_data;
     u16 font_theme_idx = config->fontId & 0xff;
     u16 font_mod_flags = config->fontId & ~font_theme_idx;
 
@@ -141,14 +144,17 @@ Clay_Dimensions ui_impl_clay_measure_text(Clay_StringSlice text, Clay_TextElemen
         }
 
         if (current_font_set_idx != prev_font_set_idx) {
-            f32x2 dim = font_measure_text(
-                font,
-                (string_view){
-                    .start = prev_txt_start,
-                    .len = utf8 - prev_txt_start
-                },
-                config->fontSize,
-                config->letterSpacing
+            f32x2 dim = font_impl_measure_text_line(
+                &(FontImplMeasureTextLineInfo){
+                    .font = font,
+                    .line = (string_view){
+                        .start = prev_txt_start,
+                        .len = utf8 - prev_txt_start
+                    },
+                    .height_px = config->fontSize,
+                    .letter_spacing_px = config->letterSpacing,
+                    .ui_measure_params = ui->measure_text_line_params
+                }
             );
 
             final_dim.height = MAX(dim.height, final_dim.height);
@@ -159,14 +165,17 @@ Clay_Dimensions ui_impl_clay_measure_text(Clay_StringSlice text, Clay_TextElemen
         }
     }
 
-    f32x2 dim = font_measure_text(
-        ARRAY_GET(font_theme, prev_font_set_idx)->styles[font_style],
-        (string_view){
-            .start = prev_txt_start,
-            .len = (full_txt_line.start + full_txt_line.len) - prev_txt_start
-        },
-        config->fontSize,
-        config->letterSpacing
+    f32x2 dim = font_impl_measure_text_line(
+        &(FontImplMeasureTextLineInfo){
+            .font = ARRAY_GET(font_theme, prev_font_set_idx)->styles[font_style],
+            .line = (string_view){
+                .start = prev_txt_start,
+                .len = (full_txt_line.start + full_txt_line.len) - prev_txt_start
+            },
+            .height_px = config->fontSize,
+            .letter_spacing_px = config->letterSpacing,
+            .ui_measure_params = ui->measure_text_line_params
+        }
     );
 
     final_dim.height = MAX(dim.height, final_dim.height);
@@ -256,6 +265,14 @@ UiContext *ui_create(const UiCreateInfo *create_info) {
         .del_freq = HASHMAP_DEL_FREQ_LOW,
     };
     HASHMAP_MAKE(&ui->string_key_map);
+
+    // Default parameters for drawing a single line of text
+    ui->measure_text_line_params = (UiImplMeasureTextLineParams){
+        .include_side_bearings = {
+            .left = true,
+            .right = true,
+        },
+    };
 
     return ui;
 }
@@ -620,4 +637,12 @@ bool ui_elem_middle_button(UiMouseInfo *info, bool is_pressed, bool this_frame) 
     return is_pressed
                ? pointer_pressed(info, this_frame, UI_MOUSE_POINTER_ACTION_MIDDLE_CLICK_FLAG)
                : pointer_released(info, this_frame, UI_MOUSE_POINTER_ACTION_MIDDLE_CLICK_FLAG);
+}
+
+UiImplMeasureTextLineParams ui_impl_get_measure_text_line_params(UiContext *ui) {
+    return ui->measure_text_line_params;
+}
+
+void ui_impl_set_measure_text_line_params(UiContext *ui, const UiImplMeasureTextLineParams *params) {
+    ui->measure_text_line_params = *params;
 }

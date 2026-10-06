@@ -8,7 +8,16 @@
 #include "fonts.h"
 #include "../../libs/stb_truetype.h"
 
-struct CODEPOINT_INFO_T;
+#include "ui.impl.h"
+
+typedef struct FONT_IMPL_MEASURE_TEXT_LINE_INFO_T {
+    FontHandle *font;
+    string_view line;
+    i32 height_px;
+    i32 letter_spacing_px;
+
+    UiImplMeasureTextLineParams ui_measure_params;
+} FontImplMeasureTextLineInfo;
 
 stbtt_fontinfo *font_impl_get_info(FontHandle *font);
 
@@ -36,6 +45,8 @@ void font_impl_get_codepoint_bitmap(
     i32 *out_bitmap_height
 );
 
-i32 font_impl_get_kerning_advance(FontHandle *font, const char* prev_codepoint, const char* next_codepoint);
+i32 font_impl_get_kerning_advance(FontHandle *font, const char *prev_codepoint, const char *next_codepoint);
+
+f32x2 font_impl_measure_text_line(FontImplMeasureTextLineInfo *info);
 
 #endif //ALTCORE_FONTS_IMPL_H

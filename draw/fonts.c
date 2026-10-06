@@ -161,45 +161,40 @@ static CodepointInfo *get_codepoint_info(FontHandle *font, const char *utf8) {
     return info;
 }
 
-f32x2 font_measure_text(
-    FontHandle *font,
-    string_view line,
-    i32 height_px,
-    i32 letter_spacing_px
-) {
-    f32 scale_factor = font_impl_get_scale_factor(font, height_px);
+f32x2 font_impl_measure_text_line(FontImplMeasureTextLineInfo *info) {
+    f32 scale_factor = font_impl_get_scale_factor(info->font, info->height_px);
 
-    f32 y1 = scale_factor * (f32) font->max_bbox.y1;
-    f32 y0 = scale_factor * (f32) font->max_bbox.y0;
-    f32 height = y1 - y0;
+    f32 y1 = scale_factor * (f32) info->font->max_bbox.y1;
+    f32 y0 = scale_factor * (f32) info->font->max_bbox.y0;
+    i32 height = (i32) (y1 - y0);
 
-    f32 width = 0;
+    i32 width = 0;
 
     const char *prev_utf8 = nullptr;
-    STRING_VIEW_FOR(utf8, &line) {
-        i64 remaining_bytes = line.start + line.len - utf8;
-        CodepointInfo *codepoint_info = get_codepoint_info(font, utf8);
+    STRING_VIEW_FOR(utf8, &info->line) {
+        i64 remaining_bytes = info->line.start + info->line.len - utf8;
+        CodepointInfo *codepoint_info = get_codepoint_info(info->font, utf8);
 
-        if (codepoint_info->glyph_idx) {
-            if (utf8 == line.start) {
+        if (codepoint_info->glyph_idx > 0) {
+            if (info->ui_measure_params.include_side_bearings.left && utf8 == info->line.start) {
                 f32 lsb_px = scale_factor * (f32) codepoint_info->left_side_bearing_units;
                 if (lsb_px < 0) {
-                    width -= lsb_px;
+                    width -= (i32) lsb_px;
                 }
             }
 
-            width += scale_factor * (f32) font_impl_get_kerning_advance(font, prev_utf8, utf8);
-            width += scale_factor * (f32) codepoint_info->advance_width_units;
+            width += (i32) (scale_factor * (f32) font_impl_get_kerning_advance(info->font, prev_utf8, utf8));
+            width += (i32) (scale_factor * (f32) codepoint_info->advance_width_units);
 
-            if (utf8 + utf8_size(utf8, remaining_bytes) < line.start + line.len) {
-                width += (f32) letter_spacing_px;
-            } else {
+            if (utf8 + utf8_size(utf8, remaining_bytes) < info->line.start + info->line.len) {
+                width += info->letter_spacing_px;
+            } else if (info->ui_measure_params.include_side_bearings.right) {
                 f32 rsb_px = scale_factor * (f32) (
                                  codepoint_info->advance_width_units - (
                                      codepoint_info->left_side_bearing_units + (
                                          codepoint_info->bbox.x1 - codepoint_info->bbox.x0)));
                 if (rsb_px < 0) {
-                    width -= rsb_px;
+                    width -= (i32) rsb_px;
                 }
             }
         }
@@ -208,8 +203,8 @@ f32x2 font_measure_text(
     }
 
     f32x2 dim = {
-        .width = width,
-        .height = height,
+        .width = (f32) width,
+        .height = (f32) height,
     };
 
     return dim;
