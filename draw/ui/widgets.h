@@ -24,6 +24,7 @@ typedef struct WIDGET_TEXT_EDIT_INFO_T {
     rgba8 selection_color;
     rgba8 cursor_color;
     u16 cursor_width_px;
+    rgba8 insert_color;
     UiMouseInfo *mouse;
 } WidgetTextEditUiInfo;
 

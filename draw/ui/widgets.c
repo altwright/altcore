@@ -15,8 +15,6 @@
 #define STB_TEXTEDIT_CHARTYPE char
 #define STB_TEXTEDIT_POSITIONTYPE i32
 
-#include <X11/Xdefs.h>
-
 #include "../../../libs/stb_textedit.h"
 
 typedef struct SINGLE_LINE_DATA_T {
@@ -80,6 +78,10 @@ typedef enum KEY_MODIFIER_FLAG_E : u64 {
 #define STB_TEXTEDIT_K_BACKSPACE (KEYBOARD_KEY_BACKSPACE)
 #define STB_TEXTEDIT_K_UNDO ((u64)KEY_MODIFIER_CTRL_FLAG | KEYBOARD_KEY_Z)
 #define STB_TEXTEDIT_K_REDO ((u64)KEY_MODIFIER_CTRL_FLAG | KEYBOARD_KEY_Y)
+#define STB_TEXTEDIT_K_INSERT (KEYBOARD_KEY_INSERT)
+#define STB_TEXTEDIT_IS_SPACE isspace
+#define STB_TEXTEDIT_K_WORDLEFT ((u64)KEY_MODIFIER_CTRL_FLAG | KEYBOARD_KEY_ARROW_LEFT)
+#define STB_TEXTEDIT_K_WORDRIGHT ((u64)KEY_MODIFIER_CTRL_FLAG | KEYBOARD_KEY_ARROW_RIGHT)
 
 #define STB_TEXTEDIT_STRING WidgetTextEditString
 #define STB_TEXTEDIT_STRINGLEN(obj) ((obj)->chars.len)
@@ -699,7 +701,7 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
             CLAY_TEXT(clay_edit_str, &info->text->config);
 
             CLAY({
-                .backgroundColor = ui_color(info->cursor_color),
+                .backgroundColor = stb_state->insert_mode ? ui_color(info->insert_color) : ui_color(info->cursor_color),
                 .floating = {
                     .attachPoints = {
                         .element = CLAY_ATTACH_POINT_RIGHT_TOP,
