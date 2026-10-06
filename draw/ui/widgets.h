@@ -37,7 +37,7 @@ typedef struct WIDGET_TEXT_EDIT_KEY_INPUT_T {
     } mods;
 } WidgetTextEditKeyInput;
 
-WidgetTextEditHandle *widget_text_edit_create(bool multi_line);
+WidgetTextEditHandle *widget_text_edit_create();
 
 void widget_text_edit_destroy(WidgetTextEditHandle *handle);
 

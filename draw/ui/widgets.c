@@ -25,7 +25,6 @@ typedef struct SINGLE_LINE_DATA_T {
 
 struct WIDGET_TEXT_EDIT_HANDLE {
     STB_TexteditState stb_state;
-    bool is_multi_line;
 
     union {
         SingleLineData single;
@@ -82,11 +81,11 @@ static void layout_row(StbTexteditRow *layout, WidgetTextEditString *text, i32 s
     UiImplMeasureTextLineParams original_params = ui_impl_get_measure_text_line_params(text->ui);
 
     UiImplMeasureTextLineParams modified_params = original_params;
-    modified_params.include_side_bearings.left = false;
-    modified_params.include_side_bearings.right = false;
+    modified_params.include_negative_side_bearings.left = false;
+    modified_params.include_negative_side_bearings.right = false;
     ui_impl_set_measure_text_line_params(text->ui, &modified_params);
 
-    if (!text->handle->is_multi_line) {
+    if (text->handle->stb_state.single_line) {
         layout->num_chars = (i32) text->chars.len - start_idx;
         Clay_Dimensions pre_dim = ui_impl_clay_measure_text(
             (Clay_StringSlice){
@@ -142,14 +141,14 @@ static void layout_row(StbTexteditRow *layout, WidgetTextEditString *text, i32 s
 static float get_width(WidgetTextEditString *text, i32 base_idx, i32 current_idx) {
     float char_width = 0;
 
-    UiImplMeasureTextLineParams original_params = ui_impl_get_measure_text_line_params(text->ui);
+    UiImplMeasureTextLineParams default_params = ui_impl_get_measure_text_line_params(text->ui);
+    UiImplMeasureTextLineParams modified_params = default_params;
 
-    UiImplMeasureTextLineParams modified_params = original_params;
-    modified_params.include_side_bearings.left = false;
-    modified_params.include_side_bearings.right = false;
-    ui_impl_set_measure_text_line_params(text->ui, &modified_params);
+    if (text->handle->stb_state.single_line) {
+        modified_params.include_negative_side_bearings.left = false;
+        modified_params.include_negative_side_bearings.right = false;
+        ui_impl_set_measure_text_line_params(text->ui, &modified_params);
 
-    if (!text->handle->is_multi_line) {
         Clay_Dimensions dim = ui_impl_clay_measure_text(
             (Clay_StringSlice){
                 .baseChars = text->chars.data,
@@ -165,7 +164,7 @@ static float get_width(WidgetTextEditString *text, i32 base_idx, i32 current_idx
         crash_msg("Multi-line layout not implemented\n");
     }
 
-    ui_impl_set_measure_text_line_params(text->ui, &original_params);
+    ui_impl_set_measure_text_line_params(text->ui, &default_params);
 
     return char_width;
 }
@@ -482,13 +481,11 @@ static int insert_chars(WidgetTextEditString *text, i32 start_idx, const char *c
 #define STB_TEXTEDIT_IMPLEMENTATION
 #include "../../../libs/stb_textedit.h"
 
-WidgetTextEditHandle *widget_text_edit_create(bool multi_line) {
+WidgetTextEditHandle *widget_text_edit_create() {
     WidgetTextEditHandle *handle = alt_malloc(sizeof(WidgetTextEditHandle));
-    *handle = (WidgetTextEditHandle){
-        .is_multi_line = multi_line,
-    };
+    *handle = (WidgetTextEditHandle){};
 
-    stb_textedit_initialize_state(&handle->stb_state, !multi_line);
+    stb_textedit_initialize_state(&handle->stb_state, true);
 
     return handle;
 }
@@ -499,12 +496,12 @@ void widget_text_edit_destroy(WidgetTextEditHandle *handle) {
 
 void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
     //@formatter:off
-    STB_TexteditState *edit_state = &info->text->handle->stb_state;
+    STB_TexteditState *stb_state = &info->text->handle->stb_state;
 
     UiImplMeasureTextLineParams default_params = ui_impl_get_measure_text_line_params(info->text->ui);
     UiImplMeasureTextLineParams modified_params = default_params;
 
-    if (!info->text->handle->is_multi_line) {
+    if (stb_state->single_line) {
         Clay_ElementId open_elem_id = ui_impl_get_open_elem_id(info->text->ui);
         Clay_ElementData open_elem_data = Clay_GetElementData(open_elem_id);
         if (!open_elem_data.found) {
@@ -527,12 +524,12 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
             widget_text_edit_drag(info->text, pointer_rel_pos);
         }
 
-        if (edit_state->select_start != edit_state->select_end) {
-            i32 selection_start = MIN(edit_state->select_start, edit_state->select_end);
-            i32 selection_end = MAX(edit_state->select_start, edit_state->select_end);
+        if (stb_state->select_start != stb_state->select_end) {
+            i32 selection_start = MIN(stb_state->select_start, stb_state->select_end);
+            i32 selection_end = MAX(stb_state->select_start, stb_state->select_end);
 
-            modified_params.include_side_bearings.left = false;
-            modified_params.include_side_bearings.right = false;
+            modified_params.include_negative_side_bearings.left = false;
+            modified_params.include_negative_side_bearings.right = false;
             ui_impl_set_measure_text_line_params(info->text->ui, &modified_params);
 
             Clay_Dimensions start_to_end_dim = ui_impl_clay_measure_text(
@@ -545,8 +542,8 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                 info->text->ui
             );
 
-            modified_params.include_side_bearings.left = false;
-            modified_params.include_side_bearings.right = true;
+            modified_params.include_negative_side_bearings.left = false;
+            modified_params.include_negative_side_bearings.right = true;
             ui_impl_set_measure_text_line_params(info->text->ui, &modified_params);
 
             Clay_Dimensions end_to_term_dim = ui_impl_clay_measure_text(
@@ -592,15 +589,15 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
 
         CLAY_TEXT(clay_edit_str, &info->text->config);
 
-        modified_params.include_side_bearings.left = false;
-        modified_params.include_side_bearings.right = true;
+        modified_params.include_negative_side_bearings.left = false;
+        modified_params.include_negative_side_bearings.right = true;
         ui_impl_set_measure_text_line_params(info->text->ui, &modified_params);
 
         Clay_Dimensions cursor_to_term_dim = ui_impl_clay_measure_text(
             (Clay_StringSlice){
                 .baseChars = info->text->chars.data,
-                .chars = &info->text->chars.data[edit_state->cursor],
-                .length = (i32)info->text->chars.len - edit_state->cursor,
+                .chars = &info->text->chars.data[stb_state->cursor],
+                .length = (i32)info->text->chars.len - stb_state->cursor,
             },
             &info->text->config,
             info->text->ui
@@ -654,10 +651,6 @@ i64 widget_text_edit_paste(WidgetTextEditString *text, const string *in_str) {
 }
 
 void widget_text_edit_key_press(WidgetTextEditString *text, WidgetTextEditKeyInput key_input) {
-    if (!text->handle->is_multi_line && key_input.key == KEYBOARD_KEY_ENTER) {
-        return;
-    }
-
     u64 mod_key = key_input.key;
 
     if (key_input.mods.shift) {

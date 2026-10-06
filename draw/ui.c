@@ -268,7 +268,7 @@ UiContext *ui_create(const UiCreateInfo *create_info) {
 
     // Default parameters for drawing a single line of text
     ui->measure_text_line_params = (UiImplMeasureTextLineParams){
-        .include_side_bearings = {
+        .include_negative_side_bearings = {
             .left = true,
             .right = true,
         },

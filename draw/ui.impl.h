@@ -11,7 +11,7 @@ typedef struct UI_IMPL_MEASURE_TEXT_LINE_PARAMS_T {
     struct {
         bool left;
         bool right;
-    } include_side_bearings;
+    } include_negative_side_bearings;
 } UiImplMeasureTextLineParams;
 
 Clay_Dimensions ui_impl_clay_measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, void *user_data);

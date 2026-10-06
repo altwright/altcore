@@ -176,7 +176,7 @@ f32x2 font_impl_measure_text_line(FontImplMeasureTextLineInfo *info) {
         CodepointInfo *codepoint_info = get_codepoint_info(info->font, utf8);
 
         if (codepoint_info->glyph_idx > 0) {
-            if (info->ui_measure_params.include_side_bearings.left && utf8 == info->line.start) {
+            if (info->ui_measure_params.include_negative_side_bearings.left && utf8 == info->line.start) {
                 f32 lsb_px = scale_factor * (f32) codepoint_info->left_side_bearing_units;
                 if (lsb_px < 0) {
                     width -= (i32) lsb_px;
@@ -188,7 +188,7 @@ f32x2 font_impl_measure_text_line(FontImplMeasureTextLineInfo *info) {
 
             if (utf8 + utf8_size(utf8, remaining_bytes) < info->line.start + info->line.len) {
                 width += info->letter_spacing_px;
-            } else if (info->ui_measure_params.include_side_bearings.right) {
+            } else if (info->ui_measure_params.include_negative_side_bearings.right) {
                 f32 rsb_px = scale_factor * (f32) (
                                  codepoint_info->advance_width_units - (
                                      codepoint_info->left_side_bearing_units + (
