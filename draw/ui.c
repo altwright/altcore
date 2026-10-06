@@ -308,6 +308,18 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
         }
     }
 
+    if (Clay_IsDebugModeEnabled()) {
+        f32 debug_width = canvas_size.width - ui_size.width;
+        if (debug_width <= 0) {
+            Clay_SetDebugModeEnabled(false);
+        } else {
+            Clay__debugViewWidth = (u32)debug_width;
+            ui_size.width += debug_width;
+        }
+
+        ui->current_canvas.offset.x = 0;
+    }
+
     Clay_SetLayoutDimensions(ui_size);
 
     ui->current_canvas.fb = layout_info->canvas;

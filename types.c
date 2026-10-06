@@ -261,7 +261,7 @@ void bits_unset(bits *bs, i64 bit_idx) {
 
 bool bits_is_set(const bits *bs, i64 bit_idx) {
     i64 bitfield_idx = get_bitfield_idx(bs, bit_idx);
-    return bs->data[bitfield_idx] & (bit_idx % 64);
+    return bs->data[bitfield_idx] & (1ULL << bit_idx % 64);
 }
 
 void assert_bits_count_match(const bits *left, const bits *right) {
