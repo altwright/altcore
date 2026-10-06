@@ -321,7 +321,7 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
     );
 
     Clay_UpdateScrollContainers(
-        true,
+        layout_info->enable_drag_scrolling,
         (Clay_Vector2){
             .x = layout_info->mouse.scroll_delta.x,
             .y = layout_info->mouse.scroll_delta.y,

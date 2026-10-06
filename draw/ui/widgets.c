@@ -20,14 +20,28 @@
 #include "../../../libs/stb_textedit.h"
 
 typedef struct SINGLE_LINE_DATA_T {
-    f32x2 row_size_px;
 } SingleLineData;
+
+typedef enum CURSOR_DIRECTION {
+#define X_CURSOR_DIRECTIONS \
+    X(FORWARD) \
+    X(BACKWARD) \
+    X(UP) \
+    X(DOWN) \
+    X(COUNT)
+#define X(dir) \
+    CURSOR_DIRECTION_##dir,
+    X_CURSOR_DIRECTIONS
+#undef X
+} CursorDirection;
 
 struct WIDGET_TEXT_EDIT_HANDLE {
     STB_TexteditState stb_state;
+    int prev_cursor;
+    CursorDirection cursor_dir;
 
     union {
-        SingleLineData single;
+        SingleLineData single_line;
     } data;
 };
 
@@ -502,18 +516,20 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
     UiImplMeasureTextLineParams modified_params = default_params;
 
     if (stb_state->single_line) {
+        int current_cursor = stb_state->cursor;
+        i32 cursor_delta = current_cursor - info->text->handle->prev_cursor;
+        if (cursor_delta > 0) {
+            info->text->handle->cursor_dir = CURSOR_DIRECTION_FORWARD;
+        } else if (cursor_delta < 0) {
+            info->text->handle->cursor_dir = CURSOR_DIRECTION_BACKWARD;
+        }
+        info->text->handle->prev_cursor = current_cursor;
+
         Clay_ElementId open_elem_id = ui_impl_get_open_elem_id(info->text->ui);
         Clay_ElementData open_elem_data = Clay_GetElementData(open_elem_id);
         if (!open_elem_data.found) {
             crash_msg("Open elem ID %u invalid\n", open_elem_id.id);
         }
-
-        f32x2 open_elem_top_left_coord = {
-            .x = open_elem_data.boundingBox.x,
-            .y = open_elem_data.boundingBox.y,
-        };
-        f32x2 pointer_viewport_coord = ui_viewport_coord(info->text->ui, info->mouse->pointer.canvas_pos.curr_frame);
-        f32x2 pointer_rel_pos = f32x2_sub(pointer_viewport_coord, open_elem_top_left_coord);
 
         ui_impl_set_measure_text_line_params(info->text->ui, &default_params);
 
@@ -534,8 +550,8 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
         Clay_Dimensions cursor_to_term_dim = ui_impl_clay_measure_text(
             (Clay_StringSlice){
                 .baseChars = info->text->chars.data,
-                .chars = &info->text->chars.data[stb_state->cursor],
-                .length = (i32)info->text->chars.len - stb_state->cursor,
+                .chars = &info->text->chars.data[current_cursor],
+                .length = (i32)info->text->chars.len - current_cursor,
             },
             &info->text->config,
             info->text->ui
@@ -546,29 +562,50 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
         Clay_ScrollContainerData scroll_container_data = Clay_GetScrollContainerData(open_elem_id);
         if (scroll_container_data.found) {
             if (stb_state->single_line && scroll_container_data.config.horizontal) {
-
                 f32 horizontal_padding = scroll_container_data.contentDimensions.width - full_dim.width;
-                f32 base_to_cursor_width = full_dim.width - cursor_to_term_dim.width;
 
-                if (horizontal_padding + base_to_cursor_width > scroll_container_data.scrollContainerDimensions.width) {
-                    scroll_container_data.scrollPosition->x = scroll_container_data.scrollContainerDimensions.width
-                                                                - (horizontal_padding + base_to_cursor_width);
-                } else {
-                    scroll_container_data.scrollPosition->x = 0;
+                switch (info->text->handle->cursor_dir) {
+                    case CURSOR_DIRECTION_FORWARD: {
+                        if (current_cursor < info->text->chars.len - 1) {
+                            f32 next_cursor_char_width = get_width(info->text, 0, current_cursor);
+                            f32 base_to_cursor_width = full_dim.width - cursor_to_term_dim.width;
+
+                            f32 left_clip_to_next_cursor_width = horizontal_padding + base_to_cursor_width
+                                                                    + next_cursor_char_width
+                                                                    + scroll_container_data.scrollPosition->x;
+
+                            if (left_clip_to_next_cursor_width > scroll_container_data.scrollContainerDimensions.width) {
+                                scroll_container_data.scrollPosition->x -= next_cursor_char_width;
+                            }
+                        } else {
+                            scroll_container_data.scrollPosition->x = scroll_container_data.scrollContainerDimensions.width
+                                                                         - scroll_container_data.contentDimensions.width;
+                        }
+                        break;
+                    } case CURSOR_DIRECTION_BACKWARD: {
+                        if (current_cursor > 0) {
+                            f32 next_cursor_char_width = get_width(info->text, 0, current_cursor - 1);
+
+                            f32 next_cursor_to_right_clip_width = horizontal_padding + cursor_to_term_dim.width
+                                                                    + next_cursor_char_width
+                                                                    - (scroll_container_data.contentDimensions.width
+                                                                        - scroll_container_data.scrollContainerDimensions.width
+                                                                        + scroll_container_data.scrollPosition->x);
+
+                            if (next_cursor_to_right_clip_width > scroll_container_data.scrollContainerDimensions.width) {
+                                scroll_container_data.scrollPosition->x += next_cursor_char_width;
+                            }
+                        } else {
+                            scroll_container_data.scrollPosition->x = 0;
+                        }
+                        break;
+                    }
+                    default:
+                        break;
                 }
-
-                pointer_rel_pos.x -= scroll_container_data.scrollPosition->x;
             } else {
                 crash_msg("Multi-line scroll container handling unimplemented\n");
             }
-        }
-
-        if (ui_elem_left_button(info->mouse, true, true)) {
-            widget_text_edit_click(info->text, pointer_rel_pos);
-        }
-
-        if (ui_elem_left_button(info->mouse, true, false)) {
-            widget_text_edit_drag(info->text, pointer_rel_pos);
         }
 
         CLAY({
@@ -579,6 +616,23 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                 },
             },
         }) {
+            Clay_ElementId line_wrapper_elem = ui_impl_get_open_elem_id(info->text->ui);
+            Clay_ElementData line_wrapper_elem_data = Clay_GetElementData(line_wrapper_elem);
+            f32x2 line_wrapper_elem_top_left_coord = {
+                .x = line_wrapper_elem_data.boundingBox.x,
+                .y = line_wrapper_elem_data.boundingBox.y,
+            };
+            f32x2 pointer_viewport_coord = ui_viewport_coord(info->text->ui, info->mouse->pointer.canvas_pos.curr_frame);
+            f32x2 pointer_rel_pos = f32x2_sub(pointer_viewport_coord, line_wrapper_elem_top_left_coord);
+
+            if (ui_elem_left_button(info->mouse, true, true)) {
+                widget_text_edit_click(info->text, pointer_rel_pos);
+            }
+
+            if (ui_elem_left_button(info->mouse, true, false)) {
+                widget_text_edit_drag(info->text, pointer_rel_pos);
+            }
+
             if (stb_state->select_start != stb_state->select_end) {
                 i32 selection_start = MIN(stb_state->select_start, stb_state->select_end);
                 i32 selection_end = MAX(stb_state->select_start, stb_state->select_end);
@@ -652,7 +706,7 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                         .parent = CLAY_ATTACH_POINT_RIGHT_TOP,
                     },
                     .attachTo = CLAY_ATTACH_TO_PARENT,
-                    .clipTo = CLAY_CLIP_TO_NONE,
+                    .clipTo = CLAY_CLIP_TO_ATTACHED_PARENT,
                     .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
                     .offset = {
                         .x = -cursor_to_term_dim.width + (f32)info->cursor_width_px,

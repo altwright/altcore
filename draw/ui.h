@@ -111,6 +111,7 @@ typedef struct UI_BEGIN_LAYOUT_INFO_T {
     Framebuffer *canvas;
     UiMouseInfo mouse;
     f32 frame_elapsed_time_s;
+    bool enable_drag_scrolling;
 } UiBeginLayoutInfo;
 
 UiContext *ui_create(const UiCreateInfo *create_info);
