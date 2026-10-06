@@ -505,16 +505,17 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
     UiImplMeasureTextLineParams modified_params = default_params;
 
     if (!info->text->handle->is_multi_line) {
-        Clay_ElementData parent_data = Clay_GetElementData(info->parent_id);
-        if (!parent_data.found) {
-            crash_msg("Parent ID %.*s invalid\n", info->parent_id.stringId.length, info->parent_id.stringId.chars);
+        Clay_ElementId open_elem_id = ui_impl_get_open_elem_id(info->text->ui);
+        Clay_ElementData open_elem_data = Clay_GetElementData(open_elem_id);
+        if (!open_elem_data.found) {
+            crash_msg("Open elem ID %u invalid\n", open_elem_id.id);
         }
         f32x2 parent_top_left = {
-            .x = parent_data.boundingBox.x,
-            .y = parent_data.boundingBox.y,
+            .x = open_elem_data.boundingBox.x,
+            .y = open_elem_data.boundingBox.y,
         };
 
-        f32x2 pointer_viewport_coord = ui_viewport_coord(info->text->ui, info->mouse->pointer.pos.curr_frame);
+        f32x2 pointer_viewport_coord = ui_viewport_coord(info->text->ui, info->mouse->pointer.canvas_pos.curr_frame);
 
         f32x2 pointer_rel_pos = f32x2_sub(pointer_viewport_coord, parent_top_left);
 
@@ -574,7 +575,7 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                 },
                 .layout = {
                     .sizing = {
-                        .height = CLAY_SIZING_FIXED(parent_data.boundingBox.height),
+                        .height = CLAY_SIZING_FIXED(open_elem_data.boundingBox.height),
                         .width = CLAY_SIZING_FIXED(start_to_end_dim.width)
                     }
                 }
@@ -616,12 +617,12 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                 .clipTo = CLAY_CLIP_TO_NONE,
                 .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
                 .offset = {
-                    .x = -cursor_to_term_dim.width,
+                    .x = -cursor_to_term_dim.width + info->cursor_width_px,
                 }
             },
             .layout = {
                 .sizing = {
-                    .height = CLAY_SIZING_FIXED(parent_data.boundingBox.height),
+                    .height = CLAY_SIZING_FIXED(open_elem_data.boundingBox.height),
                     .width = CLAY_SIZING_FIXED(info->cursor_width_px)
                 }
             }

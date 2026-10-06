@@ -92,7 +92,7 @@ typedef struct UI_MOUSE_INFO_T {
         struct {
             f32x2 prev_frame;
             f32x2 curr_frame;
-        } pos;
+        } canvas_pos;
 
         struct {
             UiMousePointerActionFlags prev_frame;

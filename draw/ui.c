@@ -314,8 +314,8 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
 
     Clay_SetPointerState(
         (Clay_Vector2){
-            .x = layout_info->mouse.pointer.pos.curr_frame.x - ui->current_canvas.offset.x,
-            .y = layout_info->mouse.pointer.pos.curr_frame.y - ui->current_canvas.offset.y,
+            .x = layout_info->mouse.pointer.canvas_pos.curr_frame.x - ui->current_canvas.offset.x,
+            .y = layout_info->mouse.pointer.canvas_pos.curr_frame.y - ui->current_canvas.offset.y,
         },
         layout_info->mouse.pointer.pressed.curr_frame != 0
     );
@@ -645,4 +645,9 @@ UiImplMeasureTextLineParams ui_impl_get_measure_text_line_params(UiContext *ui) 
 
 void ui_impl_set_measure_text_line_params(UiContext *ui, const UiImplMeasureTextLineParams *params) {
     ui->measure_text_line_params = *params;
+}
+
+Clay_ElementId ui_impl_get_open_elem_id(UiContext *ui) {
+    uint32_t id = Clay__GetOpenLayoutElement()->id;
+    return Clay__GetHashMapItem(id)->elementId;
 }

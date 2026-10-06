@@ -24,4 +24,6 @@ UiImplMeasureTextLineParams ui_impl_get_measure_text_line_params(UiContext *ui);
 
 void ui_impl_set_measure_text_line_params(UiContext* ui, const UiImplMeasureTextLineParams *params);
 
+Clay_ElementId ui_impl_get_open_elem_id(UiContext *ui);
+
 #endif //BRITANNICUS_UI_IMPL_H

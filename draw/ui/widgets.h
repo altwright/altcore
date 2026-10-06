@@ -21,7 +21,6 @@ typedef struct WIDGET_TEXT_EDIT_STRING_T {
 
 typedef struct WIDGET_TEXT_EDIT_INFO_T {
     WidgetTextEditString *text;
-    Clay_ElementId parent_id;
     rgba8 selection_color;
     rgba8 cursor_color;
     u16 cursor_width_px;
