@@ -508,6 +508,13 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
             crash_msg("Open elem ID %u invalid\n", open_elem_id.id);
         }
 
+        f32x2 open_elem_top_left_coord = {
+            .x = open_elem_data.boundingBox.x,
+            .y = open_elem_data.boundingBox.y,
+        };
+        f32x2 pointer_viewport_coord = ui_viewport_coord(info->text->ui, info->mouse->pointer.canvas_pos.curr_frame);
+        f32x2 pointer_rel_pos = f32x2_sub(pointer_viewport_coord, open_elem_top_left_coord);
+
         ui_impl_set_measure_text_line_params(info->text->ui, &default_params);
 
         Clay_Dimensions full_dim = ui_impl_clay_measure_text(
@@ -550,19 +557,11 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                     scroll_container_data.scrollPosition->x = 0;
                 }
 
+                pointer_rel_pos.x -= scroll_container_data.scrollPosition->x;
             } else {
                 crash_msg("Multi-line scroll container handling unimplemented\n");
             }
         }
-
-        f32x2 open_elem_top_left = {
-            .x = open_elem_data.boundingBox.x,
-            .y = open_elem_data.boundingBox.y,
-        };
-
-        f32x2 pointer_viewport_coord = ui_viewport_coord(info->text->ui, info->mouse->pointer.canvas_pos.curr_frame);
-
-        f32x2 pointer_rel_pos = f32x2_sub(pointer_viewport_coord, open_elem_top_left);
 
         if (ui_elem_left_button(info->mouse, true, true)) {
             widget_text_edit_click(info->text, pointer_rel_pos);
