@@ -507,87 +507,18 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
         if (!open_elem_data.found) {
             crash_msg("Open elem ID %u invalid\n", open_elem_id.id);
         }
-        f32x2 parent_top_left = {
-            .x = open_elem_data.boundingBox.x,
-            .y = open_elem_data.boundingBox.y,
-        };
-
-        f32x2 pointer_viewport_coord = ui_viewport_coord(info->text->ui, info->mouse->pointer.canvas_pos.curr_frame);
-
-        f32x2 pointer_rel_pos = f32x2_sub(pointer_viewport_coord, parent_top_left);
-
-        if (ui_elem_left_button(info->mouse, true, true)) {
-            widget_text_edit_click(info->text, pointer_rel_pos);
-        }
-
-        if (ui_elem_left_button(info->mouse, true, false)) {
-            widget_text_edit_drag(info->text, pointer_rel_pos);
-        }
-
-        if (stb_state->select_start != stb_state->select_end) {
-            i32 selection_start = MIN(stb_state->select_start, stb_state->select_end);
-            i32 selection_end = MAX(stb_state->select_start, stb_state->select_end);
-
-            modified_params.include_negative_side_bearings.left = false;
-            modified_params.include_negative_side_bearings.right = false;
-            ui_impl_set_measure_text_line_params(info->text->ui, &modified_params);
-
-            Clay_Dimensions start_to_end_dim = ui_impl_clay_measure_text(
-                (Clay_StringSlice) {
-                    .baseChars = info->text->chars.data,
-                    .chars = &info->text->chars.data[selection_start],
-                    .length = selection_end - selection_start,
-                },
-                &info->text->config,
-                info->text->ui
-            );
-
-            modified_params.include_negative_side_bearings.left = false;
-            modified_params.include_negative_side_bearings.right = true;
-            ui_impl_set_measure_text_line_params(info->text->ui, &modified_params);
-
-            Clay_Dimensions end_to_term_dim = ui_impl_clay_measure_text(
-                (Clay_StringSlice) {
-                    .baseChars = info->text->chars.data,
-                    .chars = &info->text->chars.data[selection_end],
-                    .length = (i32)info->text->chars.len - selection_end,
-                },
-                &info->text->config,
-                info->text->ui
-            );
-
-            CLAY({
-                .backgroundColor = ui_color(info->selection_color),
-                .floating = {
-                    .attachPoints = {
-                        .element = CLAY_ATTACH_POINT_RIGHT_TOP,
-                        .parent = CLAY_ATTACH_POINT_RIGHT_TOP,
-                    },
-                    .attachTo = CLAY_ATTACH_TO_PARENT,
-                    .clipTo = CLAY_CLIP_TO_ATTACHED_PARENT,
-                    .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
-                    .offset = {
-                        .x = -end_to_term_dim.width
-                    }
-                },
-                .layout = {
-                    .sizing = {
-                        .height = CLAY_SIZING_FIXED(open_elem_data.boundingBox.height),
-                        .width = CLAY_SIZING_FIXED(start_to_end_dim.width)
-                    }
-                }
-            }){}
-        }
 
         ui_impl_set_measure_text_line_params(info->text->ui, &default_params);
 
-        Clay_String clay_edit_str = {
-            .isStaticallyAllocated = false,
-            .chars = info->text->chars.data,
-            .length = (i32) info->text->chars.len,
-        };
-
-        CLAY_TEXT(clay_edit_str, &info->text->config);
+        Clay_Dimensions full_dim = ui_impl_clay_measure_text(
+            (Clay_StringSlice){
+                .baseChars = info->text->chars.data,
+                .chars = info->text->chars.data,
+                .length = (i32)info->text->chars.len,
+            },
+            &info->text->config,
+            info->text->ui
+        );
 
         modified_params.include_negative_side_bearings.left = false;
         modified_params.include_negative_side_bearings.right = true;
@@ -603,29 +534,139 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
             info->text->ui
         );
 
-        CLAY({
-            .backgroundColor = ui_color(info->cursor_color),
-            .floating = {
-                .attachPoints = {
-                    .element = CLAY_ATTACH_POINT_RIGHT_TOP,
-                    .parent = CLAY_ATTACH_POINT_RIGHT_TOP,
-                },
-                .attachTo = CLAY_ATTACH_TO_PARENT,
-                .clipTo = CLAY_CLIP_TO_NONE,
-                .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
-                .offset = {
-                    .x = -cursor_to_term_dim.width + info->cursor_width_px,
+        ui_impl_set_measure_text_line_params(info->text->ui, &default_params);
+
+        Clay_ScrollContainerData scroll_container_data = Clay_GetScrollContainerData(open_elem_id);
+        if (scroll_container_data.found) {
+            if (stb_state->single_line && scroll_container_data.config.horizontal) {
+
+                f32 horizontal_padding = scroll_container_data.contentDimensions.width - full_dim.width;
+                f32 base_to_cursor_width = full_dim.width - cursor_to_term_dim.width;
+
+                if (horizontal_padding + base_to_cursor_width > scroll_container_data.scrollContainerDimensions.width) {
+                    scroll_container_data.scrollPosition->x = scroll_container_data.scrollContainerDimensions.width
+                                                                - (horizontal_padding + base_to_cursor_width);
+                } else {
+                    scroll_container_data.scrollPosition->x = 0;
                 }
-            },
+
+            } else {
+                crash_msg("Multi-line scroll container handling unimplemented\n");
+            }
+        }
+
+        f32x2 open_elem_top_left = {
+            .x = open_elem_data.boundingBox.x,
+            .y = open_elem_data.boundingBox.y,
+        };
+
+        f32x2 pointer_viewport_coord = ui_viewport_coord(info->text->ui, info->mouse->pointer.canvas_pos.curr_frame);
+
+        f32x2 pointer_rel_pos = f32x2_sub(pointer_viewport_coord, open_elem_top_left);
+
+        if (ui_elem_left_button(info->mouse, true, true)) {
+            widget_text_edit_click(info->text, pointer_rel_pos);
+        }
+
+        if (ui_elem_left_button(info->mouse, true, false)) {
+            widget_text_edit_drag(info->text, pointer_rel_pos);
+        }
+
+        CLAY({
             .layout = {
                 .sizing = {
-                    .height = CLAY_SIZING_FIXED(open_elem_data.boundingBox.height),
-                    .width = CLAY_SIZING_FIXED(info->cursor_width_px)
-                }
-            }
-        }){}
+                    .width = CLAY_SIZING_FIT(0),
+                    .height = CLAY_SIZING_FIT(0),
+                },
+            },
+        }) {
+            if (stb_state->select_start != stb_state->select_end) {
+                i32 selection_start = MIN(stb_state->select_start, stb_state->select_end);
+                i32 selection_end = MAX(stb_state->select_start, stb_state->select_end);
 
-        //Clay_ScrollContainerData parent_scroll = Clay_GetScrollContainerData(info->parent_id);
+                modified_params.include_negative_side_bearings.left = false;
+                modified_params.include_negative_side_bearings.right = false;
+                ui_impl_set_measure_text_line_params(info->text->ui, &modified_params);
+
+                Clay_Dimensions start_to_end_dim = ui_impl_clay_measure_text(
+                    (Clay_StringSlice) {
+                        .baseChars = info->text->chars.data,
+                        .chars = &info->text->chars.data[selection_start],
+                        .length = selection_end - selection_start,
+                    },
+                    &info->text->config,
+                    info->text->ui
+                );
+
+                modified_params.include_negative_side_bearings.left = false;
+                modified_params.include_negative_side_bearings.right = true;
+                ui_impl_set_measure_text_line_params(info->text->ui, &modified_params);
+
+                Clay_Dimensions end_to_term_dim = ui_impl_clay_measure_text(
+                    (Clay_StringSlice) {
+                        .baseChars = info->text->chars.data,
+                        .chars = &info->text->chars.data[selection_end],
+                        .length = (i32)info->text->chars.len - selection_end,
+                    },
+                    &info->text->config,
+                    info->text->ui
+                );
+
+                CLAY({
+                    .backgroundColor = ui_color(info->selection_color),
+                    .floating = {
+                        .attachPoints = {
+                            .element = CLAY_ATTACH_POINT_RIGHT_TOP,
+                            .parent = CLAY_ATTACH_POINT_RIGHT_TOP,
+                        },
+                        .attachTo = CLAY_ATTACH_TO_PARENT,
+                        .clipTo = CLAY_CLIP_TO_ATTACHED_PARENT,
+                        .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
+                        .offset = {
+                            .x = -end_to_term_dim.width
+                        }
+                    },
+                    .layout = {
+                        .sizing = {
+                            .height = CLAY_SIZING_FIXED(full_dim.height),
+                            .width = CLAY_SIZING_FIXED(start_to_end_dim.width)
+                        }
+                    }
+                }){}
+            }
+
+            ui_impl_set_measure_text_line_params(info->text->ui, &default_params);
+
+            Clay_String clay_edit_str = {
+                .isStaticallyAllocated = false,
+                .chars = info->text->chars.data,
+                .length = (i32) info->text->chars.len,
+            };
+
+            CLAY_TEXT(clay_edit_str, &info->text->config);
+
+            CLAY({
+                .backgroundColor = ui_color(info->cursor_color),
+                .floating = {
+                    .attachPoints = {
+                        .element = CLAY_ATTACH_POINT_RIGHT_TOP,
+                        .parent = CLAY_ATTACH_POINT_RIGHT_TOP,
+                    },
+                    .attachTo = CLAY_ATTACH_TO_PARENT,
+                    .clipTo = CLAY_CLIP_TO_NONE,
+                    .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
+                    .offset = {
+                        .x = -cursor_to_term_dim.width + (f32)info->cursor_width_px,
+                    }
+                },
+                .layout = {
+                    .sizing = {
+                        .height = CLAY_SIZING_FIXED(full_dim.height),
+                        .width = CLAY_SIZING_FIXED(info->cursor_width_px)
+                    }
+                }
+            }){}
+        }
     } else {
         crash_msg("Multi-line text edit ui is not implemented yet\n");
     }
