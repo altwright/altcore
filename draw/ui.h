@@ -100,7 +100,11 @@ typedef struct UI_MOUSE_INFO_T {
         } pressed;
     } pointer;
 
-    f32x2 scroll_delta;
+    struct {
+        f32x2 frame_delta_units;
+        f64 height_pct_per_delta_unit;
+        bool drag_scrolling;
+    } scroll;
 
     struct {
         u64 last_left_click_time_ns;
@@ -110,8 +114,7 @@ typedef struct UI_MOUSE_INFO_T {
 typedef struct UI_BEGIN_LAYOUT_INFO_T {
     Framebuffer *canvas;
     UiMouseInfo mouse;
-    f32 frame_elapsed_time_s;
-    bool enable_drag_scrolling;
+    f64 frame_elapsed_time_s;
 } UiBeginLayoutInfo;
 
 UiContext *ui_create(const UiCreateInfo *create_info);

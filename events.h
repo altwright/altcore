@@ -265,9 +265,15 @@ typedef enum MOUSE_BUTTON_FLAG_E : u64 {
 typedef MouseButtonFlag MouseButtonFlags;
 
 typedef struct MOUSE_EVENT_PRESS_DATA_T {
+    WindowHandle *window;
     MouseButton button;
     bool pressed;
 } MouseEventPressData;
+
+typedef struct MOUSE_EVENT_SCROLL_DATA_T {
+    WindowHandle *window;
+    f32x2 delta_units; // +ve right and down
+} MouseEventScrollData;
 
 typedef struct MOUSE_EVENT_T {
     MouseEventType type;
@@ -275,6 +281,7 @@ typedef struct MOUSE_EVENT_T {
     union {
         MouseEventMoveData move;
         MouseEventPressData press;
+        MouseEventScrollData scroll;
     } data;
 } MouseEvent;
 

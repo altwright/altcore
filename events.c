@@ -335,6 +335,7 @@ void events_poll() {
                         e.data.mouse.type = MOUSE_EVENT_TYPE_PRESS;
                         MouseEventPressData *press_data = &e.data.mouse.data.press;
                         *press_data = (MouseEventPressData){
+                            .window = window_impl_get_handle_from_id(sdl_data->windowID),
                             .pressed = sdl_event.button.down
                         };
 
@@ -356,6 +357,18 @@ void events_poll() {
                                 break;
                         }
 
+                        break;
+                    }
+                    case SDL_EVENT_MOUSE_WHEEL: {
+                        SDL_MouseWheelEvent *sdl_data = &sdl_event.wheel;
+
+                        e.data.mouse.type = MOUSE_EVENT_TYPE_SCROLL;
+                        MouseEventScrollData *scroll_data = &e.data.mouse.data.scroll;
+                        scroll_data->window = window_impl_get_handle_from_id(sdl_data->windowID);
+                        scroll_data->delta_units = (f32x2) {
+                            .x = sdl_data->x,
+                            .y = -sdl_data->y,
+                        };
                         break;
                     }
                     default:

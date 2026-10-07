@@ -335,13 +335,20 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
         layout_info->mouse.pointer.pressed.curr_frame != 0
     );
 
+    Clay_Vector2 scroll_delta_px = {
+        .x = layout_info->mouse.scroll.frame_delta_units.x,
+        .y = -layout_info->mouse.scroll.frame_delta_units.y,
+    };
+
+    if (layout_info->mouse.scroll.height_pct_per_delta_unit > 0) {
+        scroll_delta_px.x *= (f32)ui_height_px(ui, layout_info->mouse.scroll.height_pct_per_delta_unit);
+        scroll_delta_px.y *= (f32)ui_height_px(ui, layout_info->mouse.scroll.height_pct_per_delta_unit);
+    }
+
     Clay_UpdateScrollContainers(
-        layout_info->enable_drag_scrolling,
-        (Clay_Vector2){
-            .x = layout_info->mouse.scroll_delta.x,
-            .y = layout_info->mouse.scroll_delta.y,
-        },
-        layout_info->frame_elapsed_time_s
+        layout_info->mouse.scroll.drag_scrolling,
+        scroll_delta_px,
+        (f32)layout_info->frame_elapsed_time_s
     );
 
     Clay_SetMeasureTextFunction(ui_impl_clay_measure_text, ui);
