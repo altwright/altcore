@@ -97,7 +97,11 @@ void events_poll() {
 
                 switch (sdl_event.type) {
                     case SDL_EVENT_KEY_DOWN: {
-                        e.data.keyboard.type = KEYBOARD_EVENT_KEY_PRESS;
+                        if (sdl_event.key.repeat) {
+                            e.data.keyboard.type = KEYBOARD_EVENT_KEY_REPEAT;
+                        } else {
+                            e.data.keyboard.type = KEYBOARD_EVENT_KEY_PRESS;
+                        }
                         break;
                     }
                     case SDL_EVENT_KEY_UP: {

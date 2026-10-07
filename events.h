@@ -97,6 +97,7 @@ typedef enum KEYBOARD_EVENT_TYPE_E {
 #define X_KEYBOARD_EVENT_TYPES \
     X(KEY_PRESS) \
     X(KEY_RELEASE) \
+    X(KEY_REPEAT) \
     X(COUNT)
 #endif
 #ifndef X
