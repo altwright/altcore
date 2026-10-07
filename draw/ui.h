@@ -146,4 +146,8 @@ bool ui_elem_middle_button(UiMouseInfo *info, bool is_pressed, bool this_frame);
 
 bool ui_elem_right_button(UiMouseInfo *info, bool is_pressed, bool this_frame);
 
+bool ui_get_debug_enabled(UiContext *ui);
+
+void ui_set_debug_enabled(UiContext *ui, bool enabled);
+
 #endif //ALTCORE_UI_H

@@ -48,8 +48,12 @@ struct UI_CONTEXT_T {
 
     FontThemes font_themes;
 
+    bool debug_enabled;
+
     UiImplMeasureTextLineParams measure_text_line_params;
 };
+
+constexpr u16 kMinDebugWindowWidthPx = 400;
 
 static void ui_error_handler(Clay_ErrorData err_data) {
     debug_msg(
@@ -308,17 +312,16 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
         }
     }
 
-    if (Clay_IsDebugModeEnabled()) {
+    if (ui->debug_enabled) {
         f32 debug_width = canvas_size.width - ui_size.width;
-        if (debug_width <= 0) {
-            Clay_SetDebugModeEnabled(false);
+        if (debug_width < (f32)Clay__debugViewWidth) {
+            ui->debug_enabled = false;
         } else {
-            Clay__debugViewWidth = (u32)debug_width;
-            ui_size.width += debug_width;
+            ui_size.width += (f32)Clay__debugViewWidth;
+            ui->current_canvas.offset.x = (canvas_size.width - ui_size.width) / 2;
         }
-
-        ui->current_canvas.offset.x = 0;
     }
+    Clay_SetDebugModeEnabled(ui->debug_enabled);
 
     Clay_SetLayoutDimensions(ui_size);
 
@@ -348,6 +351,9 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
 
 RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
     Clay_RenderCommandArray clay_cmds = Clay_EndLayout();
+
+    ui->debug_enabled = Clay_IsDebugModeEnabled();
+    Clay_SetDebugModeEnabled(false);
 
     RenderCmds render_cmds = {
         .arena = arena,
@@ -663,3 +669,12 @@ Clay_ElementId ui_impl_get_open_elem_id(UiContext *ui) {
     uint32_t id = Clay__GetOpenLayoutElement()->id;
     return Clay__GetHashMapItem(id)->elementId;
 }
+
+bool ui_get_debug_enabled(UiContext *ui) {
+    return ui->debug_enabled;
+}
+
+void ui_set_debug_enabled(UiContext *ui, bool enabled) {
+    ui->debug_enabled = enabled;
+}
+
