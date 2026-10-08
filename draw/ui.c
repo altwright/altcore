@@ -279,6 +279,7 @@ UiContext *ui_create(const UiCreateInfo *create_info) {
 
 void ui_destroy(UiContext *ui) {
     arena_free(ui->arena);
+    alt_free(ui->str_loc_sets);
     alt_free(ui);
 }
 
