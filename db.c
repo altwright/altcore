@@ -13,12 +13,12 @@
 #include "strings.h"
 #include "debug.h"
 
-struct DB_READ_STREAM_T {
+struct DB_READ_HANDLE_T {
     Arena *arena;
     FILE *fp;
 };
 
-struct DB_WRITE_STREAM_T {
+struct DB_WRITE_HANDLE_T {
     Arena *arena;
     FILE *fp;
 };
@@ -153,10 +153,10 @@ void db_write(const DbWriteInfo *info) {
     arena_free(tmp);
 }
 
-DbReadStream *db_read_open(const DbReadInfo *info) {
-    DbReadStream *stream = alt_malloc(sizeof(*stream));
+DbReadHandle *db_read_open(const DbReadInfo *info) {
+    DbReadHandle *stream = alt_malloc(sizeof(*stream));
 
-    *stream = (DbReadStream){
+    *stream = (DbReadHandle){
         .arena = arena_make(KIBIBYTE),
     };
 
@@ -172,20 +172,20 @@ DbReadStream *db_read_open(const DbReadInfo *info) {
     return stream;
 }
 
-u64 db_read_next(DbReadStream *stream, u8 *out_bytes, u64 out_bytes_len) {
-    return fread(out_bytes, 1, out_bytes_len, stream->fp);
+u64 db_read_next(DbReadHandle *handle, u8 *out_bytes, u64 out_bytes_len) {
+    return fread(out_bytes, 1, out_bytes_len, handle->fp);
 }
 
-void db_read_close(DbReadStream *stream) {
-    fclose(stream->fp);
-    arena_free(stream->arena);
-    alt_free(stream);
+void db_read_close(DbReadHandle *handle) {
+    fclose(handle->fp);
+    arena_free(handle->arena);
+    alt_free(handle);
 }
 
-DbWriteStream *db_write_open(const DbWriteInfo *info) {
-    DbWriteStream *stream = alt_malloc(sizeof(*stream));
+DbWriteHandle *db_write_open(const DbWriteInfo *info) {
+    DbWriteHandle *stream = alt_malloc(sizeof(*stream));
 
-    *stream = (DbWriteStream){
+    *stream = (DbWriteHandle){
         .arena = arena_make(KIBIBYTE),
     };
 
@@ -201,14 +201,14 @@ DbWriteStream *db_write_open(const DbWriteInfo *info) {
     return stream;
 }
 
-u64 db_write_next(DbWriteStream *stream, const u8 *in_bytes, u64 in_bytes_len) {
-    return fwrite(in_bytes, 1, in_bytes_len, stream->fp);
+u64 db_write_next(DbWriteHandle *handle, const u8 *in_bytes, u64 in_bytes_len) {
+    return fwrite(in_bytes, 1, in_bytes_len, handle->fp);
 }
 
-void db_write_close(DbWriteStream *stream) {
-    fclose(stream->fp);
-    arena_free(stream->arena);
-    alt_free(stream);
+void db_write_close(DbWriteHandle *handle) {
+    fclose(handle->fp);
+    arena_free(handle->arena);
+    alt_free(handle);
 }
 
 bool db_exists(const DbReadInfo *info) {
