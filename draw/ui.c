@@ -43,8 +43,10 @@ struct UI_CONTEXT_T {
         Framebuffer *fb;
     } current_canvas;
 
-    u64 current_locale;
-    StringKeyMap string_key_map;
+    i64 current_loc_idx;
+    i64 num_str_loc_sets;
+    i64 num_locs_per_set;
+    string_view *str_loc_sets;
 
     FontThemes font_themes;
 
@@ -264,12 +266,6 @@ UiContext *ui_create(const UiCreateInfo *create_info) {
         }
     }
 
-    ui->string_key_map = (StringKeyMap){
-        .type = HASHMAP_TYPE_NON_STR_KEY,
-        .del_freq = HASHMAP_DEL_FREQ_LOW,
-    };
-    HASHMAP_MAKE(&ui->string_key_map);
-
     // Default parameters for drawing a single line of text
     ui->measure_text_line_params = (UiImplMeasureTextLineParams){
         .include_negative_side_bearings = {
@@ -283,7 +279,6 @@ UiContext *ui_create(const UiCreateInfo *create_info) {
 
 void ui_destroy(UiContext *ui) {
     arena_free(ui->arena);
-    HASHMAP_FREE(&ui->string_key_map);
     alt_free(ui);
 }
 
@@ -314,10 +309,10 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
 
     if (ui->debug_enabled) {
         f32 debug_width = canvas_size.width - ui_size.width;
-        if (debug_width < (f32)Clay__debugViewWidth) {
+        if (debug_width < (f32) Clay__debugViewWidth) {
             ui->debug_enabled = false;
         } else {
-            ui_size.width += (f32)Clay__debugViewWidth;
+            ui_size.width += (f32) Clay__debugViewWidth;
             ui->current_canvas.offset.x = (canvas_size.width - ui_size.width) / 2;
         }
     }
@@ -341,14 +336,14 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
     };
 
     if (layout_info->mouse.scroll.height_pct_per_delta_unit > 0) {
-        scroll_delta_px.x *= (f32)ui_height_px(ui, layout_info->mouse.scroll.height_pct_per_delta_unit);
-        scroll_delta_px.y *= (f32)ui_height_px(ui, layout_info->mouse.scroll.height_pct_per_delta_unit);
+        scroll_delta_px.x *= (f32) ui_height_px(ui, layout_info->mouse.scroll.height_pct_per_delta_unit);
+        scroll_delta_px.y *= (f32) ui_height_px(ui, layout_info->mouse.scroll.height_pct_per_delta_unit);
     }
 
     Clay_UpdateScrollContainers(
         layout_info->mouse.scroll.drag_scrolling,
         scroll_delta_px,
-        (f32)layout_info->frame_elapsed_time_s
+        (f32) layout_info->frame_elapsed_time_s
     );
 
     Clay_SetMeasureTextFunction(ui_impl_clay_measure_text, ui);
@@ -522,59 +517,49 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
     return render_cmds;
 }
 
-void ui_set_string(UiContext *ui, u64 str_key, u64 loc_key, const char8_t *utf8_str) {
-    const char *c_str = (const char *) utf8_str;
-
-    auto str_loc_pair = HASHMAP_GET(&ui->string_key_map, &str_key);
-    if (!str_loc_pair) {
-        LocaleKeyMap new_loc_map = {
-            .type = HASHMAP_TYPE_NON_STR_KEY,
-            .del_freq = HASHMAP_DEL_FREQ_LOW,
-        };
-        HASHMAP_MAKE(&new_loc_map);
-
-        HASHMAP_PUT(&ui->string_key_map, &str_key, &new_loc_map);
-
-        str_loc_pair = HASHMAP_GET(&ui->string_key_map, &str_key);
+void ui_set_strings(UiContext *ui, const char8_t **str_loc_sets, i64 num_str_loc_sets, i64 num_locs_per_set) {
+    ui->num_str_loc_sets = num_str_loc_sets;
+    ui->num_locs_per_set = num_locs_per_set;
+    ui->str_loc_sets = alt_realloc(ui->str_loc_sets, num_str_loc_sets * num_locs_per_set * sizeof(string_view));
+    for (i64 str_loc_set_idx = 0; str_loc_set_idx < num_str_loc_sets; str_loc_set_idx++) {
+        for (i64 loc_idx = 0; loc_idx < num_locs_per_set; loc_idx++) {
+            i64 str_idx = str_loc_set_idx * num_locs_per_set + loc_idx;
+            string_view *str = &ui->str_loc_sets[str_idx];
+            str->start = (const char *) str_loc_sets[str_idx];
+            if (str->start) {
+                str->len = (i64) strlen(str->start);
+            } else {
+                str->len = 0;
+            }
+        }
     }
-
-    LocaleKeyMap *loc_map = &str_loc_pair->value;
-
-    string_view view = {
-        .start = c_str,
-        .len = (i64) strlen(c_str),
-    };
-    HASHMAP_PUT(loc_map, &loc_key, &view);
 }
 
-Clay_String ui_get_string(UiContext *ui, u64 str_key) {
-    auto str_loc_pair = HASHMAP_GET(&ui->string_key_map, &str_key);
-    if (!str_loc_pair) {
-        return (Clay_String){};
+Clay_String ui_get_string(UiContext *ui, i64 str_idx) {
+    string_view str = ui->str_loc_sets[str_idx * ui->num_locs_per_set + ui->current_loc_idx];
+    if (!str.start) {
+        if (ui->current_loc_idx == 0) {
+            crash_msg("No default loc defined for string idx %d\n", str_idx);
+        }
+        str = ui->str_loc_sets[str_idx * ui->num_locs_per_set];
     }
-
-    LocaleKeyMap *loc_map = &str_loc_pair->value;
-    auto loc_str_pair = HASHMAP_GET(loc_map, &ui->current_locale);
-    if (!loc_str_pair) {
-        u64 default_loc_key = 0;
-        loc_str_pair = HASHMAP_GET(loc_map, &default_loc_key);
-    }
-
-    string_view view = loc_str_pair->value;
 
     return (Clay_String){
-        .chars = view.start,
-        .length = (i32) view.len,
-        .isStaticallyAllocated = true
+        .isStaticallyAllocated = true,
+        .chars = str.start,
+        .length = (i32) str.len
     };
 }
 
-void ui_set_locale(UiContext *ui, u64 loc_key) {
-    ui->current_locale = loc_key;
+void ui_set_locale(UiContext *ui, i64 loc_idx) {
+    if (loc_idx < 0 || loc_idx >= ui->num_locs_per_set) {
+        crash_msg("Invalid loc_idx %d\n", loc_idx);
+    }
+    ui->current_loc_idx = loc_idx;
 }
 
-u64 ui_get_locale(UiContext *ui) {
-    return ui->current_locale;
+i64 ui_get_locale(UiContext *ui) {
+    return ui->current_loc_idx;
 }
 
 u16 ui_height_px(UiContext *ui, f64 pct) {
@@ -684,4 +669,3 @@ bool ui_get_debug_enabled(UiContext *ui) {
 void ui_set_debug_enabled(UiContext *ui, bool enabled) {
     ui->debug_enabled = enabled;
 }
-

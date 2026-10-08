@@ -127,13 +127,13 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui);
 
 Clay_Color ui_color(rgba8 color);
 
-void ui_set_string(UiContext *ui, u64 str_key, u64 loc_key, const char8_t *utf8_str);
+void ui_set_strings(UiContext *ui, const char8_t **str_loc_sets, i64 num_str_loc_sets, i64 num_locs_per_set);
 
-Clay_String ui_get_string(UiContext *ui, u64 str_key);
+Clay_String ui_get_string(UiContext *ui, i64 str_idx);
 
-void ui_set_locale(UiContext *ui, u64 loc_key);
+void ui_set_locale(UiContext *ui, i64 loc_idx);
 
-u64 ui_get_locale(UiContext *ui);
+i64 ui_get_locale(UiContext *ui);
 
 u16 ui_width_px(UiContext *ui, f64 pct);
 
