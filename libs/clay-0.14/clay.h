@@ -1397,10 +1397,10 @@ static inline void Clay__SIMDARXMix(__m128i* a, __m128i* b) {
 
 uint64_t Clay__HashData(const uint8_t* data, size_t length) {
     // Pinched these constants from the BLAKE implementation
-    __m128i v0 = _mm_set1_epi64x(0x6a09e667f3bcc908ULL);
-    __m128i v1 = _mm_set1_epi64x(0xbb67ae8584caa73bULL);
-    __m128i v2 = _mm_set1_epi64x(0x3c6ef372fe94f82bULL);
-    __m128i v3 = _mm_set1_epi64x(0xa54ff53a5f1d36f1ULL);
+    __m128i v0 = _mm_set_epi64x(0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL);
+    __m128i v1 = _mm_set_epi64x(0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL);
+    __m128i v2 = _mm_set_epi64x(0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL);
+    __m128i v3 = _mm_set_epi64x(0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL);
 
     uint8_t overflowBuffer[16] = { 0 };  // Temporary buffer for small inputs
 

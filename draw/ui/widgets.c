@@ -490,8 +490,20 @@ static void delete_chars(WidgetTextEditString *text, i32 start_idx, i32 num_char
 }
 
 static int insert_chars(WidgetTextEditString *text, i32 start_idx, const char *chars, i32 chars_len) {
-    string_put(&text->chars, start_idx, "%.*s", chars_len, chars);
-    return true;
+    if (text->cap_fixed) {
+        i64 remaining_space = text->chars.cap - text->chars.len - 1;
+        if (chars_len > remaining_space) {
+            chars_len = (i32) remaining_space;
+        }
+    }
+
+    bool can_insert = chars_len > 0;
+
+    if (can_insert) {
+        string_put(&text->chars, start_idx, "%.*s", chars_len, chars);
+    }
+
+    return can_insert;
 }
 
 #define STB_TEXTEDIT_IMPLEMENTATION

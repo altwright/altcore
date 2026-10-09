@@ -15,6 +15,7 @@ typedef struct WIDGET_TEXT_EDIT_HANDLE WidgetTextEditHandle;
 typedef struct WIDGET_TEXT_EDIT_STRING_T {
     WidgetTextEditHandle *handle;
     string chars;
+    bool cap_fixed;
     UiContext *ui;
     Clay_TextElementConfig config;
 } WidgetTextEditString;
