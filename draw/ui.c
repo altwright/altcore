@@ -658,7 +658,7 @@ void ui_impl_set_measure_text_line_params(UiContext *ui, const UiImplMeasureText
     ui->measure_text_line_params = *params;
 }
 
-Clay_ElementId ui_impl_get_open_elem_id(UiContext *ui) {
+Clay_ElementId ui_get_open_elem_id(UiContext *ui) {
     uint32_t id = Clay__GetOpenLayoutElement()->id;
     return Clay__GetHashMapItem(id)->elementId;
 }

@@ -153,4 +153,6 @@ bool ui_get_debug_enabled(UiContext *ui);
 
 void ui_set_debug_enabled(UiContext *ui, bool enabled);
 
+Clay_ElementId ui_get_open_elem_id(UiContext *ui);
+
 #endif //ALTCORE_UI_H

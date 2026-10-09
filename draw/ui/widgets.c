@@ -539,7 +539,7 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
         }
         info->text->handle->prev_cursor = current_cursor;
 
-        Clay_ElementId open_elem_id = ui_impl_get_open_elem_id(info->text->ui);
+        Clay_ElementId open_elem_id = ui_get_open_elem_id(info->text->ui);
 
         ui_impl_set_measure_text_line_params(info->text->ui, &default_params);
 
@@ -626,7 +626,7 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                 },
             },
         }) {
-            Clay_ElementId line_wrapper_elem = ui_impl_get_open_elem_id(info->text->ui);
+            Clay_ElementId line_wrapper_elem = ui_get_open_elem_id(info->text->ui);
             Clay_ElementData line_wrapper_elem_data = Clay_GetElementData(line_wrapper_elem);
             f32x2 line_wrapper_elem_top_left_coord = {
                 .x = line_wrapper_elem_data.boundingBox.x,
@@ -783,7 +783,7 @@ static f64 get_scale_value(
     f64 value = current_value;
 
     if (ui_elem_left_button(mouse, true, false)) {
-        Clay_ElementId self_id = ui_impl_get_open_elem_id(ui);
+        Clay_ElementId self_id = ui_get_open_elem_id(ui);
         Clay_ElementData self_data = Clay_GetElementData(self_id);
 
         if (self_data.boundingBox.width > 0 && self_data.boundingBox.height > 0) {
