@@ -772,6 +772,44 @@ void widget_text_edit_key_press(WidgetTextEditString *text, WidgetTextEditKeyInp
     stb_textedit_key(text, &text->handle->stb_state, mod_key);
 }
 
+static f64 get_scale_value(
+    UiContext *ui,
+    UiMouseInfo *mouse,
+    bool vertical,
+    f64 min,
+    f64 max,
+    f64 current_value
+) {
+    f64 value = current_value;
+
+    if (ui_elem_left_button(mouse, true, false)) {
+        Clay_ElementId self_id = ui_impl_get_open_elem_id(ui);
+        Clay_ElementData self_data = Clay_GetElementData(self_id);
+
+        if (self_data.boundingBox.width > 0 && self_data.boundingBox.height > 0) {
+            f32x2 pointer_coord = ui_viewport_coord(ui, mouse->pointer.canvas_pos.curr_frame);
+            f32x2 bbox_start = {
+                .x = self_data.boundingBox.x,
+                .y = self_data.boundingBox.y,
+            };
+
+            f32x2 pointer_rel_coord = f32x2_sub(pointer_coord, bbox_start);
+
+            f64 bbox_ascend_pct = 0;
+            if (vertical) {
+                bbox_ascend_pct = (self_data.boundingBox.height - pointer_rel_coord.y)
+                                  / self_data.boundingBox.height;
+            } else {
+                bbox_ascend_pct = pointer_rel_coord.x / self_data.boundingBox.width;
+            }
+
+            value = bbox_ascend_pct * (max - min) + min;
+        }
+    }
+
+    return value;
+}
+
 void widget_i64_scale_ui(WidgetI64ScaleUiInfo *info) {
     UiContext *ui = info->ui;
     UiMouseInfo *mouse = info->mouse;
@@ -787,34 +825,28 @@ void widget_i64_scale_ui(WidgetI64ScaleUiInfo *info) {
             }
         }
     }) {
-        if (ui_elem_left_button(mouse, true, false)) {
-            Clay_ElementId self_id = ui_impl_get_open_elem_id(ui);
-            Clay_ElementData self_data = Clay_GetElementData(self_id);
-
-            if (self_data.boundingBox.width > 0 && self_data.boundingBox.height > 0) {
-                f32x2 pointer_coord = ui_viewport_coord(ui, mouse->pointer.canvas_pos.curr_frame);
-                f32x2 bbox_start = {
-                    .x = self_data.boundingBox.x,
-                    .y = self_data.boundingBox.y,
-                };
-
-                f32x2 pointer_rel_coord = f32x2_sub(pointer_coord, bbox_start);
-
-                f32 bbox_ascend_pct = 0;
-                if (info->vertical) {
-                    bbox_ascend_pct = (self_data.boundingBox.height - pointer_rel_coord.y)
-                                            / self_data.boundingBox.height;
-                } else {
-                    bbox_ascend_pct = pointer_rel_coord.x / self_data.boundingBox.width;
-                }
-
-                f32 new_value = bbox_ascend_pct * (f32)(info->max - info->min) + (f32)info->min;
-                *info->value = (i64)(new_value + 0.5);
-            }
-        }
+        f64 new_value = get_scale_value(ui, mouse, info->vertical, (f64)info->min, (f64)info->max, (f64)*info->value);
+        *info->value = (i64)(new_value + 0.5);
     }
     //@formatter:on
 }
 
 void widget_f64_scale_ui(WidgetF64ScaleUiInfo *info) {
+    UiContext *ui = info->ui;
+    UiMouseInfo *mouse = info->mouse;
+
+    *info->value = CLAMP(*info->value, info->min, info->max);
+
+    //@formatter:off
+    CLAY({
+        .layout = {
+            .sizing = {
+                .width = CLAY_SIZING_GROW(0),
+                .height = CLAY_SIZING_GROW(0),
+            }
+        }
+    }) {
+        *info->value = get_scale_value(ui, mouse, info->vertical, info->min, info->max, *info->value);
+    }
+    //@formatter:on
 }
