@@ -626,7 +626,7 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
             .layout = {
                 .sizing = {
                     .width = CLAY_SIZING_FIT(0),
-                    .height = CLAY_SIZING_FIXED(info->text->config.fontSize),
+                    .height = CLAY_SIZING_FIT(0),
                 },
             },
         }) {
