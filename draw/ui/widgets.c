@@ -540,10 +540,6 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
         info->text->handle->prev_cursor = current_cursor;
 
         Clay_ElementId open_elem_id = ui_impl_get_open_elem_id(info->text->ui);
-        Clay_ElementData open_elem_data = Clay_GetElementData(open_elem_id);
-        if (!open_elem_data.found) {
-            crash_msg("Open elem ID %u invalid\n", open_elem_id.id);
-        }
 
         ui_impl_set_measure_text_line_params(info->text->ui, &default_params);
 
@@ -713,7 +709,7 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
             CLAY_TEXT(clay_edit_str, &info->text->config);
 
             CLAY({
-                .backgroundColor = stb_state->insert_mode ? ui_color(info->insert_color) : ui_color(info->cursor_color),
+                .backgroundColor = stb_state->insert_mode ? ui_color(info->insert_cursor_color) : ui_color(info->cursor_color),
                 .floating = {
                     .attachPoints = {
                         .element = CLAY_ATTACH_POINT_RIGHT_TOP,
@@ -774,4 +770,51 @@ void widget_text_edit_key_press(WidgetTextEditString *text, WidgetTextEditKeyInp
     }
 
     stb_textedit_key(text, &text->handle->stb_state, mod_key);
+}
+
+void widget_i64_scale_ui(WidgetI64ScaleUiInfo *info) {
+    UiContext *ui = info->ui;
+    UiMouseInfo *mouse = info->mouse;
+
+    *info->value = CLAMP(*info->value, info->min, info->max);
+
+    //@formatter:off
+    CLAY({
+        .layout = {
+            .sizing = {
+                .width = CLAY_SIZING_GROW(0),
+                .height = CLAY_SIZING_GROW(0),
+            }
+        }
+    }) {
+        if (ui_elem_left_button(mouse, true, false)) {
+            Clay_ElementId self_id = ui_impl_get_open_elem_id(ui);
+            Clay_ElementData self_data = Clay_GetElementData(self_id);
+
+            if (self_data.boundingBox.width > 0 && self_data.boundingBox.height > 0) {
+                f32x2 pointer_coord = ui_viewport_coord(ui, mouse->pointer.canvas_pos.curr_frame);
+                f32x2 bbox_start = {
+                    .x = self_data.boundingBox.x,
+                    .y = self_data.boundingBox.y,
+                };
+
+                f32x2 pointer_rel_coord = f32x2_sub(pointer_coord, bbox_start);
+
+                f32 bbox_ascend_pct = 0;
+                if (info->vertical) {
+                    bbox_ascend_pct = (self_data.boundingBox.height - pointer_rel_coord.y)
+                                            / self_data.boundingBox.height;
+                } else {
+                    bbox_ascend_pct = pointer_rel_coord.x / self_data.boundingBox.width;
+                }
+
+                f32 new_value = bbox_ascend_pct * (f32)(info->max - info->min) + (f32)info->min;
+                *info->value = (i64)(new_value + 0.5);
+            }
+        }
+    }
+    //@formatter:on
+}
+
+void widget_f64_scale_ui(WidgetF64ScaleUiInfo *info) {
 }

@@ -20,12 +20,12 @@ typedef struct WIDGET_TEXT_EDIT_STRING_T {
     Clay_TextElementConfig config;
 } WidgetTextEditString;
 
-typedef struct WIDGET_TEXT_EDIT_INFO_T {
+typedef struct WIDGET_TEXT_EDIT_UI_INFO_T {
     WidgetTextEditString *text;
     rgba8 selection_color;
     rgba8 cursor_color;
     u16 cursor_width_px;
-    rgba8 insert_color;
+    rgba8 insert_cursor_color;
     UiMouseInfo *mouse;
 } WidgetTextEditUiInfo;
 
@@ -38,6 +38,22 @@ typedef struct WIDGET_TEXT_EDIT_KEY_INPUT_T {
         bool alt;
     } mods;
 } WidgetTextEditKeyInput;
+
+typedef struct WIDGET_I64_SCALE_UI_INFO_T {
+    i64* value;
+    i64 min, max;
+    UiContext *ui;
+    UiMouseInfo *mouse;
+    bool vertical;
+} WidgetI64ScaleUiInfo;
+
+typedef struct WIDGET_F64_SCALE_UI_INFO_T {
+    f64* value;
+    f64 min, max;
+    UiContext *ui;
+    UiMouseInfo *mouse;
+    bool vertical;
+} WidgetF64ScaleUiInfo;
 
 WidgetTextEditHandle *widget_text_edit_create();
 
@@ -56,5 +72,9 @@ i64 widget_text_edit_cut(WidgetTextEditString *text, string *out_str);
 i64 widget_text_edit_paste(WidgetTextEditString *text, const string *in_str);
 
 void widget_text_edit_key_press(WidgetTextEditString *text, WidgetTextEditKeyInput key_input);
+
+void widget_i64_scale_ui(WidgetI64ScaleUiInfo *info);
+
+void widget_f64_scale_ui(WidgetF64ScaleUiInfo *info);
 
 #endif //BRITANNICUS_WIDGETS_H
