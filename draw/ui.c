@@ -369,6 +369,25 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
         .start_y = ui->current_canvas.offset.y,
     };
 
+    f32x4s scissor_stack = {
+        .arena = arena,
+        .cap = 16,
+    };
+    ARRAY_MAKE(&scissor_stack);
+
+    FramebufferInfo fb_info = framebuffer_get_info(ui->current_canvas.fb);
+    if (fb_info.type != FRAMEBUFFER_TYPE_PIXEL) {
+        crash_msg("Unhandled framebuffer type %d", fb_info.type);
+    }
+
+    f32x4 base_scissor = {
+        .start_x = 0,
+        .start_y = 0,
+        .width = (f32) fb_info.data.pixel_buf.size.width,
+        .height = (f32) fb_info.data.pixel_buf.size.height,
+    };
+    ARRAY_PUSH(&scissor_stack, &base_scissor);
+
     for (i32 clay_cmd_idx = 0; clay_cmd_idx < clay_cmds.length; clay_cmd_idx++) {
         const Clay_RenderCommand *clay_cmd = &clay_cmds.internalArray[clay_cmd_idx];
 
@@ -450,26 +469,21 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
             case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START: {
                 RenderCmd scissor_cmd = {RENDER_CMD_TYPE_SCISSOR};
 
+                f32x4 new_scissor = f32x4_intersect(ARRAY_PEEK(&scissor_stack), dst_region);
                 scissor_cmd.data.scissor.framebuffer = ui->current_canvas.fb;
-                scissor_cmd.data.scissor.region = dst_region;
+                scissor_cmd.data.scissor.region = new_scissor;
 
                 ARRAY_PUSH(&render_cmds, &scissor_cmd);
+
+                ARRAY_PUSH(&scissor_stack, &new_scissor);
 
                 break;
             }
             case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END: {
                 RenderCmd scissor_cmd = {RENDER_CMD_TYPE_SCISSOR};
                 scissor_cmd.data.scissor.framebuffer = ui->current_canvas.fb;
-
-                FramebufferInfo fb_info = framebuffer_get_info(ui->current_canvas.fb);
-                assert(fb_info.type == FRAMEBUFFER_TYPE_PIXEL);
-
-                scissor_cmd.data.scissor.region = (f32x4){
-                    .start_x = 0,
-                    .start_y = 0,
-                    .width = (f32) fb_info.data.pixel_buf.size.width,
-                    .height = (f32) fb_info.data.pixel_buf.size.height,
-                };
+                ARRAY_POP(&scissor_stack);
+                scissor_cmd.data.scissor.region = ARRAY_PEEK(&scissor_stack);
 
                 ARRAY_PUSH(&render_cmds, &scissor_cmd);
 

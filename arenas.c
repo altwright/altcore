@@ -70,7 +70,6 @@ void *arena_alloc(Arena *arena, i64 size) {
     ArenaBuffer *current_buffer = arena->buffer;
     while (current_buffer_offset > current_buffer->cap) {
         current_buffer_offset -= current_buffer->cap;
-        assert(current_buffer->next);
         current_buffer = current_buffer->next;
     }
 
@@ -82,6 +81,7 @@ void *arena_alloc(Arena *arena, i64 size) {
             next_buffer->data = alt_calloc(next_buffer->cap, sizeof(u8));
             current_buffer->next = next_buffer;
         }
+        arena->offset += current_buffer->cap - current_buffer_offset;
         current_buffer = current_buffer->next;
         current_buffer_offset = 0;
     }

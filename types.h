@@ -232,7 +232,16 @@ do { \
 ( \
     (array_ptr)->len > 0 ? \
     (array_ptr)->data[--((array_ptr)->len)] : \
-    kNullPtr[0] \
+    *(typeof(*(array_ptr)->data)*)(kNullPtr) \
+)
+#endif
+
+#ifndef ARRAY_PEEK
+#define ARRAY_PEEK(array_ptr) \
+( \
+    (array_ptr)->len > 0 ? \
+    (array_ptr)->data[(array_ptr)->len - 1] : \
+    *(typeof(*(array_ptr)->data)*)(kNullPtr) \
 )
 #endif
 
