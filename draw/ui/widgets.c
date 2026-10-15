@@ -706,7 +706,7 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                 .length = (i32) info->text->chars.len,
             };
 
-            CLAY_TEXT(clay_edit_str, &info->text->config);
+            CLAY_TEXT(clay_edit_str, CLAY_TEXT_CONFIG(info->text->config));
 
             CLAY({
                 .backgroundColor = stb_state->insert_mode ? ui_color(info->insert_cursor_color) : ui_color(info->cursor_color),
