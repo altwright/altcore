@@ -5,12 +5,6 @@
 #include "maths.h"
 #include "cglm/vec2.h"
 
-f32x44 f32x44_identity() {
-    return (f32x44){
-        .data = GLM_MAT4_IDENTITY_INIT
-    };
-}
-
 f32x2 f32x2_add(f32x2 left, f32x2 right) {
     return (f32x2){
         .x = left.x + right.x,

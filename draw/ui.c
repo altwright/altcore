@@ -396,9 +396,9 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
         switch (clay_cmd->commandType) {
             case CLAY_RENDER_COMMAND_TYPE_RECTANGLE: {
                 RenderCmd rect_cmd = {RENDER_CMD_TYPE_DRAW_RECT};
-                rect_cmd.data.draw_rect.dst_framebuffer = ui->current_canvas.fb;
+                rect_cmd.data.draw_rect.dst_fb = ui->current_canvas.fb;
 
-                rect_cmd.data.draw_rect.dst_region = dst_region;
+                rect_cmd.data.draw_rect.dst_fb_region = dst_region;
 
                 rect_cmd.data.draw_rect.bg_color = clay_to_render_color(
                     clay_cmd->renderData.rectangle.backgroundColor
@@ -414,9 +414,9 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
             }
             case CLAY_RENDER_COMMAND_TYPE_BORDER: {
                 RenderCmd border_cmd = {RENDER_CMD_TYPE_DRAW_RECT};
-                border_cmd.data.draw_rect.dst_framebuffer = ui->current_canvas.fb;
+                border_cmd.data.draw_rect.dst_fb = ui->current_canvas.fb;
 
-                border_cmd.data.draw_rect.dst_region = dst_region;
+                border_cmd.data.draw_rect.dst_fb_region = dst_region;
 
                 border_cmd.data.draw_rect.border_color = clay_to_render_color(
                     clay_cmd->renderData.border.color
@@ -497,8 +497,8 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 };
                 RenderCmdDrawRect *blit_data = &blit_cmd.data.draw_rect;
 
-                blit_data->dst_framebuffer = ui->current_canvas.fb;
-                blit_data->dst_region = dst_region;
+                blit_data->dst_fb = ui->current_canvas.fb;
+                blit_data->dst_fb_region = dst_region;
                 blit_data->corner_radii = clay_to_render_corner_radii(image_cmd->cornerRadius);
 
                 Framebuffer *image_fb = image_cmd->imageData;

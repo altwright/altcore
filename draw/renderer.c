@@ -39,10 +39,10 @@ Renderer *renderer_create(const RendererCreateInfo *create_info) {
     };
 
     switch (renderer->type) {
-        case RENDERER_TYPE_SOFTWARE_SINGLE_THREAD: {
+        case RENDERER_TYPE_SINGLE_THREAD: {
             break;
         }
-        case RENDERER_TYPE_SOFTWARE_MULTI_THREAD: {
+        case RENDERER_TYPE_MULTI_THREAD: {
             i32 max_logical_threads = SDL_GetNumLogicalCPUCores();
 
             i32 num_rendering_threads = max_logical_threads - 1;
@@ -82,10 +82,10 @@ Renderer *renderer_create(const RendererCreateInfo *create_info) {
 
 void renderer_destroy(Renderer *renderer) {
     switch (renderer->type) {
-        case RENDERER_TYPE_SOFTWARE_SINGLE_THREAD: {
+        case RENDERER_TYPE_SINGLE_THREAD: {
             break;
         }
-        case RENDERER_TYPE_SOFTWARE_MULTI_THREAD: {
+        case RENDERER_TYPE_MULTI_THREAD: {
             for (i32 thread_idx = 0; thread_idx < renderer->data.software_multi_thread.rendering_threads_count;
                  thread_idx++) {
                 worker_destroy(renderer->data.software_multi_thread.rendering_threads[thread_idx]);
@@ -108,7 +108,7 @@ void renderer_destroy(Renderer *renderer) {
 
 void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
     switch (renderer->type) {
-        case RENDERER_TYPE_SOFTWARE_SINGLE_THREAD: {
+        case RENDERER_TYPE_SINGLE_THREAD: {
             ARRAY_FOR(cmd, cmds) {
                 switch (cmd->type) {
                     case RENDER_CMD_TYPE_CLEAR: {
@@ -161,7 +161,7 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
 
 void renderer_idle(Renderer *renderer) {
     switch (renderer->type) {
-        case RENDERER_TYPE_SOFTWARE_SINGLE_THREAD: {
+        case RENDERER_TYPE_SINGLE_THREAD: {
             break;
         }
         default:

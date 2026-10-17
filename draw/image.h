@@ -18,6 +18,7 @@ typedef enum IMAGE_COMPRESSION_TYPE_E {
 } ImageCompressionType;
 
 typedef struct IMAGE_CREATE_INFO_T {
+    Renderer *renderer;
     ImageCompressionType compression;
 
     struct {

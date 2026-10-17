@@ -11,17 +11,17 @@
 #include "../../debug.h"
 
 void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
-    FramebufferInfo dst_fb_info = framebuffer_get_info(data->dst_framebuffer);
+    FramebufferInfo dst_fb_info = framebuffer_get_info(data->dst_fb);
     if (dst_fb_info.type != FRAMEBUFFER_TYPE_PIXEL) {
         crash_msg("Destination framebuffer is not a pixel buffer\n");
     }
 
-    u8 *dst_fb_bytes = framebuffer_impl_get_bytes(data->dst_framebuffer);
+    u8 *dst_fb_bytes = framebuffer_impl_get_bytes(data->dst_fb);
     PixelFormat dst_px_format = dst_fb_info.data.pixel_buf.format;
     i64 dst_px_size = pixel_size(dst_px_format);
     i32x2 dst_fb_size = dst_fb_info.data.pixel_buf.size;
     i64 dst_fb_pitch_bytes = dst_fb_info.data.pixel_buf.pitch_bytes;
-    i32x4 dst_fb_region = ftoi32x4(data->dst_region);
+    i32x4 dst_fb_region = ftoi32x4(data->dst_fb_region);
     i32x4 dst_fb_scissor = dst_fb_info.data.pixel_buf.scissor;
     RectCornerRadii corner_radii = data->corner_radii;
     RectBorderWidths border_widths = data->border_widths;

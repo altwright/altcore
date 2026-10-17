@@ -26,11 +26,15 @@ set(HEADER_FILEPATHS
         draw/window.h
         draw/framebuffer.h
         draw/renderer.h
+        draw/model.h
         draw/ui.h
         draw/ui/widgets.h
         draw/fonts.h
         draw/lights.h
         draw/image.h
+        draw/vertex_buffer.h
+        draw/index_buffer.h
+        draw/shader.h
 )
 
 set(SOURCE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -59,8 +63,13 @@ add_library(${PROJECT_NAME}
         db.c
         draw/window.c
         draw/framebuffer.c
+        draw/vertex_buffer.c
+        draw/index_buffer.c
+        draw/shader.c
         draw/renderer.c
         draw/pixels.c
+        draw/model.c
+        draw/model/glb.c
         draw/ui.c
         draw/ui/widgets.c
         draw/fonts.c

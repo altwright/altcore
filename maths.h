@@ -40,16 +40,7 @@
     CLAMP(val, 0, 1)
 #endif
 
-typedef struct F32X44_T {
-    union {
-        mat4s mat;
-        mat4 data;
-    };
-} f32x44;
-
 f32 f32_lerp(f32 start, f32 end, f32 lerp);
-
-f32x44 f32x44_identity();
 
 f32x2 f32x2_add(f32x2 left, f32x2 right);
 

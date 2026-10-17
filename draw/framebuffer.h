@@ -8,8 +8,8 @@
 #include "../types.h"
 #include "pixels.h"
 
-struct FRAMEBUFFER_T;
 typedef struct FRAMEBUFFER_T Framebuffer;
+typedef struct RENDERER_T Renderer;
 
 typedef enum FRAMEBUFFER_TYPE_E {
 #ifndef X_FRAMEBUFFER_TYPES
@@ -33,6 +33,7 @@ typedef struct PIXEL_BUFFER_CREATE_INFO_T {
 } PixelBufferCreateInfo;
 
 typedef struct FRAMEBUFFER_CREATE_INFO_T {
+    Renderer *renderer;
     FramebufferType type;
 
     union {

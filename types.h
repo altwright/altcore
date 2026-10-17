@@ -457,7 +457,7 @@ i64 free_elem_idx;
 
 #ifndef QUEUE_POP_FRONT
 #define QUEUE_POP_FRONT(q_ptr) \
-    (q_ptr)->data[(q_ptr)->head]; \
+    ((q_ptr)->count > 0 ? (q_ptr)->data[(q_ptr)->head] : *(typeof(*(q_ptr)->data)*)kNullPtr); \
     (q_ptr)->head++; \
     (q_ptr)->head %= (q_ptr)->cap; \
     (q_ptr)->count--

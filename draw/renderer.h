@@ -7,17 +7,19 @@
 
 #include "../types.h"
 #include "framebuffer.h"
+#include "vertex_buffer.h"
+#include "index_buffer.h"
+#include "shader.h"
 #include "window.h"
 #include "fonts.h"
 
-struct RENDERER_T;
 typedef struct RENDERER_T Renderer;
 
 typedef enum RENDERER_TYPE_E {
 #ifndef X_RENDERER_TYPES
 #define X_RENDERER_TYPES \
-    X(SOFTWARE_SINGLE_THREAD) \
-    X(SOFTWARE_MULTI_THREAD) \
+    X(SINGLE_THREAD) \
+    X(MULTI_THREAD) \
     X(COUNT)
 #endif
 #ifndef X
@@ -39,6 +41,7 @@ typedef enum RENDER_CMD_TYPE_E {
     X(DRAW_RECT) \
     X(DRAW_TEXT) \
     X(SCISSOR) \
+    X(DRAW_PRIMITIVE) \
     X(PRESENT) \
     X(COUNT)
 #endif
@@ -49,21 +52,6 @@ typedef enum RENDER_CMD_TYPE_E {
     X_RENDER_CMD_TYPES
 #undef X
 } RenderCmdType;
-
-typedef enum RENDER_BUFFER_TYPE_E {
-#ifndef X_RENDER_BUFFER_TYPES
-#define X_RENDER_BUFFER_TYPES \
-    X(FRAMEBUFFER) \
-    X(SWAPCHAIN) \
-    X(COUNT)
-#endif
-#ifndef X
-#define X(type) \
-    RENDER_BUFFER_TYPE_##type,
-#endif
-    X_RENDER_BUFFER_TYPES
-#undef X
-} RenderBufferType;
 
 typedef struct RENDER_CMD_CLEAR_T {
     Framebuffer *framebuffer;
@@ -79,12 +67,13 @@ typedef struct RECT_BORDER_WIDTHS_T {
 } RectBorderWidths;
 
 typedef struct RENDER_CMD_DRAW_RECT_T {
-    Framebuffer *dst_framebuffer;
-    f32x4 dst_region;
+    Framebuffer *dst_fb;
+    f32x4 dst_fb_region;
     rgba8 bg_color;
     RectCornerRadii corner_radii;
     rgba8 border_color;
     RectBorderWidths border_widths;
+
     struct {
         u8 *pixel_bytes;
         PixelFormat px_format;
@@ -92,16 +81,6 @@ typedef struct RENDER_CMD_DRAW_RECT_T {
         i64 pitch_bytes;
     } src_blit;
 } RenderCmdDrawRect;
-
-typedef struct RENDER_CMD_BLIT_T {
-    Framebuffer *framebuffer;
-    f32x4 dst;
-    RectCornerRadii dst_corner_radii;
-    u8 *src_pixels;
-    PixelFormat src_px_format;
-    i32x2 src_size;
-    i64 src_pitch_bytes;
-} RenderCmdBlit;
 
 typedef struct RENDER_CMD_DRAW_TEXT_T {
     Framebuffer *dst_fb;
@@ -115,8 +94,33 @@ typedef struct RENDER_CMD_DRAW_TEXT_T {
     i32 line_height_px;
 } RenderCmdDrawText;
 
+typedef enum RENDER_CMD_DRAW_PRIMITIVE_TYPE_E {
+#define X_RENDER_CMD_DRAW_PRIMITIVE_TYPES \
+    X(TRIANGLE) \
+    X(COUNT)
+#define X(type) \
+    RENDER_CMD_DRAW_PRIMITIVE_TYPE_##type,
+    X_RENDER_CMD_DRAW_PRIMITIVE_TYPES
+#undef X
+} RenderCmdDrawPrimitiveType;
+
+typedef struct RENDER_CMD_DRAW_PRIMITIVES_T {
+    Framebuffer *dst_framebuffer;
+    VertexBuffer *src_vertex_buffer;
+    IndexBuffer *src_index_buffer;
+    RenderCmdDrawPrimitiveType prim_type;
+
+    VertexShaderFnPtr vert_shader;
+    FragmentShaderFnPtr frag_shader;
+
+    struct {
+        u8 *data;
+        i64 len;
+    } shader_input;
+} RenderCmdDrawPrimitives;
+
 typedef struct RENDER_CMD_SCISSOR_T {
-    Framebuffer* framebuffer;
+    Framebuffer *framebuffer;
     f32x4 region;
 } RenderCmdScissor;
 
@@ -131,7 +135,6 @@ typedef struct RENDER_CMD_T {
     union {
         RenderCmdClear clear;
         RenderCmdDrawRect draw_rect;
-        RenderCmdBlit blit;
         RenderCmdDrawText draw_text;
         RenderCmdScissor scissor;
         RenderCmdPresent present;
