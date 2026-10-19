@@ -6,6 +6,7 @@
 
 #include <string.h>
 
+#include "vertex_buffer.impl.h"
 #include "../debug.h"
 #include "../../arenas.h"
 #include "../../memory.h"
@@ -48,4 +49,9 @@ VertexBuffer *vertex_buffer_create(VertexBufferCreateInfo *info) {
 void vertex_buffer_destroy(VertexBuffer *buffer) {
     arena_free(buffer->arena);
     alt_free(buffer);
+}
+
+void vertex_buffer_impl_get_verts(VertexBuffer *vert_buf, const f32x3 **out_verts, i64 *out_verts_len) {
+    *out_verts = vert_buf->vertices.data;
+    *out_verts_len = vert_buf->vertices.len;
 }

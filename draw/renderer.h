@@ -7,8 +7,7 @@
 
 #include "../types.h"
 #include "framebuffer.h"
-#include "vertex_buffer.h"
-#include "index_buffer.h"
+#include "model.h"
 #include "shader.h"
 #include "window.h"
 #include "fonts.h"
@@ -41,7 +40,7 @@ typedef enum RENDER_CMD_TYPE_E {
     X(DRAW_RECT) \
     X(DRAW_TEXT) \
     X(SCISSOR) \
-    X(DRAW_PRIMITIVE) \
+    X(DRAW_MODEL) \
     X(PRESENT) \
     X(COUNT)
 #endif
@@ -104,20 +103,37 @@ typedef enum RENDER_CMD_DRAW_PRIMITIVE_TYPE_E {
 #undef X
 } RenderCmdDrawPrimitiveType;
 
-typedef struct RENDER_CMD_DRAW_PRIMITIVES_T {
-    Framebuffer *dst_framebuffer;
-    VertexBuffer *src_vertex_buffer;
-    IndexBuffer *src_index_buffer;
-    RenderCmdDrawPrimitiveType prim_type;
+typedef enum RENDER_CMD_DRAW_MODEL_CULL_MODE_E {
+#define X_RENDER_CMD_DRAW_MODEL_CULL_MODES \
+    X(NONE) \
+    X(BACK_FACE_CW) \
+    X(BACK_FACE_CCW) \
+    X(FRONT_FACE_CW) \
+    X(FRONT_FACE_CCW) \
+    X(COUNT)
+#define X(mode) \
+    RENDER_CMD_DRAW_MODEL_CULL_MODE_##mode,
+    X_RENDER_CMD_DRAW_MODEL_CULL_MODES
+#undef X
+} RenderCmdDrawModelCullMode;
 
-    VertexShaderFnPtr vert_shader;
-    FragmentShaderFnPtr frag_shader;
+typedef struct RENDER_CMD_DRAW_MODEL_T {
+    Framebuffer *dst_framebuffer;
+
+    Model *model;
+
+    VertexShaderFnPtr vert_shader_fn;
+    FragmentShaderFnPtr frag_shader_fn;
 
     struct {
-        u8 *data;
+        u8 *bytes;
         i64 len;
-    } shader_input;
-} RenderCmdDrawPrimitives;
+    } shader_data;
+
+    ShaderDataInitFnPtr shader_data_init_fn;
+
+    RenderCmdDrawModelCullMode cull_mode;
+} RenderCmdDrawModel;
 
 typedef struct RENDER_CMD_SCISSOR_T {
     Framebuffer *framebuffer;
@@ -137,6 +153,7 @@ typedef struct RENDER_CMD_T {
         RenderCmdDrawRect draw_rect;
         RenderCmdDrawText draw_text;
         RenderCmdScissor scissor;
+        RenderCmdDrawModel draw_model;
         RenderCmdPresent present;
     } data;
 } RenderCmd;

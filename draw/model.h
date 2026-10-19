@@ -5,9 +5,10 @@
 #ifndef BRITANNICUS_MODEL_H
 #define BRITANNICUS_MODEL_H
 
-#include "renderer.h"
 #include "vertex_buffer.h"
 #include "index_buffer.h"
+#include "../../strings.h"
+
 
 typedef enum MESH_PRIMITIVE_TYPE_E {
 #define X_MESH_PRIMITIVE_TYPES \

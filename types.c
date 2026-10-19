@@ -161,6 +161,30 @@ f32x4 itof32x4(i32x4 vec) {
     };
 }
 
+f32x4 f32x3to4(f32x3 vec, f32 last) {
+    return (f32x4){
+        .x = vec.x,
+        .y = vec.y,
+        .z = vec.z,
+        .w = last,
+    };
+}
+
+f32x2 f32x3to2(f32x3 vec) {
+    return (f32x2) {
+        .x = vec.x,
+        .y = vec.y,
+    };
+}
+
+f32x3 f32x4to3(f32x4 vec) {
+    return (f32x3){
+        .x = vec.x,
+        .y = vec.y,
+        .z = vec.z,
+    };
+}
+
 void queue_make(
     struct ARENA_T *arena,
     i64 *cap,

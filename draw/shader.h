@@ -7,27 +7,12 @@
 
 #include "../types.h"
 #include "pixels.h"
+#include "model.h"
 
-typedef enum FRAGMENT_TYPE_E {
-#define X_FRAGMENT_TYPES \
-    X(SRGB) \
-    X(COUNT)
-#define X(type) \
-    FRAGMENT_TYPE_##type,
-    X_FRAGMENT_TYPES
-#undef X
-} FragmentType;
+typedef void (*ShaderDataInitFnPtr)(MeshPrimitive *prim, void *data);
 
-typedef struct FRAGMENT_T {
-    FragmentType type;
+typedef f32x4 (*VertexShaderFnPtr)(f32x3 vertex, i64 indice, void *data);
 
-    union {
-        rgba8 srgb;
-    } data;
-} Fragment;
-
-typedef f32x3 (*VertexShaderFnPtr)(f32x3 vertex, i64 indice_idx, void *data);
-
-typedef Fragment (*FragmentShaderFnPtr)(f32x3 screen, f32x3 barycentric, i64 start_indice_idx, void *data);
+typedef rgba8 (*FragmentShaderFnPtr)(f32x3 fragment, void *data);
 
 #endif //BRITANNICUS_SHADER_H

@@ -12,6 +12,7 @@
 #include "../worker.h"
 #include "../barrier.h"
 #include "cmds/clear.h"
+#include "cmds/draw_model.h"
 #include "cmds/present.h"
 #include "cmds/draw_rect.h"
 #include "cmds/draw_text.h"
@@ -143,6 +144,11 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
 
                         soft_cmd_scissor(data);
 
+                        break;
+                    }
+                    case RENDER_CMD_TYPE_DRAW_MODEL: {
+                        RenderCmdDrawModel *data = &cmd->data.draw_model;
+                        soft_cmd_draw_model(data);
                         break;
                     }
                     default:

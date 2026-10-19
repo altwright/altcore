@@ -100,6 +100,10 @@ typedef struct F32X3_T {
             f32 x, y, z;
         };
 
+        struct {
+            f32 u, v, w;
+        };
+
         f32 data[4];
     };
 } f32x3;
@@ -538,6 +542,12 @@ i32x4 ftoi32x4(f32x4 vec);
 
 f32x4 itof32x4(i32x4 vec);
 
+f32x4 f32x3to4(f32x3 vec, f32 last);
+
+f32x2 f32x3to2(f32x3 vec);
+
+f32x3 f32x4to3(f32x4 vec);
+
 bits bits_make(struct ARENA_T *arena, i64 bit_count);
 
 void bits_set(bits *bs, i64 bit_idx);
@@ -558,6 +568,6 @@ bool bits_match(const bits *left, const bits *right);
 
 bits bits_dup(struct ARENA_T *arena, const bits *bs);
 
-void bits_clear(bits* bs);
+void bits_clear(bits *bs);
 
 #endif //ALTCORE_TYPES_H
