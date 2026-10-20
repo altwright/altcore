@@ -7,6 +7,4 @@
 
 #include "vertex_buffer.h"
 
-void vertex_buffer_impl_get_verts(VertexBuffer *vert_buf, const f32x3 **out_verts, i64 *out_verts_len);
-
 #endif //BRITANNICUS_VERTEX_BUFFER_IMPL_H

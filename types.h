@@ -20,148 +20,148 @@ typedef uint64_t u64;
 typedef float f32;
 typedef double f64;
 
-typedef struct U32X2_T {
-    union {
-        struct {
-            u32 x, y;
-        };
-
-        struct {
-            u32 u, v;
-        };
-
-        struct {
-            u32 width, height;
-        };
-
-        u32 data[2];
+typedef union U32X2_U {
+    struct {
+        u32 x, y;
     };
+
+    struct {
+        u32 u, v;
+    };
+
+    struct {
+        u32 width, height;
+    };
+
+    u32 data[2];
 } u32x2;
 
-typedef struct I32X2_T {
-    union {
-        struct {
-            i32 x, y;
-        };
-
-        struct {
-            i32 u, v;
-        };
-
-        struct {
-            i32 width, height;
-        };
-
-        i32 data[2];
+typedef union I32X2_U {
+    struct {
+        i32 x, y;
     };
+
+    struct {
+        i32 u, v;
+    };
+
+    struct {
+        i32 width, height;
+    };
+
+    i32 data[2];
 } i32x2;
 
-typedef struct F32X2_T {
-    union {
-        struct {
-            f32 x, y;
-        };
-
-        struct {
-            f32 u, v;
-        };
-
-        struct {
-            f32 width, height;
-        };
-
-        f32 data[2];
+typedef union F32X2_U {
+    struct {
+        f32 x, y;
     };
+
+    struct {
+        f32 u, v;
+    };
+
+    struct {
+        f32 width, height;
+    };
+
+    f32 data[2];
 } f32x2;
 
-typedef struct I32X3_T {
-    union {
-        struct {
-            i32 x, y, z;
-        };
-
-        i32 data[4];
+typedef union I32X3_U {
+    struct {
+        i32 x, y, z;
     };
+
+    i32 data[4];
 } i32x3;
 
-typedef struct U32X3_T {
-    union {
-        struct {
-            u32 x, y, z;
-        };
-
-        u32 data[4];
+typedef union U32X3_U {
+    struct {
+        u32 x, y, z;
     };
+
+    u32 data[4];
 } u32x3;
 
-typedef struct F32X3_T {
-    union {
-        struct {
-            f32 x, y, z;
-        };
-
-        struct {
-            f32 u, v, w;
-        };
-
-        f32 data[4];
+typedef union F32X3_U {
+    struct {
+        f32 x, y, z;
     };
+
+    struct {
+        f32 u, v, w;
+    };
+
+    f32 data[4];
 } f32x3;
 
-typedef struct U32X4_T {
-    union {
-        struct {
-            u32 x, y, z, w;
-        };
-
-        struct {
-            u32 r, g, b, a;
-        };
-
-        struct {
-            u32 start_x, start_y, width, height;
-        };
+typedef union U8X4_U {
+    struct {
+        u32 x, y, z, w;
     };
+
+    struct {
+        u32 r, g, b, a;
+    };
+
+    struct {
+        u32 start_x, start_y, width, height;
+    };
+
+    u8 data[4];
+} u8x4;
+
+typedef union U32X4_U {
+    struct {
+        u32 x, y, z, w;
+    };
+
+    struct {
+        u32 r, g, b, a;
+    };
+
+    struct {
+        u32 start_x, start_y, width, height;
+    };
+
+    u32 data[4];
 } u32x4;
 
-typedef struct I32X4_T {
-    union {
-        struct {
-            i32 x, y, z, w;
-        };
-
-        struct {
-            i32 r, g, b, a;
-        };
-
-        struct {
-            i32 start_x, start_y, width, height;
-        };
-
-        i32 data[4];
+typedef union I32X4_U {
+    struct {
+        i32 x, y, z, w;
     };
+
+    struct {
+        i32 r, g, b, a;
+    };
+
+    struct {
+        i32 start_x, start_y, width, height;
+    };
+
+    i32 data[4];
 } i32x4;
 
-typedef struct F32X4_T {
-    union {
-        struct {
-            f32 x, y, z, w;
-        };
-
-        struct {
-            f32 r, g, b, a;
-        };
-
-        struct {
-            f32 start_x, start_y, width, height;
-        };
-
-        struct {
-            f32 left, right, top, bottom;
-        };
-
-        f32 data[4];
+typedef union F32X4_U {
+    struct {
+        f32 x, y, z, w;
     };
+
+    struct {
+        f32 r, g, b, a;
+    };
+
+    struct {
+        f32 start_x, start_y, width, height;
+    };
+
+    struct {
+        f32 left, right, top, bottom;
+    };
+
+    f32 data[4];
 } f32x4;
 
 struct ARENA_T;

@@ -21,8 +21,8 @@ static f32x3 to_screen_space(f32x4 clip_space, i32x2 screen_size) {
     };
 }
 
-static f32 edge_to_point_area_2(f32x2 a, f32x2 b, f32x2 p) {
-    return (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+static f32 screen_triangle_area_2(f32x2 a, f32x2 b, f32x2 c) {
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
 static bool tri_face_culled(f32x4 clip_space_tri[3], RenderCmdDrawModelCullMode cull_mode) {
@@ -54,19 +54,17 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
 
     u8 *dst_fb_bytes = framebuffer_impl_get_bytes(data->dst_framebuffer);
 
-    ARRAY_FOR(mesh, &data->model->meshes) {
-        ARRAY_FOR(prim, &mesh->prims) {
-            const f32x3 *verts = nullptr;
-            i64 verts_len = 0;
-
-            vertex_buffer_impl_get_verts(prim->vertices, &verts, &verts_len);
+    for (i64 mesh_idx = 0; mesh_idx < data->model->meshes.len; mesh_idx++) {
+        Mesh *mesh = ARRAY_GET(&data->model->meshes, mesh_idx);
+        for (i64 prim_idx = 0; prim_idx < mesh->prims.len; prim_idx++) {
+            MeshPrimitive *prim = ARRAY_GET(&mesh->prims, prim_idx);
 
             const u16 *indices = nullptr;
             i64 indices_len = 0;
 
             index_buffer_impl_get_indices(prim->indices, &indices, &indices_len);
 
-            data->shader_data_init_fn(prim, data->shader_data.bytes);
+            data->shader_data_init_fn(data->model, mesh_idx, prim_idx, data->shader_data.bytes);
 
             switch (prim->type) {
                 case MESH_PRIMITIVE_TYPE_TRIANGLES: {
@@ -75,37 +73,37 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                     }
 
                     for (i64 start_indice_idx = 0; start_indice_idx < indices_len; start_indice_idx += 3) {
-                        u16 i0 = indices[start_indice_idx];
-                        u16 i1 = indices[start_indice_idx + 1];
-                        u16 i2 = indices[start_indice_idx + 2];
+                        i64 triangle_indices[3] = {};
+                        f32x4 clip_space_triangle[3] = {};
+                        for (i64 vert_idx = 0; vert_idx < 3; vert_idx++) {
+                            triangle_indices[vert_idx] = indices[start_indice_idx + vert_idx];
+                            clip_space_triangle[vert_idx] = data->
+                                    vert_shader_fn(triangle_indices[vert_idx], data->shader_data.bytes);
+                        }
 
-                        f32x4 clip_space_tri[3] = {
-                            data->vert_shader_fn(verts[i0], i0, data->shader_data.bytes),
-                            data->vert_shader_fn(verts[i1], i1, data->shader_data.bytes),
-                            data->vert_shader_fn(verts[i2], i2, data->shader_data.bytes),
-                        };
-
-                        // TODO: Handle tri passing through near and far planes
-                        if (clip_space_tri[0].w <= kEpsilon
-                            || clip_space_tri[1].w <= kEpsilon
-                            || clip_space_tri[2].w <= kEpsilon) {
+                        // TODO: Handle tri passing through near plane
+                        if (clip_space_triangle[0].w <= kEpsilon
+                            || clip_space_triangle[1].w <= kEpsilon
+                            || clip_space_triangle[2].w <= kEpsilon) {
                             continue;
                         }
 
+                        f32 clip_space_tri_inv_w[3] = {};
                         f32x3 screen_space_3d_tri[3] = {};
                         f32x2 screen_space_2d_tri[3] = {};
                         for (i64 vert_idx = 0; vert_idx < 3; vert_idx++) {
-                            screen_space_3d_tri[vert_idx] = to_screen_space(clip_space_tri[vert_idx], dst_fb_size);
+                            clip_space_tri_inv_w[vert_idx] = 1 / clip_space_triangle[vert_idx].w;
+                            screen_space_3d_tri[vert_idx] = to_screen_space(clip_space_triangle[vert_idx], dst_fb_size);
                             screen_space_2d_tri[vert_idx] = f32x3to2(screen_space_3d_tri[vert_idx]);
                         }
 
-                        f32 screen_space_area_2 = edge_to_point_area_2(
+                        f32 screen_space_triangle_area_2 = screen_triangle_area_2(
                             screen_space_2d_tri[0],
                             screen_space_2d_tri[1],
                             screen_space_2d_tri[2]
                         );
 
-                        if (ABS(screen_space_area_2) <= 2 * kEpsilon) {
+                        if (ABS(screen_space_triangle_area_2) <= 2 * kEpsilon) {
                             continue;
                         }
 
@@ -116,14 +114,14 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                             }
                             case RENDER_CMD_DRAW_MODEL_CULL_MODE_FRONT_FACE_CCW:
                             case RENDER_CMD_DRAW_MODEL_CULL_MODE_BACK_FACE_CW: {
-                                if (screen_space_area_2 > 0) {
+                                if (screen_space_triangle_area_2 > 0) {
                                     face_culled = true;
                                 }
                                 break;
                             }
                             case RENDER_CMD_DRAW_MODEL_CULL_MODE_FRONT_FACE_CW:
                             case RENDER_CMD_DRAW_MODEL_CULL_MODE_BACK_FACE_CCW: {
-                                if (screen_space_area_2 < 0) {
+                                if (screen_space_triangle_area_2 < 0) {
                                     face_culled = true;
                                 }
                                 break;
@@ -182,12 +180,18 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                                     .y = (f32) y_idx + 0.5f,
                                 };
 
-                                f32 edge_0 = edge_to_point_area_2(screen_space_2d_tri[1], screen_space_2d_tri[2], px);
-                                f32 edge_1 = edge_to_point_area_2(screen_space_2d_tri[2], screen_space_2d_tri[0], px);
-                                f32 edge_2 = edge_to_point_area_2(screen_space_2d_tri[0], screen_space_2d_tri[1], px);
+                                // TODO: Can compute top-left corner once and add the px step
+                                f32 edge_0_to_p_area_2 = screen_triangle_area_2(
+                                    screen_space_2d_tri[1], screen_space_2d_tri[2], px);
+                                f32 edge_1_to_p_area_2 = screen_triangle_area_2(
+                                    screen_space_2d_tri[2], screen_space_2d_tri[0], px);
+                                f32 edge_2_to_p_area_2 = screen_triangle_area_2(
+                                    screen_space_2d_tri[0], screen_space_2d_tri[1], px);
 
-                                bool all_negative = edge_0 < 0 && edge_1 < 0 && edge_2 < 0;
-                                bool all_positive = edge_0 > 0 && edge_1 > 0 && edge_2 > 0;
+                                bool all_negative =
+                                        edge_0_to_p_area_2 < 0 && edge_1_to_p_area_2 < 0 && edge_2_to_p_area_2 < 0;
+                                bool all_positive =
+                                        edge_0_to_p_area_2 > 0 && edge_1_to_p_area_2 > 0 && edge_2_to_p_area_2 > 0;
                                 bool px_inside = false;
 
                                 switch (data->cull_mode) {
@@ -220,19 +224,36 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                                     continue;
                                 }
 
-                                f32 bary_0 = edge_0 / screen_space_area_2;
-                                f32 bary_1 = edge_1 / screen_space_area_2;
-                                f32 bary_2 = edge_2 / screen_space_area_2;
+                                f32x3 bary = {
+                                    .u = edge_0_to_p_area_2 / screen_space_triangle_area_2,
+                                    .v = edge_1_to_p_area_2 / screen_space_triangle_area_2,
+                                    .w = edge_2_to_p_area_2 / screen_space_triangle_area_2,
+                                };
 
                                 f32x3 frag = {
                                     .x = px.x,
                                     .y = px.y,
-                                    .z = bary_0 * screen_space_3d_tri[0].z
-                                         + bary_1 * screen_space_3d_tri[1].z
-                                         + bary_2 * screen_space_3d_tri[2].z,
+                                    .z = bary.u * screen_space_3d_tri[0].z
+                                         + bary.v * screen_space_3d_tri[1].z
+                                         + bary.w * screen_space_3d_tri[2].z,
                                 };
 
-                                rgba8 frag_color = data->frag_shader_fn(frag, data->shader_data.bytes);
+                                f32 bary_inv_w = bary.u * clip_space_tri_inv_w[0]
+                                                 + bary.v * clip_space_tri_inv_w[1]
+                                                 + bary.w * clip_space_tri_inv_w[2];
+
+                                for (i64 vert_idx = 0; vert_idx < 3; vert_idx++) {
+                                    bary.data[vert_idx] = (bary.data[vert_idx] * clip_space_tri_inv_w[vert_idx])
+                                                          / bary_inv_w;
+                                }
+
+                                rgba8 frag_color = data->frag_shader_fn(
+                                    frag,
+                                    bary,
+                                    triangle_indices,
+                                    data->shader_data.bytes
+                                );
+
                                 pixel_set(
                                     &(Pixel){
                                         .format = PIXEL_FORMAT_RGBA8,

@@ -145,29 +145,6 @@ Model model_load(ModelLoadInfo *info) {
                             break;
                     }
 
-                    const cgltf_accessor *pos_accessor = cgltf_find_accessor(
-                        &node_mesh_prim, cgltf_attribute_type_position, 0);
-                    if (!pos_accessor) {
-                        crash_msg("No position data for mesh primitive vertices found\n");
-                    }
-
-                    if (pos_accessor->type != cgltf_type_vec3) {
-                        crash_msg("Expected position data to be vec3, not %d\n", pos_accessor->type);
-                    }
-
-                    if (pos_accessor->component_type != cgltf_component_type_r_32f) {
-                        crash_msg("Expected position data components to be f32, not %d\n",
-                                  pos_accessor->component_type);
-                    }
-
-                    f32s vert_components = {
-                        .arena = tmp,
-                        .len = (i64) pos_accessor->count * 3,
-                    };
-                    ARRAY_MAKE(&vert_components);
-
-                    cgltf_accessor_unpack_floats(pos_accessor, vert_components.data, vert_components.len);
-
                     IndexBufferCreateInfo index_buffer_info = {
                         .renderer = info->renderer,
                         .indices = {
@@ -195,13 +172,117 @@ Model model_load(ModelLoadInfo *info) {
 
                     prim->indices = index_buffer_create(&index_buffer_info);
 
+                    VertexAttributes vert_attrs = {
+                        .arena = tmp,
+                        .len = (i64) node_mesh_prim.attributes_count,
+                    };
+                    ARRAY_MAKE(&vert_attrs);
+
+                    i64 vertex_count = -1;
+                    for (i64 attr_idx = 0; attr_idx < node_mesh_prim.attributes_count; attr_idx++) {
+                        cgltf_attribute prim_attr = node_mesh_prim.attributes[attr_idx];
+                        VertexAttribute *vert_attr = ARRAY_GET(&vert_attrs, attr_idx);
+
+                        switch (prim_attr.type) {
+                            case cgltf_attribute_type_position: {
+                                vert_attr->hint = VERTEX_ATTRIBUTE_HINT_POSITION;
+                                break;
+                            }
+                            case cgltf_attribute_type_color: {
+                                vert_attr->hint = VERTEX_ATTRIBUTE_HINT_COLOR;
+                                break;
+                            }
+                            case cgltf_attribute_type_normal: {
+                                vert_attr->hint = VERTEX_ATTRIBUTE_HINT_NORMAL;
+                                break;
+                            }
+                            case cgltf_attribute_type_tangent: {
+                                vert_attr->hint = VERTEX_ATTRIBUTE_HINT_TANGENT;
+                                break;
+                            }
+                            case cgltf_attribute_type_texcoord: {
+                                vert_attr->hint = VERTEX_ATTRIBUTE_HINT_TEXTURE_COORD;
+                                break;
+                            }
+                            case cgltf_attribute_type_joints: {
+                                vert_attr->hint = VERTEX_ATTRIBUTE_HINT_JOINTS;
+                                break;
+                            }
+                            case cgltf_attribute_type_weights: {
+                                vert_attr->hint = VERTEX_ATTRIBUTE_HINT_WEIGHTS;
+                                break;
+                            }
+                            default:
+                                crash_msg("Unhandled primitive attribute type %d\n", prim_attr.type);
+                                break;
+                        }
+
+                        switch (prim_attr.data->type) {
+                            case cgltf_type_vec2: {
+                                switch (prim_attr.data->component_type) {
+                                    case cgltf_component_type_r_32f: {
+                                        vert_attr->type = VERTEX_ATTRIBUTE_TYPE_F32X2;
+                                        break;
+                                    }
+                                    default:
+                                        crash_msg("Unhandled primitive vec2 attr component type %d\n",
+                                                  prim_attr.data->component_type);
+                                        break;
+                                }
+                                break;
+                            }
+                            case cgltf_type_vec3: {
+                                switch (prim_attr.data->component_type) {
+                                    case cgltf_component_type_r_32f: {
+                                        vert_attr->type = VERTEX_ATTRIBUTE_TYPE_F32X3;
+                                        break;
+                                    }
+                                    default:
+                                        crash_msg("Unhandled primitive vec3 attr component type %d\n",
+                                                  prim_attr.data->component_type);
+                                        break;
+                                }
+                                break;
+                            }
+                            case cgltf_type_vec4: {
+                                switch (prim_attr.data->component_type) {
+                                    case cgltf_component_type_r_32f: {
+                                        vert_attr->type = VERTEX_ATTRIBUTE_TYPE_F32X4;
+                                        break;
+                                    }
+                                    default:
+                                        crash_msg("Unhandled primitive vec4 attr component type %d\n",
+                                                  prim_attr.data->component_type);
+                                        break;
+                                }
+                                break;
+                            }
+                            default:
+                                crash_msg("Unhandled primitive attribute data type %d\n", prim_attr.data->type);
+                                break;
+                        }
+
+                        if (prim_attr.data->is_sparse) {
+                            crash_msg("Vertex attribute accessor is sparse\n");
+                        }
+
+                        u8 *buffer = prim_attr.data->buffer_view->buffer->data;
+                        vert_attr->start = buffer + prim_attr.data->buffer_view->offset + prim_attr.data->offset;
+                        vert_attr->stride = (i64) prim_attr.data->stride;
+
+                        if (vertex_count < 0) {
+                            vertex_count = (i64) prim_attr.data->count;
+                        } else if (prim_attr.data->count != vertex_count) {
+                            crash_msg("Attribute counts do not match\n");
+                        }
+                    }
+
                     VertexBufferCreateInfo vertex_buffer_info = {
                         .renderer = info->renderer,
                         .vertices = {
-                            .type = VERTEX_COMPONENT_TYPE_F32,
-                            .start = (u8 *) vert_components.data,
-                            .count = vert_components.len / 3,
-                            .stride_bytes = sizeof(f32) * 3,
+                            .data = vert_attrs.data,
+                            .per_vertex_attribute_count = (i64) node_mesh_prim.attributes_count,
+                            .count = vertex_count,
                         }
                     };
 
