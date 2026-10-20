@@ -39,6 +39,8 @@ typedef enum VERTEX_ATTRIBUTE_HINT_E {
 
 typedef enum VERTEX_ATTRIBUTE_TYPE_E {
 #define X_VERTEX_ATTRIBUTE_TYPES \
+    X(ABGR8) \
+    X(ABGR16) \
     X(F32X2) \
     X(F32X3) \
     X(F32X4) \

@@ -6,7 +6,7 @@
 
 #include <string.h>
 
-#include "vertex_buffer.impl.h"
+#include "pixels.h"
 #include "../debug.h"
 #include "../../arenas.h"
 #include "../../memory.h"
@@ -31,6 +31,14 @@ struct VERTEX_BUFFER_T {
 static i64 get_attr_size(VertexAttributeType type) {
     i64 attr_size = 0;
     switch (type) {
+        case VERTEX_ATTRIBUTE_TYPE_ABGR8: {
+            attr_size = (i64) sizeof(abgr8);
+            break;
+        }
+        case VERTEX_ATTRIBUTE_TYPE_ABGR16: {
+            attr_size = (i64) sizeof(abgr16);
+            break;
+        }
         case VERTEX_ATTRIBUTE_TYPE_F32X2: {
             attr_size = (i64) sizeof(f32x2);
             break;
