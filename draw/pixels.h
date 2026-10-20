@@ -15,6 +15,7 @@ typedef enum PIXEL_FORMAT_E {
     X(ARGB8) \
     X(RGBA16) \
     X(ABGR16) \
+    X(RGBA32F) \
     X(COUNT)
 #endif
 #ifndef X
@@ -62,6 +63,14 @@ typedef union ABGR16_U {
 
     u16 data[4];
 } abgr16;
+
+typedef union RGBA32F_U {
+    struct {
+        f32 a, b, g, r;
+    };
+
+    f32 data[4];
+} rgba32f;
 
 typedef struct PIXEL_T {
     PixelFormat format;

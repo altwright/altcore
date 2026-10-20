@@ -106,16 +106,25 @@ typedef enum RENDER_CMD_DRAW_PRIMITIVE_TYPE_E {
 typedef enum RENDER_CMD_DRAW_MODEL_CULL_MODE_E {
 #define X_RENDER_CMD_DRAW_MODEL_CULL_MODES \
     X(NONE) \
-    X(BACK_FACE_CW) \
-    X(BACK_FACE_CCW) \
-    X(FRONT_FACE_CW) \
-    X(FRONT_FACE_CCW) \
+    X(BACK) \
+    X(FRONT) \
     X(COUNT)
 #define X(mode) \
     RENDER_CMD_DRAW_MODEL_CULL_MODE_##mode,
     X_RENDER_CMD_DRAW_MODEL_CULL_MODES
 #undef X
 } RenderCmdDrawModelCullMode;
+
+typedef enum RENDER_CMD_DRAW_MODEL_FACE_WINDING_E {
+#define X_RENDER_CMD_DRAW_MODEL_FACE_WINDINGS \
+    X(CCW) \
+    X(CW) \
+    X(COUNT)
+#define X(mode) \
+    RENDER_CMD_DRAW_MODEL_FACE_WINDING_##mode,
+    X_RENDER_CMD_DRAW_MODEL_FACE_WINDINGS
+#undef X
+} RenderCmdDrawModelFaceWinding;
 
 typedef struct RENDER_CMD_DRAW_MODEL_T {
     Framebuffer *dst_framebuffer;
@@ -132,6 +141,7 @@ typedef struct RENDER_CMD_DRAW_MODEL_T {
 
     ShaderDataInitFnPtr shader_data_init_fn;
 
+    RenderCmdDrawModelFaceWinding face_winding;
     RenderCmdDrawModelCullMode cull_mode;
 } RenderCmdDrawModel;
 

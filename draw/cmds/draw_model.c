@@ -107,21 +107,23 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                             continue;
                         }
 
+                        if (data->face_winding != RENDER_CMD_DRAW_MODEL_FACE_WINDING_CCW) {
+                            screen_space_triangle_area_2 *= -1;
+                        }
+
                         bool face_culled = false;
                         switch (data->cull_mode) {
                             case RENDER_CMD_DRAW_MODEL_CULL_MODE_NONE: {
                                 break;
                             }
-                            case RENDER_CMD_DRAW_MODEL_CULL_MODE_FRONT_FACE_CCW:
-                            case RENDER_CMD_DRAW_MODEL_CULL_MODE_BACK_FACE_CW: {
-                                if (screen_space_triangle_area_2 > 0) {
+                            case RENDER_CMD_DRAW_MODEL_CULL_MODE_BACK: {
+                                if (screen_space_triangle_area_2 < 0) {
                                     face_culled = true;
                                 }
                                 break;
                             }
-                            case RENDER_CMD_DRAW_MODEL_CULL_MODE_FRONT_FACE_CW:
-                            case RENDER_CMD_DRAW_MODEL_CULL_MODE_BACK_FACE_CCW: {
-                                if (screen_space_triangle_area_2 < 0) {
+                            case RENDER_CMD_DRAW_MODEL_CULL_MODE_FRONT: {
+                                if (screen_space_triangle_area_2 > 0) {
                                     face_culled = true;
                                 }
                                 break;
@@ -188,6 +190,12 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                                 f32 edge_2_to_p_area_2 = screen_triangle_area_2(
                                     screen_space_2d_tri[0], screen_space_2d_tri[1], px);
 
+                                if (data->face_winding != RENDER_CMD_DRAW_MODEL_FACE_WINDING_CCW) {
+                                    edge_0_to_p_area_2 *= -1;
+                                    edge_1_to_p_area_2 *= -1;
+                                    edge_2_to_p_area_2 *= -1;
+                                }
+
                                 bool all_negative =
                                         edge_0_to_p_area_2 < 0 && edge_1_to_p_area_2 < 0 && edge_2_to_p_area_2 < 0;
                                 bool all_positive =
@@ -201,16 +209,14 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                                         }
                                         break;
                                     }
-                                    case RENDER_CMD_DRAW_MODEL_CULL_MODE_FRONT_FACE_CCW:
-                                    case RENDER_CMD_DRAW_MODEL_CULL_MODE_BACK_FACE_CW: {
-                                        if (all_negative) {
+                                    case RENDER_CMD_DRAW_MODEL_CULL_MODE_BACK: {
+                                        if (all_positive) {
                                             px_inside = true;
                                         }
                                         break;
                                     }
-                                    case RENDER_CMD_DRAW_MODEL_CULL_MODE_FRONT_FACE_CW:
-                                    case RENDER_CMD_DRAW_MODEL_CULL_MODE_BACK_FACE_CCW: {
-                                        if (all_positive) {
+                                    case RENDER_CMD_DRAW_MODEL_CULL_MODE_FRONT: {
+                                        if (all_negative) {
                                             px_inside = true;
                                         }
                                         break;
@@ -247,7 +253,7 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                                                           / bary_inv_w;
                                 }
 
-                                rgba8 frag_color = data->frag_shader_fn(
+                                rgba32f color = data->frag_shader_fn(
                                     frag,
                                     bary,
                                     triangle_indices,
@@ -256,13 +262,13 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
 
                                 pixel_set(
                                     &(Pixel){
-                                        .format = PIXEL_FORMAT_RGBA8,
+                                        .format = dst_fb_info.data.pixel_buf.format,
                                         .start = dst_fb_bytes + y_idx * dst_fb_pitch + x_idx *
                                                  dst_fb_pixel_format_size,
                                     },
                                     &(Pixel){
-                                        .format = PIXEL_FORMAT_RGBA8,
-                                        .start = frag_color.data,
+                                        .format = PIXEL_FORMAT_RGBA32F,
+                                        .start = (u8*)color.data,
                                     }
                                 );
                             }

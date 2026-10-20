@@ -102,10 +102,6 @@ typedef union U8X4_U {
     };
 
     struct {
-        u32 r, g, b, a;
-    };
-
-    struct {
         u32 start_x, start_y, width, height;
     };
 
@@ -115,10 +111,6 @@ typedef union U8X4_U {
 typedef union U32X4_U {
     struct {
         u32 x, y, z, w;
-    };
-
-    struct {
-        u32 r, g, b, a;
     };
 
     struct {
@@ -134,10 +126,6 @@ typedef union I32X4_U {
     };
 
     struct {
-        i32 r, g, b, a;
-    };
-
-    struct {
         i32 start_x, start_y, width, height;
     };
 
@@ -147,10 +135,6 @@ typedef union I32X4_U {
 typedef union F32X4_U {
     struct {
         f32 x, y, z, w;
-    };
-
-    struct {
-        f32 r, g, b, a;
     };
 
     struct {

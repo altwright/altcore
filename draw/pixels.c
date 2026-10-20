@@ -122,18 +122,17 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
         switch (dst_px->format) {
             case PIXEL_FORMAT_RGBA8: {
                 auto dst = (rgba8 *) dst_px->start;
+                rgba8 new_src = {};
                 switch (src_px->format) {
                     case PIXEL_FORMAT_ARGB8: {
                         auto src = (const argb8 *) src_px->start;
 
-                        rgba8 new_src = {
+                        new_src = (rgba8){
                             .r = src->r,
                             .g = src->g,
                             .b = src->b,
                             .a = src->a
                         };
-
-                        alpha_blend_8888(dst->data, new_src.data, offsetof(rgba8, a));
 
                         break;
                     }
@@ -143,14 +142,24 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                             break;
                         }
 
-                        rgba8 new_src = {
+                        new_src = (rgba8){
                             .r = src->r,
                             .g = src->g,
                             .b = src->b,
                             .a = src->a
                         };
 
-                        alpha_blend_8888(dst->data, new_src.data, offsetof(rgba8, a));
+                        break;
+                    }
+                    case PIXEL_FORMAT_RGBA32F: {
+                        auto src = (const rgba32f *) src_px->start;
+                        if (src->a == 0) {
+                            break;
+                        }
+
+                        for (i64 channel_idx = 0; channel_idx < 4; channel_idx++) {
+                            new_src.data[channel_idx] = (u8) (src->data[channel_idx] * 255.f);
+                        }
 
                         break;
                     }
@@ -158,6 +167,9 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                         crash_msg("Unhandled src pixel format %d\n", src_px->format);
                         break;
                 }
+
+                alpha_blend_8888(dst->data, new_src.data, offsetof(rgba8, a));
+
                 break;
             }
             default:
