@@ -105,9 +105,9 @@ typedef enum RENDER_CMD_DRAW_PRIMITIVE_TYPE_E {
 
 typedef enum RENDER_CMD_DRAW_MODEL_CULL_MODE_E {
 #define X_RENDER_CMD_DRAW_MODEL_CULL_MODES \
-    X(NONE) \
     X(BACK) \
     X(FRONT) \
+    X(NONE) \
     X(COUNT)
 #define X(mode) \
     RENDER_CMD_DRAW_MODEL_CULL_MODE_##mode,
