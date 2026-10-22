@@ -66,7 +66,7 @@ Model model_load(ModelLoadInfo *info) {
                 mesh->parent_idx = -1;
             }
 
-            model.textures = (Textures){
+            model.textures = (Framebuffers){
                 .arena = model.arena,
                 .len = (i64) glb_data->textures_count,
             };
@@ -74,46 +74,62 @@ Model model_load(ModelLoadInfo *info) {
 
             for (i64 tex_idx = 0; tex_idx < glb_data->textures_count; tex_idx++) {
                 cgltf_texture *glb_texture = &glb_data->textures[tex_idx];
-                Texture **texture = ARRAY_GET(&model.textures, tex_idx);
+                Framebuffer **texture = ARRAY_GET(&model.textures, tex_idx);
 
-                TextureLoadInfo texture_create_info = {
-                    .name = glb_texture->name,
-                    .compression_type = TEXTURE_COMPRESSION_TYPE_COUNT,
+                FramebufferCreateInfo texture_create_info = {
+                    .renderer = info->renderer,
+                    .type = FRAMEBUFFER_TYPE_PIXEL,
+                    .data = {
+                        .pixel = {
+                            .type = FRAMEBUFFER_CREATE_ACTION_TYPE_LOAD,
+                            .data = {
+                                .load = {
+                                    .dst_format = PIXEL_FORMAT_RGBA8,
+                                }
+                            }
+                        }
+                    }
                 };
 
+                auto load_info = &texture_create_info.data.pixel.data.load;
+
                 cgltf_image *glb_image = glb_texture->image;
-                if (glb_texture->has_basisu) {
-                    texture_create_info.compression_type = TEXTURE_COMPRESSION_TYPE_BASISU;
-                    glb_image = glb_texture->basisu_image;
+
+                if (strcmp(glb_image->mime_type, "image/png") == 0) {
+                    load_info->type = FRAMEBUFFER_LOAD_COMPRESSION_TYPE_PNG;
+                } else if (strcmp(glb_image->mime_type, "image/jpeg") == 0) {
+                    load_info->type = FRAMEBUFFER_LOAD_COMPRESSION_TYPE_JPEG;
+                } else {
+                    crash_msg("Unhandled mime type %s\n", glb_image->mime_type);
                 }
 
-                switch (texture_create_info.compression_type) {
-                    case TEXTURE_COMPRESSION_TYPE_COUNT: {
-                        if (strcmp(glb_image->mime_type, "image/png") == 0) {
-                            texture_create_info.compression_type = TEXTURE_COMPRESSION_TYPE_PNG;
-                        } else {
-                            crash_msg("Unhandled mime type %s\n", glb_image->mime_type);
-                        }
-                        break;
-                    }
-                    case TEXTURE_COMPRESSION_TYPE_BASISU: {
-                        if (strcmp(glb_image->mime_type, "image/ktx2") != 0) {
-                            crash_msg("Expected ktx2 mime type: %s\n", glb_image->mime_type);
-                        }
-                        break;
-                    }
-                    default:
-                        crash_msg("Unhandled texture compression type %d\n", texture_create_info.compression_type);
-                        break;
-                }
-
-                texture_create_info.bytes.start = glb_image->buffer_view->buffer->data + glb_image->buffer_view->offset;
+                u8 *load_bytes = glb_image->buffer_view->buffer->data + glb_image->buffer_view->offset;
                 if (glb_image->buffer_view->stride != 0) {
                     crash_msg("Expected contiguous texture buffer\n");
                 }
-                texture_create_info.bytes.len = (i64) glb_image->buffer_view->size;
+                i64 load_bytes_len = (i64) glb_image->buffer_view->size;
 
-                *texture = texture_load(&texture_create_info);
+                switch (load_info->type) {
+                    case FRAMEBUFFER_LOAD_COMPRESSION_TYPE_PNG: {
+                        auto png_bytes = &load_info->data.png;
+                        png_bytes->data = load_bytes;
+                        png_bytes->len = load_bytes_len;
+
+                        break;
+                    }
+                    case FRAMEBUFFER_LOAD_COMPRESSION_TYPE_JPEG: {
+                        auto jpeg_bytes = &load_info->data.jpeg;
+                        jpeg_bytes->data = load_bytes;
+                        jpeg_bytes->len = load_bytes_len;
+
+                        break;
+                    }
+                    default:
+                        crash_msg("Unhandled load type\n");
+                        break;
+                }
+
+                *texture = framebuffer_create(&texture_create_info);
             }
 
             for (i64 node_idx = 0; node_idx < scene->nodes_count; node_idx++) {
@@ -386,7 +402,7 @@ Model model_load(ModelLoadInfo *info) {
 
 void model_unload(Model *model) {
     ARRAY_FOR(texture, &model->textures) {
-        texture_unload(*texture);
+        framebuffer_destroy(*texture);
     }
 
     ARRAY_FOR(mesh, &model->meshes) {

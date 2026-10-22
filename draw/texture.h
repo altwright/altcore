@@ -7,8 +7,7 @@
 
 #include "../types.h"
 #include "pixels.h"
-
-typedef struct TEXTURE_T Texture;
+#include "framebuffer.h"
 
 typedef struct TEXTURE_VIEW_T {
     f32x2 offset;
@@ -16,31 +15,6 @@ typedef struct TEXTURE_VIEW_T {
     f32 rotation;
     i64 texture_idx;
 } TextureView;
-
-typedef enum TEXTURE_COMPRESSION_TYPE_E {
-#define X_TEXTURE_COMPRESSION_TYPES \
-    X(PNG) \
-    X(BASISU) \
-    X(COUNT)
-#define X(type) \
-    TEXTURE_COMPRESSION_TYPE_##type,
-    X_TEXTURE_COMPRESSION_TYPES
-#undef X
-} TextureCompressionType;
-
-typedef struct TEXTURE_LOAD_INFO_T {
-    const char *name;
-    TextureCompressionType compression_type;
-
-    struct {
-        u8 *start;
-        i64 len;
-    } bytes;
-} TextureLoadInfo;
-
-typedef struct TEXTURES_T {
-    ARRAY_FIELDS(Texture*)
-} Textures;
 
 typedef enum TEXTURE_SAMPLE_FILTER_TYPE_E {
 #define X_TEXTURE_SAMPLE_FILTER_TYPES \
@@ -76,10 +50,6 @@ typedef struct TEXTURE_SAMPLE_INFO_T {
     } wrap;
 } TextureSampleInfo;
 
-Texture *texture_load(const TextureLoadInfo *load_info);
-
-void texture_unload(Texture *texture);
-
-rgba32f texture_sample(const Texture *texture, f32x2 coord, TextureSampleInfo info);
+rgba32f texture_sample(Framebuffer *texture, f32x2 coord, TextureSampleInfo info);
 
 #endif //BRITANNICUS_TEXTURE_H

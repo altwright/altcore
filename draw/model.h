@@ -70,7 +70,7 @@ typedef struct MESHES_T {
 typedef struct MODEL_T {
     Arena *arena;
     Meshes meshes;
-    Textures textures;
+    Framebuffers textures;
 } Model;
 
 typedef enum MODEL_DATA_TYPE_E {

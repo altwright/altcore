@@ -176,6 +176,17 @@ Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info) {
                             if (!image_bytes) {
                                 crash_msg("Failed to decompress image\n");
                             }
+                            pixel_buf->size = (i32x2){
+                                .width = width,
+                                .height = height,
+                            };
+
+                            pixel_buf->scissor = (f32x4){
+                                .start_x = 0,
+                                .start_y = 0,
+                                .width = (f32) width,
+                                .height = (f32) height,
+                            };
 
                             i64 uncompressed_px_size = pixel_size(load_info->dst_format);
                             pixel_buf->arena = arena_make(width * height * uncompressed_px_size);
@@ -187,7 +198,7 @@ Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info) {
                                 .len = width * height * uncompressed_px_size,
                             };
                             ARRAY_MAKE(&uncompressed->bytes);
-                            uncompressed->pitch = pixel_buf->size.width * uncompressed_px_size;
+                            uncompressed->pitch = width * uncompressed_px_size;
 
                             for (i64 y_idx = 0; y_idx < height; y_idx++) {
                                 for (i64 x_idx = 0; x_idx < width; x_idx++) {
@@ -209,18 +220,6 @@ Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info) {
                                     );
                                 }
                             }
-
-                            pixel_buf->size = (i32x2){
-                                .width = width,
-                                .height = height,
-                            };
-
-                            pixel_buf->scissor = (f32x4){
-                                .start_x = 0,
-                                .start_y = 0,
-                                .width = (f32) width,
-                                .height = (f32) height,
-                            };
 
                             stbi_image_free(image_bytes);
                             break;

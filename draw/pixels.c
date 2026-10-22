@@ -189,7 +189,7 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                         break;
                 }
 
-                alpha_blend_32f(dst->data, new_src.data, offsetof(rgba32f, a));
+                alpha_blend_32f(dst->data, new_src.data, offsetof(rgba32f, a) / sizeof(f32));
                 break;
             }
             default:

@@ -11,6 +11,10 @@
 typedef struct FRAMEBUFFER_T Framebuffer;
 typedef struct RENDERER_T Renderer;
 
+typedef struct FRAMEBUFFERS_T {
+    ARRAY_FIELDS(Framebuffer*)
+} Framebuffers;
+
 typedef enum FRAMEBUFFER_TYPE_E {
 #ifndef X_FRAMEBUFFER_TYPES
 #define X_FRAMEBUFFER_TYPES \
