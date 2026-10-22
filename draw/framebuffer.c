@@ -344,8 +344,16 @@ rgba32f framebuffer_get_sample(Framebuffer *fb, f32x2 normalized_coord, Framebuf
     framebuffer_impl_get_bytes(fb, &bytes, &pitch);
 
     FramebufferPixelInfo* pixel_buf_info = &texture_info.data.pixel;
-    i32 p_x = (i32) (((f32) pixel_buf_info->size.x * normalized_coord.u) + 0.5f);
-    i32 p_y = (i32) (((f32) pixel_buf_info->size.y * normalized_coord.v) + 0.5f);
+    i32 p_x = (i32) (((f32) pixel_buf_info->size.width * normalized_coord.u) + 0.5f);
+    i32 p_y = (i32) (((f32) pixel_buf_info->size.height * normalized_coord.v) + 0.5f);
+
+    if (p_x >= pixel_buf_info->size.width) {
+        p_x = pixel_buf_info->size.width - 1;
+    }
+
+    if (p_y >= pixel_buf_info->size.height) {
+        p_y = pixel_buf_info->size.height - 1;
+    }
 
     i64 px_size = pixel_size(pixel_buf_info->format);
 

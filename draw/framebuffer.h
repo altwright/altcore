@@ -112,13 +112,6 @@ typedef struct FRAMEBUFFER_INFO_T {
     } data;
 } FramebufferInfo;
 
-typedef struct FRAMEBUFFER_VIEW_T {
-    f32x2 offset;
-    f32x2 scale;
-    f32 rotation;
-    i64 texture_idx;
-} FramebufferView;
-
 typedef enum FRAMEBUFFER_SAMPLE_FILTER_MODE_E {
 #define X_FRAMEBUFFER_SAMPLE_FILTER_MODES \
     X(NEAREST) \

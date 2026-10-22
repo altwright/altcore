@@ -30,12 +30,19 @@ typedef enum MESH_PRIMITIVE_MATERIAL_TYPE_E {
 #undef X
 } MeshPrimitiveMaterialType;
 
+typedef struct MESH_PRIMITIVE_TEXTURE_VIEW_T {
+    f32x2 offset;
+    f32x2 scale;
+    f32 rotation;
+    i64 texture_idx;
+} MeshPrimitiveTextureView;
+
 typedef struct MESH_PRIMITIVE_MATERIAL_T {
     MeshPrimitiveMaterialType type;
 
     struct {
         struct {
-            FramebufferView texture_view;
+            MeshPrimitiveTextureView texture_view;
         } basic;
     } data;
 } MeshPrimitiveMaterial;
