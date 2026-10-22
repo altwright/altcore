@@ -112,11 +112,53 @@ typedef struct FRAMEBUFFER_INFO_T {
     } data;
 } FramebufferInfo;
 
+typedef struct FRAMEBUFFER_VIEW_T {
+    f32x2 offset;
+    f32x2 scale;
+    f32 rotation;
+    i64 texture_idx;
+} FramebufferView;
+
+typedef enum FRAMEBUFFER_SAMPLE_FILTER_MODE_E {
+#define X_FRAMEBUFFER_SAMPLE_FILTER_MODES \
+    X(NEAREST) \
+    X(COUNT)
+#define X(mode) \
+    FRAMEBUFFER_SAMPLE_FILTER_MODE_##mode,
+    X_FRAMEBUFFER_SAMPLE_FILTER_MODES
+#undef X
+} FramebufferSampleFilterMode;
+
+typedef enum FRAMEBUFFER_SAMPLE_WRAP_MODE_E {
+#define X_FRAMEBUFFER_SAMPLE_WRAP_MODES \
+    X(CLAMP) \
+    X(REPEAT) \
+    X(MIRROR) \
+    X(COUNT)
+#define X(mode) \
+    FRAMEBUFFER_SAMPLE_WRAP_MODE_##mode,
+    X_FRAMEBUFFER_SAMPLE_WRAP_MODES
+#undef X
+} FramebufferSampleWrapMode;
+
+typedef struct FRAMEBUFFER_SAMPLE_INFO_T {
+    struct {
+        FramebufferSampleFilterMode min;
+        FramebufferSampleFilterMode mag;
+    } filter;
+
+    struct {
+        FramebufferSampleWrapMode horizontal;
+        FramebufferSampleWrapMode vertical;
+    } wrap;
+} FramebufferSampleInfo;
+
 Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info);
 
 void framebuffer_destroy(Framebuffer *fb);
 
 FramebufferInfo framebuffer_get_info(const Framebuffer *fb);
 
+rgba32f framebuffer_get_sample(Framebuffer *fb, f32x2 normalized_coord, FramebufferSampleInfo info);
 
 #endif //ALTCORE_FRAMEBUFFER_H

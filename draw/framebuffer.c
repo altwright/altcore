@@ -9,6 +9,7 @@
 #include "../memory.h"
 #include "../debug.h"
 #include "../arenas.h"
+#include "../maths.h"
 #include "window.h"
 #include "framebuffer.impl.h"
 
@@ -329,4 +330,35 @@ void framebuffer_impl_set_scissor(Framebuffer *fb, f32x4 region) {
             crash_msg("Unhandled framebuffer type %d\n", fb->type);
             break;
     }
+}
+
+rgba32f framebuffer_get_sample(Framebuffer *fb, f32x2 normalized_coord, FramebufferSampleInfo info) {
+    rgba32f sample = {};
+
+    normalized_coord.u = SATURATE(normalized_coord.u);
+    normalized_coord.v = SATURATE(normalized_coord.v);
+
+    FramebufferInfo texture_info = framebuffer_get_info(fb);
+    u8* bytes = nullptr;
+    i64 pitch = 0;
+    framebuffer_impl_get_bytes(fb, &bytes, &pitch);
+
+    FramebufferPixelInfo* pixel_buf_info = &texture_info.data.pixel;
+    i32 p_x = (i32) (((f32) pixel_buf_info->size.x * normalized_coord.u) + 0.5f);
+    i32 p_y = (i32) (((f32) pixel_buf_info->size.y * normalized_coord.v) + 0.5f);
+
+    i64 px_size = pixel_size(pixel_buf_info->format);
+
+    pixel_set(
+        &(Pixel){
+            .format = PIXEL_FORMAT_RGBA32F,
+            .start = (u8 *) sample.data,
+        },
+        &(Pixel){
+            .format = pixel_buf_info->format,
+            .start = bytes + p_y * pitch + p_x * px_size
+        }
+    );
+
+    return sample;
 }

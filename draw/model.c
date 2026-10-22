@@ -367,7 +367,7 @@ Model model_load(ModelLoadInfo *info) {
                     if (prim_material->has_pbr_metallic_roughness
                         && prim_material->pbr_metallic_roughness.base_color_texture.texture) {
                         prim->material.type = MESH_PRIMITIVE_MATERIAL_TYPE_BASIC;
-                        TextureView *material_tex_view = &prim->material.data.basic.texture_view;
+                        FramebufferView *material_tex_view = &prim->material.data.basic.texture_view;
                         cgltf_texture_view color_tex_view = prim_material->pbr_metallic_roughness.base_color_texture;
                         if (color_tex_view.has_transform) {
                             for (i64 component_idx = 0; component_idx < 2; component_idx++) {

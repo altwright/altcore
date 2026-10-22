@@ -5,9 +5,9 @@
 #ifndef BRITANNICUS_MODEL_H
 #define BRITANNICUS_MODEL_H
 
+#include "framebuffer.h"
 #include "vertex_buffer.h"
 #include "index_buffer.h"
-#include "texture.h"
 #include "../../strings.h"
 
 typedef enum MESH_PRIMITIVE_TYPE_E {
@@ -35,7 +35,7 @@ typedef struct MESH_PRIMITIVE_MATERIAL_T {
 
     struct {
         struct {
-            TextureView texture_view;
+            FramebufferView texture_view;
         } basic;
     } data;
 } MeshPrimitiveMaterial;
