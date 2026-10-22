@@ -31,7 +31,6 @@ set(HEADER_FILEPATHS
         draw/ui/widgets.h
         draw/fonts.h
         draw/lights.h
-        draw/image.h
         draw/vertex_buffer.h
         draw/index_buffer.h
         draw/shader.h
@@ -75,7 +74,6 @@ add_library(${PROJECT_NAME}
         draw/ui/widgets.c
         draw/texture.c
         draw/fonts.c
-        draw/image.c
         draw/cmds/clear.c
         draw/cmds/draw_rect.c
         draw/cmds/draw_text.c

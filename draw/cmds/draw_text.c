@@ -23,12 +23,14 @@ static void draw_text_line(
     i32x2 *cursor
 ) {
     FramebufferInfo dst_fb_info = framebuffer_get_info(dst_fb);
-    i32x2 dst_fb_size = dst_fb_info.data.pixel_buf.size;
-    u8 *dst_fb_bytes = framebuffer_impl_get_bytes(dst_fb);
+    i32x2 dst_fb_size = dst_fb_info.data.pixel.size;
+    u8 *dst_fb_bytes = nullptr;
+    i64 dst_fb_pitch = 0;
+    framebuffer_impl_get_bytes(dst_fb, &dst_fb_bytes, &dst_fb_pitch);
     stbtt_fontinfo *font_info = font_impl_get_info(font);
     f32 scale_factor = font_impl_get_scale_factor(font, font_height_px);
 
-    i32x4 dst_fb_scissor = dst_fb_info.data.pixel_buf.scissor;
+    i32x4 dst_fb_scissor = ftoi32x4(dst_fb_info.data.pixel.scissor);
 
     i32x4 dst_fb_intersect = i32x4_intersect(
         (i32x4){
@@ -84,7 +86,7 @@ static void draw_text_line(
                                                &bitmap_height);
             }
 
-            PixelFormat px_format = dst_fb_info.data.pixel_buf.format;
+            PixelFormat px_format = dst_fb_info.data.pixel.format;
             i32 px_size = (i32) pixel_size(px_format);
 
             for (i32 bitmap_row_idx = 0; bitmap_row_idx < bitmap_height; bitmap_row_idx++) {
@@ -107,7 +109,7 @@ static void draw_text_line(
                     }
 
                     u8 *px_start =
-                            dst_fb_bytes + (dst_y_idx * dst_fb_info.data.pixel_buf.pitch_bytes + dst_x_idx * px_size);
+                            dst_fb_bytes + (dst_y_idx * dst_fb_pitch + dst_x_idx * px_size);
 
                     rgba8 final_color = text_color;
                     f32 bitmap_alpha = (f32) bitmap_byte / 255.f;
@@ -115,7 +117,7 @@ static void draw_text_line(
                     final_color.a = (u8) (bitmap_alpha * color_alpha * 255.f);
 
                     Pixel dst = {
-                        .format = dst_fb_info.data.pixel_buf.format,
+                        .format = dst_fb_info.data.pixel.format,
                         .start = px_start,
                     };
 

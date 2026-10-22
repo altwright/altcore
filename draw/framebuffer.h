@@ -27,32 +27,84 @@ typedef enum FRAMEBUFFER_TYPE_E {
 #undef X
 } FramebufferType;
 
-typedef struct PIXEL_BUFFER_CREATE_INFO_T {
-    PixelFormat format;
-    i32x2 size;
-} PixelBufferCreateInfo;
+typedef enum FRAMEBUFFER_CREATE_ACTION_TYPE_E {
+#define X_FRAMEBUFFER_CREATE_ACTION_TYPES \
+    X(NEW) \
+    X(LOAD) \
+    X(COUNT)
+#define X(action) \
+    FRAMEBUFFER_CREATE_ACTION_TYPE_##action,
+    X_FRAMEBUFFER_CREATE_ACTION_TYPES
+#undef X
+} FramebufferCreateActionType;
+
+typedef enum FRAMEBUFFER_LOAD_COMPRESSION_TYPE_E {
+#define X_FRAMEBUFFER_LOAD_COMPRESSION_TYPES \
+    X(NONE) \
+    X(JPEG) \
+    X(PNG) \
+    X(COUNT)
+#define X(type) \
+    FRAMEBUFFER_LOAD_COMPRESSION_TYPE_##type,
+    X_FRAMEBUFFER_LOAD_COMPRESSION_TYPES
+#undef X
+} FramebufferLoadCompressionType;
+
+typedef struct FRAMEBUFFER_PIXEL_CREATE_INFO_T {
+    FramebufferCreateActionType type;
+
+    union {
+        struct {
+            PixelFormat dst_format;
+            i32x2 size;
+        } new;
+
+        struct {
+            PixelFormat dst_format;
+            FramebufferLoadCompressionType type;
+
+            union {
+                struct {
+                    u8 *data;
+                    PixelFormat src_format;
+                    i64 pitch;
+                    i32x2 size;
+                } none;
+
+                struct {
+                    u8 *data;
+                    i64 len;
+                } png;
+
+                struct {
+                    u8 *data;
+                    i64 len;
+                } jpeg;
+            } data;
+        } load;
+    } data;
+} FramebufferPixelCreateInfo;
 
 typedef struct FRAMEBUFFER_CREATE_INFO_T {
     Renderer *renderer;
     FramebufferType type;
 
     union {
-        PixelBufferCreateInfo pixel_buf;
+        FramebufferPixelCreateInfo pixel;
     } data;
 } FramebufferCreateInfo;
 
-typedef struct PIXEL_BUFFER_INFO_T {
+typedef struct FRAMEBUFFER_PIXEL_INFO_T {
     PixelFormat format;
     i32x2 size;
-    i64 pitch_bytes;
-    i32x4 scissor;
-} PixelBufferInfo;
+    f32x4 scissor;
+} FramebufferPixelInfo;
 
 typedef struct FRAMEBUFFER_INFO_T {
     FramebufferType type;
 
     union {
-        PixelBufferInfo pixel_buf;
+        FramebufferPixelInfo pixel;
     } data;
 } FramebufferInfo;
 

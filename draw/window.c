@@ -284,14 +284,16 @@ void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf) {
     FramebufferInfo info = framebuffer_get_info(buf);
     assert(info.type == FRAMEBUFFER_TYPE_PIXEL);
 
-    u8* bytes = framebuffer_impl_get_bytes(buf);
+    u8* bytes = nullptr;
+    i64 pitch = 0;
+    framebuffer_impl_get_bytes(buf, &bytes, &pitch);
 
     SDL_Surface* surface = SDL_CreateSurfaceFrom(
-        info.data.pixel_buf.size.x,
-        info.data.pixel_buf.size.y,
-        pixel_impl_to_sdl_format(info.data.pixel_buf.format),
+        info.data.pixel.size.x,
+        info.data.pixel.size.y,
+        pixel_impl_to_sdl_format(info.data.pixel.format),
         bytes,
-        (i32)info.data.pixel_buf.pitch_bytes
+        (i32)pitch
     );
 
     SDL_BlitSurface(surface, nullptr, handle->window_surface, nullptr);

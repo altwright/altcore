@@ -47,13 +47,14 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
         crash_msg("Unhandled framebuffer type %d\n", dst_fb_info.type);
     }
 
-    i32x2 dst_fb_size = dst_fb_info.data.pixel_buf.size;
-    i64 dst_fb_pitch = dst_fb_info.data.pixel_buf.pitch_bytes;
-    PixelFormat dst_fb_pixel_format = dst_fb_info.data.pixel_buf.format;
+    i32x2 dst_fb_size = dst_fb_info.data.pixel.size;
+    PixelFormat dst_fb_pixel_format = dst_fb_info.data.pixel.format;
     i64 dst_fb_pixel_format_size = pixel_size(dst_fb_pixel_format);
-    f32x4 dst_fb_scissor = itof32x4(dst_fb_info.data.pixel_buf.scissor);
+    f32x4 dst_fb_scissor = dst_fb_info.data.pixel.scissor;
 
-    u8 *dst_fb_bytes = framebuffer_impl_get_bytes(data->dst_framebuffer);
+    u8 *dst_fb_bytes = nullptr;
+    i64 dst_fb_pitch = 0;
+    framebuffer_impl_get_bytes(data->dst_framebuffer, &dst_fb_bytes, &dst_fb_pitch);
 
     for (i64 mesh_idx = 0; mesh_idx < data->model->meshes.len; mesh_idx++) {
         Mesh *mesh = ARRAY_GET(&data->model->meshes, mesh_idx);

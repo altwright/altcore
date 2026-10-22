@@ -7,7 +7,7 @@
 
 #include "framebuffer.h"
 
-u8* framebuffer_impl_get_bytes(Framebuffer *fb);
+void framebuffer_impl_get_bytes(Framebuffer *fb, u8** out_bytes, i64* out_pitch);
 
 void framebuffer_impl_set_scissor(Framebuffer *fb, f32x4 region);
 

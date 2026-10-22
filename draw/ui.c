@@ -221,7 +221,7 @@ UiContext *ui_create(const UiCreateInfo *create_info) {
         crash_msg("Framebuffer is not a pixel buffer\n");
     }
 
-    f32x2 canvas_size = itof32x2(canvas_info.data.pixel_buf.size);
+    f32x2 canvas_size = itof32x2(canvas_info.data.pixel.size);
     Clay_Dimensions ui_size = {
         .width = canvas_size.width,
         .height = canvas_size.height
@@ -290,7 +290,7 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
     if (canvas_info.type != FRAMEBUFFER_TYPE_PIXEL) {
         crash_msg("Expected a pixel framebuffer\n");
     }
-    f32x2 canvas_size = itof32x2(canvas_info.data.pixel_buf.size);
+    f32x2 canvas_size = itof32x2(canvas_info.data.pixel.size);
 
     Clay_Dimensions ui_size = {
         .width = canvas_size.width,
@@ -383,8 +383,8 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
     f32x4 base_scissor = {
         .start_x = 0,
         .start_y = 0,
-        .width = (f32) fb_info.data.pixel_buf.size.width,
-        .height = (f32) fb_info.data.pixel_buf.size.height,
+        .width = (f32) fb_info.data.pixel.size.width,
+        .height = (f32) fb_info.data.pixel.size.height,
     };
     ARRAY_PUSH(&scissor_stack, &base_scissor);
 
@@ -508,11 +508,13 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                     crash_msg("Expected pixel framebuffer, not type %d\n", image_fb_info.type);
                 }
 
-                u8 *image_fb_bytes = framebuffer_impl_get_bytes(image_fb);
+                u8 *image_fb_bytes = nullptr;
+                i64 image_fb_pitch = 0;
+                framebuffer_impl_get_bytes(image_fb, &image_fb_bytes, &image_fb_pitch);
                 blit_data->src_blit.pixel_bytes = image_fb_bytes;
-                blit_data->src_blit.px_format = image_fb_info.data.pixel_buf.format;
-                blit_data->src_blit.size = image_fb_info.data.pixel_buf.size;
-                blit_data->src_blit.pitch_bytes = image_fb_info.data.pixel_buf.pitch_bytes;
+                blit_data->src_blit.px_format = image_fb_info.data.pixel.format;
+                blit_data->src_blit.size = image_fb_info.data.pixel.size;
+                blit_data->src_blit.pitch_bytes = image_fb_pitch;
 
                 ARRAY_PUSH(&render_cmds, &blit_cmd);
 
@@ -587,7 +589,7 @@ u16 ui_height_px(UiContext *ui, f64 pct) {
         return 0;
     }
 
-    i32x2 canvas_size = canvas_info.data.pixel_buf.size;
+    i32x2 canvas_size = canvas_info.data.pixel.size;
 
     i32 px_height = (i32) ((f32) canvas_size.height * pct);
 
@@ -604,7 +606,7 @@ u16 ui_width_px(UiContext *ui, f64 pct) {
         return 0;
     }
 
-    i32x2 canvas_size = canvas_info.data.pixel_buf.size;
+    i32x2 canvas_size = canvas_info.data.pixel.size;
 
     i32 px_width = (i32) ((f32) canvas_size.width * pct);
 

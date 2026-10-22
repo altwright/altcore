@@ -15,10 +15,11 @@ void soft_cmd_clear(
     FramebufferInfo px_buf_info = framebuffer_get_info(px_buf);
     assert(px_buf_info.type == FRAMEBUFFER_TYPE_PIXEL);
 
-    u8 *px_buf_bytes = framebuffer_impl_get_bytes(px_buf);
-    PixelFormat px_format = px_buf_info.data.pixel_buf.format;
-    i32x2 px_buf_size = px_buf_info.data.pixel_buf.size;
-    i64 px_buf_pitch_bytes = px_buf_info.data.pixel_buf.pitch_bytes;
+    u8 *px_buf_bytes = nullptr;
+    i64 px_buf_pitch_bytes = 0;
+    framebuffer_impl_get_bytes(px_buf, &px_buf_bytes, &px_buf_pitch_bytes);
+    PixelFormat px_format = px_buf_info.data.pixel.format;
+    i32x2 px_buf_size = px_buf_info.data.pixel.size;
 
     i32 px_stride = (i32)pixel_size(px_format);
     Pixel src_px = {
