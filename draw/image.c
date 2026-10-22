@@ -54,10 +54,10 @@ Framebuffer *image_load(const ImageLoadInfo *info) {
             for (i64 y_idx = 0; y_idx < height; y_idx++) {
                 for (i64 x_idx = 0; x_idx < width; x_idx++) {
                     u8 *fb_px_start = fb_bytes + (y_idx * fb_info.data.pixel_buf.pitch_bytes) + (x_idx * fb_px_stride);
-                    stbi_uc *image_px_start = image_bytes + (y_idx * width * sizeof(argb8)) + (x_idx * sizeof(argb8));
+                    stbi_uc *image_px_start = image_bytes + (y_idx * width * sizeof(rgba8)) + (x_idx * sizeof(rgba8));
 
                     Pixel src = {
-                        .format = PIXEL_FORMAT_ABGR8,
+                        .format = PIXEL_FORMAT_RGBA8,
                         .start = image_px_start,
                     };
 

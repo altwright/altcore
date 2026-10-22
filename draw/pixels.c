@@ -13,16 +13,12 @@ i64 pixel_size(PixelFormat format) {
     i32 size = 0;
 
     switch (format) {
-        case PIXEL_FORMAT_ARGB8: {
-            size = sizeof(argb8);
+        case PIXEL_FORMAT_BGRA8: {
+            size = sizeof(bgra8);
             break;
         }
         case PIXEL_FORMAT_RGBA8: {
             size = sizeof(rgba8);
-            break;
-        }
-        case PIXEL_FORMAT_ABGR8: {
-            size = sizeof(abgr8);
             break;
         }
         default:
@@ -37,12 +33,8 @@ SDL_PixelFormat pixel_impl_to_sdl_format(PixelFormat format) {
     SDL_PixelFormat sdl_format = {};
 
     switch (format) {
-        case PIXEL_FORMAT_ARGB8: {
-            sdl_format = SDL_PIXELFORMAT_ARGB8888;
-            break;
-        }
         case PIXEL_FORMAT_RGBA8: {
-            sdl_format = SDL_PIXELFORMAT_RGBA8888;
+            sdl_format = SDL_PIXELFORMAT_ABGR8888;
             break;
         }
         default:
@@ -57,13 +49,13 @@ PixelFormat pixel_impl_from_sdl_format(SDL_PixelFormat sdl_format) {
     PixelFormat pixel_format = PIXEL_FORMAT_COUNT;
 
     switch (sdl_format) {
-        case SDL_PIXELFORMAT_RGBA8888: {
+        case SDL_PIXELFORMAT_ABGR8888: {
             pixel_format = PIXEL_FORMAT_RGBA8;
             break;
         }
         case SDL_PIXELFORMAT_ARGB8888:
         case SDL_PIXELFORMAT_XRGB8888: {
-            pixel_format = PIXEL_FORMAT_ARGB8;
+            pixel_format = PIXEL_FORMAT_BGRA8;
             break;
         }
         default:
@@ -131,11 +123,11 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                 alpha_blend_8(dst->data, src->data, offsetof(rgba8, a));
                 break;
             }
-            case PIXEL_FORMAT_ARGB8: {
-                auto dst = (argb8 *) dst_px->start;
-                auto src = (const argb8 *) src_px->start;
+            case PIXEL_FORMAT_BGRA8: {
+                auto dst = (bgra8 *) dst_px->start;
+                auto src = (const bgra8 *) src_px->start;
 
-                alpha_blend_8(dst->data, src->data, offsetof(argb8, a));
+                alpha_blend_8(dst->data, src->data, offsetof(bgra8, a));
                 break;
             }
             default:
@@ -148,23 +140,8 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                 auto dst = (rgba8 *) dst_px->start;
                 rgba8 new_src = {};
                 switch (src_px->format) {
-                    case PIXEL_FORMAT_ARGB8: {
-                        auto src = (const argb8 *) src_px->start;
-
-                        new_src = (rgba8){
-                            .r = src->r,
-                            .g = src->g,
-                            .b = src->b,
-                            .a = src->a
-                        };
-
-                        break;
-                    }
-                    case PIXEL_FORMAT_ABGR8: {
-                        auto src = (const abgr8 *) src_px->start;
-                        if (src->a == 0) {
-                            break;
-                        }
+                    case PIXEL_FORMAT_BGRA8: {
+                        auto src = (const bgra8 *) src_px->start;
 
                         new_src = (rgba8){
                             .r = src->r,
@@ -200,10 +177,10 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                 auto dst = (rgba32f *) dst_px->start;
                 rgba32f new_src = {};
                 switch (src_px->format) {
-                    case PIXEL_FORMAT_ABGR8: {
-                        auto src = (abgr8 *) src_px->start;
+                    case PIXEL_FORMAT_RGBA8: {
+                        auto src = (rgba8 *) src_px->start;
                         for (i64 cmp_idx = 0; cmp_idx < 4; cmp_idx++) {
-                            new_src.data[3 - cmp_idx] = (f32) src->data[cmp_idx] / 255.f;
+                            new_src.data[cmp_idx] = (f32) src->data[cmp_idx] / 255.f;
                         }
                         break;
                     }

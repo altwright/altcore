@@ -297,11 +297,11 @@ Model model_load(ModelLoadInfo *info) {
                             case cgltf_type_vec4: {
                                 switch (prim_attr.data->component_type) {
                                     case cgltf_component_type_r_8u: {
-                                        vert_attr->type = VERTEX_ATTRIBUTE_TYPE_ABGR8;
+                                        vert_attr->type = VERTEX_ATTRIBUTE_TYPE_RGBA8;
                                         break;
                                     }
                                     case cgltf_component_type_r_16u: {
-                                        vert_attr->type = VERTEX_ATTRIBUTE_TYPE_ABGR16;
+                                        vert_attr->type = VERTEX_ATTRIBUTE_TYPE_RGBA16;
                                         break;
                                     }
                                     case cgltf_component_type_r_32f: {

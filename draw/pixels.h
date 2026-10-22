@@ -11,10 +11,8 @@ typedef enum PIXEL_FORMAT_E {
 #ifndef X_PIXEL_FORMATS
 #define X_PIXEL_FORMATS \
     X(RGBA8) \
-    X(ABGR8) \
-    X(ARGB8) \
+    X(BGRA8) \
     X(RGBA16) \
-    X(ABGR16) \
     X(RGBA32F) \
     X(COUNT)
 #endif
@@ -28,47 +26,31 @@ typedef enum PIXEL_FORMAT_E {
 
 typedef union RGBA8_U {
     struct {
-        u8 a, b, g, r;
+        u8 r, g, b, a;
     };
 
     u8 data[4];
 } rgba8;
 
-typedef union ABGR8_U {
-    struct {
-        u8 r, g, b, a;
-    };
-
-    u8 data[4];
-} abgr8;
-
-typedef union ARGB8_U {
+typedef union BGRA8_U {
     struct {
         u8 b, g, r, a;
     };
 
     u8 data[4];
-} argb8;
+} bgra8;
 
 typedef union RGBA16_U {
-    struct {
-        u16 a, b, g, r;
-    };
-
-    u16 data[4];
-} rgba16;
-
-typedef union ABGR16_U {
     struct {
         u16 r, g, b, a;
     };
 
     u16 data[4];
-} abgr16;
+} rgba16;
 
 typedef union RGBA32F_U {
     struct {
-        f32 a, b, g, r;
+        f32 r, g, b, a;
     };
 
     f32 data[4];

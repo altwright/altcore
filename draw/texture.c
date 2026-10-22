@@ -59,7 +59,7 @@ Texture *texture_load(const TextureLoadInfo *load_info) {
 
             memcpy(texture->data.uncompressed.bytes.data, image_bytes, image_bytes_size);
 
-            texture->data.uncompressed.format = PIXEL_FORMAT_ABGR8;
+            texture->data.uncompressed.format = PIXEL_FORMAT_RGBA8;
             texture->data.uncompressed.size = (i32x2){.width = width, .height = height};
 
             stbi_image_free(image_bytes);
