@@ -38,6 +38,8 @@ typedef union ABGR8_U {
     struct {
         u8 r, g, b, a;
     };
+
+    u8 data[4];
 } abgr8;
 
 typedef union ARGB8_U {

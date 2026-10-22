@@ -49,7 +49,8 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
 
     i32x2 dst_fb_size = dst_fb_info.data.pixel_buf.size;
     i64 dst_fb_pitch = dst_fb_info.data.pixel_buf.pitch_bytes;
-    i64 dst_fb_pixel_format_size = pixel_size(dst_fb_info.data.pixel_buf.format);
+    PixelFormat dst_fb_pixel_format = dst_fb_info.data.pixel_buf.format;
+    i64 dst_fb_pixel_format_size = pixel_size(dst_fb_pixel_format);
     f32x4 dst_fb_scissor = itof32x4(dst_fb_info.data.pixel_buf.scissor);
 
     u8 *dst_fb_bytes = framebuffer_impl_get_bytes(data->dst_framebuffer);
@@ -79,6 +80,7 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                             triangle_indices[vert_idx] = indices[start_indice_idx + vert_idx];
                             clip_space_triangle[vert_idx] = data->
                                     vert_shader_fn(triangle_indices[vert_idx], data->shader_data.bytes);
+                            clip_space_triangle[vert_idx].y *= -1;
                         }
 
                         // TODO: Handle tri passing through near plane
@@ -239,26 +241,24 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                                                  + bary.w * clip_space_tri_inv_w[2];
 
                                 for (i64 vert_idx = 0; vert_idx < 3; vert_idx++) {
-                                    bary.data[vert_idx] = (bary.data[vert_idx] * clip_space_tri_inv_w[vert_idx])
-                                                          / bary_inv_w;
+                                    bary.data[vert_idx] *= clip_space_tri_inv_w[vert_idx] / bary_inv_w;
                                 }
 
                                 rgba32f color = data->frag_shader_fn(
                                     frag,
                                     bary,
-                                    triangle_indices,
                                     data->shader_data.bytes
                                 );
 
                                 pixel_set(
                                     &(Pixel){
-                                        .format = dst_fb_info.data.pixel_buf.format,
-                                        .start = dst_fb_bytes + y_idx * dst_fb_pitch + x_idx *
-                                                 dst_fb_pixel_format_size,
+                                        .format = dst_fb_pixel_format,
+                                        .start = dst_fb_bytes + (y_idx * dst_fb_pitch + x_idx *
+                                                                 dst_fb_pixel_format_size),
                                     },
                                     &(Pixel){
                                         .format = PIXEL_FORMAT_RGBA32F,
-                                        .start = (u8*)color.data,
+                                        .start = (u8 *) color.data,
                                     }
                                 );
                             }

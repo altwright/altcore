@@ -66,6 +66,56 @@ Model model_load(ModelLoadInfo *info) {
                 mesh->parent_idx = -1;
             }
 
+            model.textures = (Textures){
+                .arena = model.arena,
+                .len = (i64) glb_data->textures_count,
+            };
+            ARRAY_MAKE(&model.textures);
+
+            for (i64 tex_idx = 0; tex_idx < glb_data->textures_count; tex_idx++) {
+                cgltf_texture *glb_texture = &glb_data->textures[tex_idx];
+                Texture **texture = ARRAY_GET(&model.textures, tex_idx);
+
+                TextureLoadInfo texture_create_info = {
+                    .name = glb_texture->name,
+                    .compression_type = TEXTURE_COMPRESSION_TYPE_COUNT,
+                };
+
+                cgltf_image *glb_image = glb_texture->image;
+                if (glb_texture->has_basisu) {
+                    texture_create_info.compression_type = TEXTURE_COMPRESSION_TYPE_BASISU;
+                    glb_image = glb_texture->basisu_image;
+                }
+
+                switch (texture_create_info.compression_type) {
+                    case TEXTURE_COMPRESSION_TYPE_COUNT: {
+                        if (strcmp(glb_image->mime_type, "image/png") == 0) {
+                            texture_create_info.compression_type = TEXTURE_COMPRESSION_TYPE_PNG;
+                        } else {
+                            crash_msg("Unhandled mime type %s\n", glb_image->mime_type);
+                        }
+                        break;
+                    }
+                    case TEXTURE_COMPRESSION_TYPE_BASISU: {
+                        if (strcmp(glb_image->mime_type, "image/ktx2") != 0) {
+                            crash_msg("Expected ktx2 mime type: %s\n", glb_image->mime_type);
+                        }
+                        break;
+                    }
+                    default:
+                        crash_msg("Unhandled texture compression type %d\n", texture_create_info.compression_type);
+                        break;
+                }
+
+                texture_create_info.bytes.start = glb_image->buffer_view->buffer->data + glb_image->buffer_view->offset;
+                if (glb_image->buffer_view->stride != 0) {
+                    crash_msg("Expected contiguous texture buffer\n");
+                }
+                texture_create_info.bytes.len = (i64) glb_image->buffer_view->size;
+
+                *texture = texture_load(&texture_create_info);
+            }
+
             for (i64 node_idx = 0; node_idx < scene->nodes_count; node_idx++) {
                 Mesh *mesh = ARRAY_GET(&model.meshes, node_idx);
                 cgltf_node *node = scene->nodes[node_idx];
@@ -295,6 +345,29 @@ Model model_load(ModelLoadInfo *info) {
                     };
 
                     prim->vertices = vertex_buffer_create(&vertex_buffer_info);
+
+                    prim->material.type = MESH_PRIMITIVE_MATERIAL_TYPE_COUNT;
+                    cgltf_material *prim_material = node_mesh_prim.material;
+                    if (prim_material->has_pbr_metallic_roughness
+                        && prim_material->pbr_metallic_roughness.base_color_texture.texture) {
+                        prim->material.type = MESH_PRIMITIVE_MATERIAL_TYPE_BASIC;
+                        TextureView *material_tex_view = &prim->material.data.basic.texture_view;
+                        cgltf_texture_view color_tex_view = prim_material->pbr_metallic_roughness.base_color_texture;
+                        if (color_tex_view.has_transform) {
+                            for (i64 component_idx = 0; component_idx < 2; component_idx++) {
+                                material_tex_view->offset.data[component_idx] =
+                                        color_tex_view.transform.offset[component_idx];
+                                material_tex_view->scale.data[component_idx] =
+                                        color_tex_view.transform.scale[component_idx];
+                            }
+
+                            material_tex_view->rotation = color_tex_view.transform.rotation;
+                        } else {
+                            material_tex_view->scale = (f32x2){.x = 1, .y = 1};
+                        }
+
+                        material_tex_view->texture_idx = color_tex_view.texture - glb_data->textures;
+                    }
                 }
             }
 
@@ -312,11 +385,16 @@ Model model_load(ModelLoadInfo *info) {
 }
 
 void model_unload(Model *model) {
+    ARRAY_FOR(texture, &model->textures) {
+        texture_unload(*texture);
+    }
+
     ARRAY_FOR(mesh, &model->meshes) {
         ARRAY_FOR(prim, &mesh->prims) {
             vertex_buffer_destroy(prim->vertices);
             index_buffer_destroy(prim->indices);
         }
     }
+
     arena_free(model->arena);
 }

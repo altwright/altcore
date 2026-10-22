@@ -13,6 +13,6 @@ typedef void (*ShaderDataInitFnPtr)(const Model *model, i64 mesh_idx, i64 prim_i
 
 typedef f32x4 (*VertexShaderFnPtr)(i64 indice, void *data);
 
-typedef rgba32f (*FragmentShaderFnPtr)(f32x3 fragment, f32x3 barycentric, i64 triangle[3], void *data);
+typedef rgba32f (*FragmentShaderFnPtr)(f32x3 fragment, f32x3 barycentric, void *data);
 
 #endif //BRITANNICUS_SHADER_H

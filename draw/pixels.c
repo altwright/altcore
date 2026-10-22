@@ -7,6 +7,8 @@
 #include "../debug.h"
 #include "../maths.h"
 
+constexpr f32 kEpsilon32f = 0.001f;
+
 i64 pixel_size(PixelFormat format) {
     i32 size = 0;
 
@@ -72,7 +74,7 @@ PixelFormat pixel_impl_from_sdl_format(SDL_PixelFormat sdl_format) {
     return pixel_format;
 }
 
-static void alpha_blend_8888(u8 dst[4], const u8 src[4], i64 alpha_idx) {
+static void alpha_blend_8(u8 dst[4], const u8 src[4], i64 alpha_idx) {
     if (src[alpha_idx] == 0) {
         return;
     }
@@ -97,6 +99,28 @@ static void alpha_blend_8888(u8 dst[4], const u8 src[4], i64 alpha_idx) {
     }
 }
 
+static void alpha_blend_32f(f32 dst[4], const f32 src[4], i64 alpha_idx) {
+    if (ABS(src[alpha_idx]) <= kEpsilon32f) {
+        return;
+    }
+
+    if (src[alpha_idx] >= 1) {
+        memcpy(dst, src, sizeof(f32x4));
+    } else {
+        f32x4 new_src = {};
+        f32x4 new_dst = {};
+
+        memcpy(new_src.data, src, sizeof(f32x4));
+        memcpy(new_dst.data, dst, sizeof(f32x4));
+
+        f32x4 alpha_src = f32x4_scale(new_src, new_src.data[alpha_idx]);
+        f32x4 inv_alpha_dst = f32x4_scale(new_dst, 1.f - new_src.data[alpha_idx]);
+        new_dst = f32x4_add(alpha_src, inv_alpha_dst);
+
+        memcpy(dst, new_dst.data, sizeof(f32x4));
+    }
+}
+
 void pixel_set(Pixel *dst_px, const Pixel *src_px) {
     if (dst_px->format == src_px->format) {
         switch (dst_px->format) {
@@ -104,14 +128,14 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                 auto dst = (rgba8 *) dst_px->start;
                 auto src = (const rgba8 *) src_px->start;
 
-                alpha_blend_8888(dst->data, src->data, offsetof(rgba8, a));
+                alpha_blend_8(dst->data, src->data, offsetof(rgba8, a));
                 break;
             }
             case PIXEL_FORMAT_ARGB8: {
                 auto dst = (argb8 *) dst_px->start;
                 auto src = (const argb8 *) src_px->start;
 
-                alpha_blend_8888(dst->data, src->data, offsetof(argb8, a));
+                alpha_blend_8(dst->data, src->data, offsetof(argb8, a));
                 break;
             }
             default:
@@ -168,8 +192,27 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                         break;
                 }
 
-                alpha_blend_8888(dst->data, new_src.data, offsetof(rgba8, a));
+                alpha_blend_8(dst->data, new_src.data, offsetof(rgba8, a));
 
+                break;
+            }
+            case PIXEL_FORMAT_RGBA32F: {
+                auto dst = (rgba32f *) dst_px->start;
+                rgba32f new_src = {};
+                switch (src_px->format) {
+                    case PIXEL_FORMAT_ABGR8: {
+                        auto src = (abgr8 *) src_px->start;
+                        for (i64 cmp_idx = 0; cmp_idx < 4; cmp_idx++) {
+                            new_src.data[3 - cmp_idx] = (f32) src->data[cmp_idx] / 255.f;
+                        }
+                        break;
+                    }
+                    default:
+                        crash_msg("Unhandled pixel format %d\n", src_px->format);
+                        break;
+                }
+
+                alpha_blend_32f(dst->data, new_src.data, offsetof(rgba32f, a));
                 break;
             }
             default:

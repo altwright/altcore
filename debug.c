@@ -28,6 +28,6 @@ void crash_msg_ex(const char* filename, i32 line_num, const char* fmt, ...) {
     vfprintf(stderr, fmt, args);
     va_end(args);
 
-    assert(0);
+    assert(false);
     exit(EXIT_FAILURE);
 }

@@ -7,8 +7,8 @@
 
 #include "vertex_buffer.h"
 #include "index_buffer.h"
+#include "texture.h"
 #include "../../strings.h"
-
 
 typedef enum MESH_PRIMITIVE_TYPE_E {
 #define X_MESH_PRIMITIVE_TYPES \
@@ -20,10 +20,31 @@ typedef enum MESH_PRIMITIVE_TYPE_E {
 #undef X
 } MeshPrimitiveType;
 
+typedef enum MESH_PRIMITIVE_MATERIAL_TYPE_E {
+#define X_MESH_PRIMITIVE_MATERIAL_TYPES \
+    X(BASIC) \
+    X(COUNT)
+#define X(type) \
+    MESH_PRIMITIVE_MATERIAL_TYPE_##type,
+    X_MESH_PRIMITIVE_MATERIAL_TYPES
+#undef X
+} MeshPrimitiveMaterialType;
+
+typedef struct MESH_PRIMITIVE_MATERIAL_T {
+    MeshPrimitiveMaterialType type;
+
+    struct {
+        struct {
+            TextureView texture_view;
+        } basic;
+    } data;
+} MeshPrimitiveMaterial;
+
 typedef struct MESH_PRIMITIVE_T {
     MeshPrimitiveType type;
     VertexBuffer *vertices;
     IndexBuffer *indices;
+    MeshPrimitiveMaterial material;
 } MeshPrimitive;
 
 typedef struct MESH_PRIMITIVES_T {
@@ -49,6 +70,7 @@ typedef struct MESHES_T {
 typedef struct MODEL_T {
     Arena *arena;
     Meshes meshes;
+    Textures textures;
 } Model;
 
 typedef enum MODEL_DATA_TYPE_E {

@@ -21,6 +21,13 @@ f32x2 f32x2_sub(f32x2 left, f32x2 right) {
     };
 }
 
+f32x2 f32x2_scale(f32x2 vec, f32 scale) {
+    return (f32x2) {
+        .x = vec.x * scale,
+        .y = vec.y * scale,
+    };
+}
+
 f32 f32x2_dist(f32x2 start, f32x2 end) {
     return glm_vec2_distance(start.data, end.data);
 }
@@ -29,33 +36,35 @@ f32 f32x3_dot(f32x3 left, f32x3 right) {
     return glm_vec3_dot(left.data, right.data);
 }
 
-f32x44 f32x44_id() {
-    return (f32x44){
-        .raw = GLM_MAT4_IDENTITY_INIT,
+f32x16 f32x16_matrix_id() {
+    return (f32x16){
+        .matrix = {
+            .raw = GLM_MAT4_IDENTITY_INIT
+        },
     };
 }
 
-f32x44 f32x44_look(f32x3 eye, f32x3 dir, f32x3 up) {
-    f32x44 out = {};
-    glm_look(eye.data, dir.data, up.data, out.raw);
+f32x16 f32x16_matrix_look(f32x3 eye, f32x3 dir, f32x3 up) {
+    f32x16 out = {};
+    glm_look(eye.data, dir.data, up.data, out.matrix.raw);
     return out;
 }
 
-f32x44 f32x44_perspective(f32 fov_y_rad, f32 aspect_ratio, f32 near_plane_dist, f32 far_plane_dist) {
-    f32x44 out = {};
-    glm_perspective(fov_y_rad, aspect_ratio, near_plane_dist, far_plane_dist, out.raw);
+f32x16 f32x16_matrix_perspective(f32 fov_y_rad, f32 aspect_ratio, f32 near_plane_dist, f32 far_plane_dist) {
+    f32x16 out = {};
+    glm_perspective(fov_y_rad, aspect_ratio, near_plane_dist, far_plane_dist, out.matrix.raw);
     return out;
 }
 
-f32x44 f32x44_mul(f32x44 left, f32x44 right) {
-    f32x44 out = {};
-    glm_mat4_mul(left.raw, right.raw, out.raw);
+f32x16 f32x16_matrix_mul(f32x16 left, f32x16 right) {
+    f32x16 out = {};
+    glm_mat4_mul(left.matrix.raw, right.matrix.raw, out.matrix.raw);
     return out;
 }
 
-f32x4 f32x44_mulv(f32x44 mat, f32x4 vec) {
+f32x4 f32x16_matrix_mulv(f32x16 left, f32x4 right) {
     f32x4 out = {};
-    glm_mat4_mulv(mat.raw, vec.data, out.data);
+    glm_mat4_mulv(left.matrix.raw, right.data, out.data);
     return out;
 }
 

@@ -93,16 +93,6 @@ typedef struct RENDER_CMD_DRAW_TEXT_T {
     i32 line_height_px;
 } RenderCmdDrawText;
 
-typedef enum RENDER_CMD_DRAW_PRIMITIVE_TYPE_E {
-#define X_RENDER_CMD_DRAW_PRIMITIVE_TYPES \
-    X(TRIANGLE) \
-    X(COUNT)
-#define X(type) \
-    RENDER_CMD_DRAW_PRIMITIVE_TYPE_##type,
-    X_RENDER_CMD_DRAW_PRIMITIVE_TYPES
-#undef X
-} RenderCmdDrawPrimitiveType;
-
 typedef enum RENDER_CMD_DRAW_MODEL_CULL_MODE_E {
 #define X_RENDER_CMD_DRAW_MODEL_CULL_MODES \
     X(BACK) \
@@ -114,17 +104,6 @@ typedef enum RENDER_CMD_DRAW_MODEL_CULL_MODE_E {
     X_RENDER_CMD_DRAW_MODEL_CULL_MODES
 #undef X
 } RenderCmdDrawModelCullMode;
-
-typedef enum RENDER_CMD_DRAW_MODEL_FACE_WINDING_E {
-#define X_RENDER_CMD_DRAW_MODEL_FACE_WINDINGS \
-    X(CCW) \
-    X(CW) \
-    X(COUNT)
-#define X(mode) \
-    RENDER_CMD_DRAW_MODEL_FACE_WINDING_##mode,
-    X_RENDER_CMD_DRAW_MODEL_FACE_WINDINGS
-#undef X
-} RenderCmdDrawModelFaceWinding;
 
 typedef struct RENDER_CMD_DRAW_MODEL_T {
     Framebuffer *dst_framebuffer;
@@ -141,7 +120,6 @@ typedef struct RENDER_CMD_DRAW_MODEL_T {
 
     ShaderDataInitFnPtr shader_data_init_fn;
 
-    RenderCmdDrawModelFaceWinding face_winding;
     RenderCmdDrawModelCullMode cull_mode;
 } RenderCmdDrawModel;
 

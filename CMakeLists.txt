@@ -35,6 +35,7 @@ set(HEADER_FILEPATHS
         draw/vertex_buffer.h
         draw/index_buffer.h
         draw/shader.h
+        draw/texture.h
 )
 
 set(SOURCE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -72,6 +73,7 @@ add_library(${PROJECT_NAME}
         draw/model/glb.c
         draw/ui.c
         draw/ui/widgets.c
+        draw/texture.c
         draw/fonts.c
         draw/image.c
         draw/cmds/clear.c
