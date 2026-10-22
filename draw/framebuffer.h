@@ -135,10 +135,7 @@ typedef enum FRAMEBUFFER_SAMPLE_WRAP_MODE_E {
 } FramebufferSampleWrapMode;
 
 typedef struct FRAMEBUFFER_SAMPLE_INFO_T {
-    struct {
-        FramebufferSampleFilterMode min;
-        FramebufferSampleFilterMode mag;
-    } filter;
+    FramebufferSampleFilterMode filter;
 
     struct {
         FramebufferSampleWrapMode horizontal;
@@ -152,6 +149,6 @@ void framebuffer_destroy(Framebuffer *fb);
 
 FramebufferInfo framebuffer_get_info(const Framebuffer *fb);
 
-rgba32f framebuffer_get_sample(Framebuffer *fb, f32x2 normalized_coord, FramebufferSampleInfo info);
+rgba32f framebuffer_get_sample(Framebuffer *fb, f32x2 normalized_coord, FramebufferSampleInfo sample_info);
 
 #endif //ALTCORE_FRAMEBUFFER_H

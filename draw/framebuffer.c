@@ -332,41 +332,60 @@ void framebuffer_impl_set_scissor(Framebuffer *fb, f32x4 region) {
     }
 }
 
-rgba32f framebuffer_get_sample(Framebuffer *fb, f32x2 normalized_coord, FramebufferSampleInfo info) {
+rgba32f framebuffer_get_sample(Framebuffer *fb, f32x2 normalized_coord, FramebufferSampleInfo sample_info) {
     rgba32f sample = {};
 
-    normalized_coord.u = SATURATE(normalized_coord.u);
-    normalized_coord.v = SATURATE(normalized_coord.v);
+    switch (sample_info.filter) {
+        case FRAMEBUFFER_SAMPLE_FILTER_MODE_NEAREST: {
 
-    FramebufferInfo texture_info = framebuffer_get_info(fb);
-    u8* bytes = nullptr;
-    i64 pitch = 0;
-    framebuffer_impl_get_bytes(fb, &bytes, &pitch);
+            if (sample_info.wrap.horizontal == FRAMEBUFFER_SAMPLE_WRAP_MODE_CLAMP
+                && sample_info.wrap.vertical == FRAMEBUFFER_SAMPLE_WRAP_MODE_CLAMP) {
 
-    FramebufferPixelInfo* pixel_buf_info = &texture_info.data.pixel;
-    i32 p_x = (i32) (((f32) pixel_buf_info->size.width * normalized_coord.u) + 0.5f);
-    i32 p_y = (i32) (((f32) pixel_buf_info->size.height * normalized_coord.v) + 0.5f);
+                normalized_coord.u = SATURATE(normalized_coord.u);
+                normalized_coord.v = SATURATE(normalized_coord.v);
+            }
+            else {
+                crash_msg("Unhandled wrap combination\n");
+            }
 
-    if (p_x >= pixel_buf_info->size.width) {
-        p_x = pixel_buf_info->size.width - 1;
-    }
+            FramebufferInfo texture_info = framebuffer_get_info(fb);
+            u8* bytes = nullptr;
+            i64 pitch = 0;
+            framebuffer_impl_get_bytes(fb, &bytes, &pitch);
 
-    if (p_y >= pixel_buf_info->size.height) {
-        p_y = pixel_buf_info->size.height - 1;
-    }
+            FramebufferPixelInfo* pixel_buf_info = &texture_info.data.pixel;
+            i32 p_x = (i32) (((f32) pixel_buf_info->size.width * normalized_coord.u) + 0.5f);
+            i32 p_y = (i32) (((f32) pixel_buf_info->size.height * normalized_coord.v) + 0.5f);
 
-    i64 px_size = pixel_size(pixel_buf_info->format);
+            if (p_x >= pixel_buf_info->size.width) {
+                p_x = pixel_buf_info->size.width - 1;
+            }
 
-    pixel_set(
-        &(Pixel){
-            .format = PIXEL_FORMAT_RGBA32F,
-            .start = (u8 *) sample.data,
-        },
-        &(Pixel){
-            .format = pixel_buf_info->format,
-            .start = bytes + p_y * pitch + p_x * px_size
+            if (p_y >= pixel_buf_info->size.height) {
+                p_y = pixel_buf_info->size.height - 1;
+            }
+
+            i64 px_size = pixel_size(pixel_buf_info->format);
+
+            pixel_set(
+                &(Pixel){
+                    .format = PIXEL_FORMAT_RGBA32F,
+                    .start = (u8 *) sample.data,
+                },
+                &(Pixel){
+                    .format = pixel_buf_info->format,
+                    .start = bytes + p_y * pitch + p_x * px_size
+                }
+            );
+
+            break;
         }
-    );
+        default:
+            crash_msg("Unhandled filter mode\n");
+            break;
+    }
+
+
 
     return sample;
 }
