@@ -192,22 +192,22 @@ static bool px_within_straight_border(f32x2 px_pos, f32x4 region, RenderCmdDrawR
            || (region.start_x + region.width) - px_pos.x <= widths.right_px;
 }
 
-void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
-    FramebufferInfo dst_fb_info = framebuffer_get_info(data->dst);
+void soft_cmd_draw_rect(RenderCmdDrawRect *cmd) {
+    FramebufferInfo dst_fb_info = framebuffer_get_info(cmd->dst);
     if (dst_fb_info.type != FRAMEBUFFER_TYPE_PIXEL) {
         crash_msg("Destination framebuffer is not a pixel buffer\n");
     }
 
     u8 *dst_fb_bytes = nullptr;
     i64 dst_fb_pitch_bytes = 0;
-    framebuffer_impl_get_bytes(data->dst, &dst_fb_bytes, &dst_fb_pitch_bytes);
+    framebuffer_impl_get_bytes(cmd->dst, &dst_fb_bytes, &dst_fb_pitch_bytes);
 
     PixelFormat dst_px_format = dst_fb_info.data.pixel.format;
     i64 dst_px_size = pixel_size(dst_px_format);
     i32x2 dst_fb_size = dst_fb_info.data.pixel.size;
-    i32x4 dst_fb_region = ftoi32x4(data->dst_region);
+    i32x4 dst_fb_region = ftoi32x4(cmd->dst_region);
     i32x4 dst_fb_scissor = ftoi32x4(dst_fb_info.data.pixel.scissor);
-    RenderCmdDrawRectCornerRadii corner_radii = data->corner_radii;
+    RenderCmdDrawRectCornerRadii corner_radii = cmd->corner_radii;
     bool not_rounded = !corner_radii.top_left_px
                        && !corner_radii.top_right_px
                        && !corner_radii.bottom_left_px
@@ -243,9 +243,9 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
         .y = (f32) dst_fb_region.start_y + (f32) dst_fb_region.height - corner_radii.bottom_right_px,
     };
 
-    switch (data->mode) {
+    switch (cmd->mode) {
         case RENDER_CMD_DRAW_RECT_MODE_FILL: {
-            rgba8 color = data->data.fill.color;
+            rgba8 color = cmd->data.fill.color;
             bool is_repeating_byte_color = (color.r == color.g == color.b == color.a);
 
             if (not_rounded && is_repeating_byte_color) {
@@ -288,8 +288,8 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
             break;
         }
         case RENDER_CMD_DRAW_RECT_MODE_BORDER: {
-            rgba8 color = data->data.border.color;
-            RenderCmdDrawRectBorderWidths widths = data->data.border.widths;
+            rgba8 color = cmd->data.border.color;
+            RenderCmdDrawRectBorderWidths widths = cmd->data.border.widths;
             f32x4 region = {
                 .start_x = (f32) dst_start_x,
                 .start_y = (f32) dst_start_y,
@@ -341,6 +341,32 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *data) {
             break;
         }
         case RENDER_CMD_DRAW_RECT_MODE_BLIT: {
+            auto blit_data = &cmd->data.blit;
+            for (i32 dst_y_idx = dst_start_y; dst_y_idx < dst_end_y; dst_y_idx++) {
+                for (i32 dst_x_idx = dst_start_x; dst_x_idx < dst_end_x; dst_x_idx++) {
+                    i64 px_idx = dst_y_idx * dst_fb_pitch_bytes + dst_x_idx * dst_px_size;
+
+                    f32 dst_y_pct = (f32) (dst_y_idx - dst_start_y) / (f32) (dst_end_y - dst_start_y);
+                    f32 dst_x_pct = (f32) (dst_x_idx - dst_start_x) / (f32) (dst_end_x - dst_start_x);
+                    rgba32f sample = framebuffer_get_sample(
+                        blit_data->src,
+                        (f32x2){.x = dst_x_pct, .y = dst_y_pct},
+                        (FramebufferSampleInfo){}
+                    );
+
+                    pixel_set(
+                        &(Pixel){
+                            .format = dst_px_format,
+                            .start = dst_fb_bytes + px_idx,
+                        },
+                        &(Pixel){
+                            .format = PIXEL_FORMAT_RGBA32F,
+                            .start = (u8*)sample.data
+                        }
+                    );
+                }
+            }
+
             break;
         }
         default:

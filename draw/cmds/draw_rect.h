@@ -10,6 +10,6 @@
 #include "../renderer.h"
 #include "../framebuffer.h"
 
-void soft_cmd_draw_rect(RenderCmdDrawRect *data);
+void soft_cmd_draw_rect(RenderCmdDrawRect *cmd);
 
 #endif //ALTCORE_DRAW_RECT_H
