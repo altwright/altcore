@@ -112,13 +112,6 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
         case RENDERER_TYPE_SINGLE_THREAD: {
             ARRAY_FOR(cmd, cmds) {
                 switch (cmd->type) {
-                    case RENDER_CMD_TYPE_CLEAR: {
-                        soft_cmd_clear(
-                            cmd->data.clear.framebuffer,
-                            cmd->data.clear.color
-                        );
-                        break;
-                    }
                     case RENDER_CMD_TYPE_PRESENT: {
                         soft_cmd_present(
                             cmd->data.present.framebuffer,
@@ -128,22 +121,17 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                     }
                     case RENDER_CMD_TYPE_DRAW_RECT: {
                         RenderCmdDrawRect *data = &cmd->data.draw_rect;
-
                         soft_cmd_draw_rect(data);
                         break;
                     }
                     case RENDER_CMD_TYPE_DRAW_TEXT: {
                         RenderCmdDrawText *data = &cmd->data.draw_text;
-
                         soft_cmd_draw_text(data);
-
                         break;
                     }
                     case RENDER_CMD_TYPE_SCISSOR: {
                         RenderCmdScissor *data = &cmd->data.scissor;
-
                         soft_cmd_scissor(data);
-
                         break;
                     }
                     case RENDER_CMD_TYPE_DRAW_MODEL: {

@@ -75,8 +75,8 @@ static rgba8 clay_to_render_color(Clay_Color clay_color) {
     };
 }
 
-static RectCornerRadii clay_to_render_corner_radii(Clay_CornerRadius clay_radii) {
-    return (RectCornerRadii){
+static RenderCmdDrawRectCornerRadii clay_to_render_corner_radii(Clay_CornerRadius clay_radii) {
+    return (RenderCmdDrawRectCornerRadii){
         .top_left_px = clay_radii.topLeft,
         .top_right_px = clay_radii.topRight,
         .bottom_left_px = clay_radii.bottomLeft,
@@ -395,45 +395,45 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
 
         switch (clay_cmd->commandType) {
             case CLAY_RENDER_COMMAND_TYPE_RECTANGLE: {
-                RenderCmd rect_cmd = {RENDER_CMD_TYPE_DRAW_RECT};
-                rect_cmd.data.draw_rect.dst_fb = ui->current_canvas.fb;
-
-                rect_cmd.data.draw_rect.dst_fb_region = dst_region;
-
-                rect_cmd.data.draw_rect.bg_color = clay_to_render_color(
-                    clay_cmd->renderData.rectangle.backgroundColor
-                );
-
-                rect_cmd.data.draw_rect.corner_radii = clay_to_render_corner_radii(
+                RenderCmd cmd = {.type = RENDER_CMD_TYPE_DRAW_RECT};
+                cmd.data.draw_rect.mode = RENDER_CMD_DRAW_RECT_MODE_FILL;
+                cmd.data.draw_rect.dst = ui->current_canvas.fb;
+                cmd.data.draw_rect.dst_region = dst_region;
+                cmd.data.draw_rect.corner_radii = clay_to_render_corner_radii(
                     clay_cmd->renderData.rectangle.cornerRadius
                 );
 
-                ARRAY_PUSH(&render_cmds, &rect_cmd);
+                auto fill_data = &cmd.data.draw_rect.data.fill;
+                fill_data->color = clay_to_render_color(
+                    clay_cmd->renderData.rectangle.backgroundColor
+                );
+
+                ARRAY_PUSH(&render_cmds, &cmd);
 
                 break;
             }
             case CLAY_RENDER_COMMAND_TYPE_BORDER: {
-                RenderCmd border_cmd = {RENDER_CMD_TYPE_DRAW_RECT};
-                border_cmd.data.draw_rect.dst_fb = ui->current_canvas.fb;
+                RenderCmd cmd = {.type = RENDER_CMD_TYPE_DRAW_RECT};
+                cmd.data.draw_rect.mode = RENDER_CMD_DRAW_RECT_MODE_BORDER;
+                cmd.data.draw_rect.dst = ui->current_canvas.fb;
+                cmd.data.draw_rect.dst_region = dst_region;
+                cmd.data.draw_rect.corner_radii = clay_to_render_corner_radii(
+                    clay_cmd->renderData.border.cornerRadius
+                );
 
-                border_cmd.data.draw_rect.dst_fb_region = dst_region;
-
-                border_cmd.data.draw_rect.border_color = clay_to_render_color(
+                auto border_data = &cmd.data.draw_rect.data.border;
+                border_data->color = clay_to_render_color(
                     clay_cmd->renderData.border.color
                 );
 
-                border_cmd.data.draw_rect.border_widths = (RectBorderWidths){
+                border_data->widths = (RenderCmdDrawRectBorderWidths){
                     .left_px = clay_cmd->renderData.border.width.left,
                     .right_px = clay_cmd->renderData.border.width.right,
                     .top_px = clay_cmd->renderData.border.width.top,
                     .bottom_px = clay_cmd->renderData.border.width.bottom,
                 };
 
-                border_cmd.data.draw_rect.corner_radii = clay_to_render_corner_radii(
-                    clay_cmd->renderData.border.cornerRadius
-                );
-
-                ARRAY_PUSH(&render_cmds, &border_cmd);
+                ARRAY_PUSH(&render_cmds, &cmd);
 
                 break;
             }
@@ -492,31 +492,19 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
             case CLAY_RENDER_COMMAND_TYPE_IMAGE: {
                 const Clay_ImageRenderData *image_cmd = &clay_cmd->renderData.image;
 
-                RenderCmd blit_cmd = {
-                    .type = RENDER_CMD_TYPE_DRAW_RECT,
-                };
-                RenderCmdDrawRect *blit_data = &blit_cmd.data.draw_rect;
+                RenderCmd cmd = {.type = RENDER_CMD_TYPE_DRAW_RECT,};
+                RenderCmdDrawRect *rect_data = &cmd.data.draw_rect;
 
-                blit_data->dst_fb = ui->current_canvas.fb;
-                blit_data->dst_fb_region = dst_region;
-                blit_data->corner_radii = clay_to_render_corner_radii(image_cmd->cornerRadius);
+                rect_data->mode = RENDER_CMD_DRAW_RECT_MODE_BLIT;
+                rect_data->dst = ui->current_canvas.fb;
+                rect_data->dst_region = dst_region;
+                rect_data->corner_radii = clay_to_render_corner_radii(image_cmd->cornerRadius);
 
-                Framebuffer *image_fb = image_cmd->imageData;
-                FramebufferInfo image_fb_info = framebuffer_get_info(image_fb);
+                auto blit_data = &rect_data->data.blit;
+                blit_data->src = image_cmd->imageData;
+                blit_data->tint = clay_to_render_color(image_cmd->backgroundColor);
 
-                if (image_fb_info.type != FRAMEBUFFER_TYPE_PIXEL) {
-                    crash_msg("Expected pixel framebuffer, not type %d\n", image_fb_info.type);
-                }
-
-                u8 *image_fb_bytes = nullptr;
-                i64 image_fb_pitch = 0;
-                framebuffer_impl_get_bytes(image_fb, &image_fb_bytes, &image_fb_pitch);
-                blit_data->src_blit.pixel_bytes = image_fb_bytes;
-                blit_data->src_blit.px_format = image_fb_info.data.pixel.format;
-                blit_data->src_blit.size = image_fb_info.data.pixel.size;
-                blit_data->src_blit.pitch_bytes = image_fb_pitch;
-
-                ARRAY_PUSH(&render_cmds, &blit_cmd);
+                ARRAY_PUSH(&render_cmds, &cmd);
 
                 break;
             }
