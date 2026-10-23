@@ -50,7 +50,7 @@ IndexBuffer *index_buffer_create(IndexBufferCreateInfo *info) {
 }
 
 void index_buffer_destroy(IndexBuffer *buffer) {
-    arena_free(buffer->arena);
+    arena_free(&buffer->arena);
     alt_free(buffer);
 }
 

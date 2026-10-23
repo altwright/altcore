@@ -127,7 +127,7 @@ u8s db_read(Arena *arena, const DbReadInfo *info) {
 
     fclose(fp);
 
-    arena_free(tmp);
+    arena_free(&tmp);
 
     return file_bytes;
 }
@@ -150,7 +150,7 @@ void db_write(const DbWriteInfo *info) {
 
     fclose(fp);
 
-    arena_free(tmp);
+    arena_free(&tmp);
 }
 
 DbReadHandle *db_read_open(const DbReadInfo *info) {
@@ -178,7 +178,7 @@ u64 db_read_next(DbReadHandle *handle, u8 *out_bytes, u64 out_bytes_len) {
 
 void db_read_close(DbReadHandle *handle) {
     fclose(handle->fp);
-    arena_free(handle->arena);
+    arena_free(&handle->arena);
     alt_free(handle);
 }
 
@@ -207,7 +207,7 @@ u64 db_write_next(DbWriteHandle *handle, const u8 *in_bytes, u64 in_bytes_len) {
 
 void db_write_close(DbWriteHandle *handle) {
     fclose(handle->fp);
-    arena_free(handle->arena);
+    arena_free(&handle->arena);
     alt_free(handle);
 }
 
@@ -219,7 +219,7 @@ bool db_exists(const DbReadInfo *info) {
 
     bool exists = access(file_path.data, F_OK) == 0;
 
-    arena_free(tmp);
+    arena_free(&tmp);
 
     return exists;
 }
@@ -238,7 +238,7 @@ i64 db_size(const DbReadInfo *info) {
         file_size = file_stat.st_size;
     }
 
-    arena_free(tmp);
+    arena_free(&tmp);
 
     return file_size;
 }

@@ -395,7 +395,7 @@ Model model_load(ModelLoadInfo *info) {
             break;
     }
 
-    arena_free(tmp);
+    arena_free(&tmp);
 
     return model;
 }
@@ -412,5 +412,5 @@ void model_unload(Model *model) {
         }
     }
 
-    arena_free(model->arena);
+    arena_free(&model->arena);
 }

@@ -110,7 +110,7 @@ static void component_array_extend(ComponentArray *component_array) {
     if (component_array->arena) {
         memcpy(new_elems, component_array->elems, component_array->len * component_array->elem_size);
         memcpy(new_eids, component_array->eids, component_array->len * sizeof(EntityID));
-        arena_free(component_array->arena);
+        arena_free(&component_array->arena);
     }
 
     component_array->arena = new_arena;
@@ -188,7 +188,7 @@ static void component_array_del(
 
 static void component_array_free(ComponentArray *component_array) {
     if (component_array->arena) {
-        arena_free(component_array->arena);
+        arena_free(&component_array->arena);
     }
     component_array->elems = nullptr;
     component_array->eids = nullptr;
@@ -260,15 +260,15 @@ void ecs_destroy(EcsHandle *ecs) {
     HASHMAP_FREE(&ecs->entity_map);
 
     if (ecs->entity_fn_ptrs_array.arena) {
-        arena_free(ecs->entity_fn_ptrs_array.arena);
+        arena_free(&ecs->entity_fn_ptrs_array.arena);
     }
 
-    arena_free(ecs->arena);
+    arena_free(&ecs->arena);
 }
 
 void ecs_set_entity_fn_ptrs(EcsHandle *ecs, EntityFnPtrs *fn_ptrs, i64 fn_ptrs_len) {
     if (ecs->entity_fn_ptrs_array.arena) {
-        arena_free(ecs->entity_fn_ptrs_array.arena);
+        arena_free(&ecs->entity_fn_ptrs_array.arena);
     }
 
     i64 array_size = fn_ptrs_len * (i64) sizeof(*ecs->entity_fn_ptrs_array.data);
@@ -308,7 +308,7 @@ void ecs_tick(EcsHandle *ecs) {
                     }
 
                     if (entity->vars.arena) {
-                        arena_free(entity->vars.arena);
+                        arena_free(&entity->vars.arena);
                     }
 
                     ARRAY_DEL(&ecs->entity_ptrs, entity_idx);
@@ -375,7 +375,7 @@ EntityID ecs_entity_create(EcsHandle *ecs, const EntityCreateInfo *info) {
         ARRAY_MAKE(&new_entity_ptrs);
         memcpy(new_entity_ptrs.data, ecs->entity_ptrs.data, ecs->entity_ptrs.len * elem_size);
 
-        arena_free(ecs->entity_ptrs.arena);
+        arena_free(&ecs->entity_ptrs.arena);
 
         ecs->entity_ptrs = new_entity_ptrs;
     }

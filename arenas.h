@@ -12,7 +12,7 @@ typedef struct ARENA_T Arena;
 
 Arena* arena_make(i64 initial_cap);
 
-void arena_free(Arena *arena);
+void arena_free(Arena **arena);
 
 void *arena_alloc(Arena *arena, i64 size);
 

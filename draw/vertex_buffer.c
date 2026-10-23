@@ -102,7 +102,7 @@ VertexBuffer *vertex_buffer_create(VertexBufferCreateInfo *info) {
 }
 
 void vertex_buffer_destroy(VertexBuffer *buffer) {
-    arena_free(buffer->arena);
+    arena_free(&buffer->arena);
     alt_free(buffer);
 }
 

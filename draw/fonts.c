@@ -141,7 +141,7 @@ FontHandle *font_load(const FontLoadInfo *info) {
 }
 
 void font_unload(FontHandle *font) {
-    arena_free(font->arena);
+    arena_free(&font->arena);
     alt_free(font);
 }
 

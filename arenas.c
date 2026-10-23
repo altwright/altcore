@@ -19,8 +19,8 @@ struct ARENA_T {
     i64 offset;
 };
 
-Arena* arena_make(i64 initial_cap) {
-    Arena* arena = alt_malloc(sizeof(*arena));
+Arena *arena_make(i64 initial_cap) {
+    Arena *arena = alt_malloc(sizeof(*arena));
     *arena = (Arena){};
 
     assert(initial_cap > 0);
@@ -37,10 +37,10 @@ Arena* arena_make(i64 initial_cap) {
     return arena;
 }
 
-void arena_free(Arena *arena) {
+void arena_free(Arena **arena) {
     assert(arena);
 
-    ArenaBuffer *current_buffer = arena->buffer;
+    ArenaBuffer *current_buffer = (*arena)->buffer;
 
     while (current_buffer) {
         if (current_buffer->data) {
@@ -54,9 +54,10 @@ void arena_free(Arena *arena) {
         current_buffer = next_buffer;
     }
 
-    arena->buffer = nullptr;
+    (*arena)->buffer = nullptr;
 
-    alt_free(arena);
+    alt_free(*arena);
+    *arena = nullptr;
 }
 
 void *arena_alloc(Arena *arena, i64 size) {
@@ -103,4 +104,3 @@ i64 arena_get(Arena *arena) {
 void arena_set(Arena *arena, i64 offset) {
     arena->offset = offset;
 }
-

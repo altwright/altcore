@@ -249,7 +249,7 @@ void framebuffer_destroy(Framebuffer *fb) {
     switch (fb->type) {
         case FRAMEBUFFER_TYPE_PIXEL: {
             FramebufferPixel *pixel_buf = &fb->data.pixel;
-            arena_free(pixel_buf->arena);
+            arena_free(&pixel_buf->arena);
             break;
         }
         default:
