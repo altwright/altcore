@@ -38,9 +38,9 @@ typedef struct FONT_SETS_T {
     ARRAY_FIELDS(FontSet)
 } FontSets;
 
-FontHandle *font_load(const FontLoadInfo *info);
+FontHandle *font_create(const FontLoadInfo *info);
 
-void font_unload(FontHandle *font);
+void font_destroy(FontHandle **font);
 
 
 #endif //ALTCORE_FONTS_H

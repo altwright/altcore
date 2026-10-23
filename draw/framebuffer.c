@@ -245,19 +245,20 @@ Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info) {
     return fb;
 }
 
-void framebuffer_destroy(Framebuffer *fb) {
-    switch (fb->type) {
+void framebuffer_destroy(Framebuffer **fb) {
+    switch ((*fb)->type) {
         case FRAMEBUFFER_TYPE_PIXEL: {
-            FramebufferPixel *pixel_buf = &fb->data.pixel;
+            FramebufferPixel *pixel_buf = &(*fb)->data.pixel;
             arena_free(&pixel_buf->arena);
             break;
         }
         default:
-            crash_msg("Unhandled framebuffer type %d\n", fb->type);
+            crash_msg("Unhandled framebuffer type %d\n", (*fb)->type);
             break;
     }
 
-    alt_free(fb);
+    alt_free(*fb);
+    *fb = nullptr;
 }
 
 FramebufferInfo framebuffer_get_info(const Framebuffer *fb) {

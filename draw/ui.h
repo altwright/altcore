@@ -119,7 +119,7 @@ typedef struct UI_BEGIN_LAYOUT_INFO_T {
 
 UiContext *ui_create(const UiCreateInfo *create_info);
 
-void ui_destroy(UiContext *ui);
+void ui_destroy(UiContext **ui);
 
 void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info);
 

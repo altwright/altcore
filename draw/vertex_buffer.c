@@ -101,9 +101,10 @@ VertexBuffer *vertex_buffer_create(VertexBufferCreateInfo *info) {
     return vert_buffer;
 }
 
-void vertex_buffer_destroy(VertexBuffer *buffer) {
-    arena_free(&buffer->arena);
-    alt_free(buffer);
+void vertex_buffer_destroy(VertexBuffer **buffer) {
+    arena_free(&(*buffer)->arena);
+    alt_free(*buffer);
+    *buffer = nullptr;
 }
 
 void vertex_buffer_get_attributes(

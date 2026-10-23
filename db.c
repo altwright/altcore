@@ -176,10 +176,11 @@ u64 db_read_next(DbReadHandle *handle, u8 *out_bytes, u64 out_bytes_len) {
     return fread(out_bytes, 1, out_bytes_len, handle->fp);
 }
 
-void db_read_close(DbReadHandle *handle) {
-    fclose(handle->fp);
-    arena_free(&handle->arena);
-    alt_free(handle);
+void db_read_close(DbReadHandle **handle) {
+    fclose((*handle)->fp);
+    arena_free(&(*handle)->arena);
+    alt_free(*handle);
+    *handle = nullptr;
 }
 
 DbWriteHandle *db_write_open(const DbWriteInfo *info) {
@@ -205,10 +206,11 @@ u64 db_write_next(DbWriteHandle *handle, const u8 *in_bytes, u64 in_bytes_len) {
     return fwrite(in_bytes, 1, in_bytes_len, handle->fp);
 }
 
-void db_write_close(DbWriteHandle *handle) {
-    fclose(handle->fp);
-    arena_free(&handle->arena);
-    alt_free(handle);
+void db_write_close(DbWriteHandle **handle) {
+    fclose((*handle)->fp);
+    arena_free(&(*handle)->arena);
+    alt_free(*handle);
+    *handle = nullptr;
 }
 
 bool db_exists(const DbReadInfo *info) {

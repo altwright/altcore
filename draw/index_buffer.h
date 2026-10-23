@@ -34,6 +34,6 @@ typedef struct INDEX_BUFFER_CREATE_INFO_T {
 
 IndexBuffer *index_buffer_create(IndexBufferCreateInfo *info);
 
-void index_buffer_destroy(IndexBuffer *buffer);
+void index_buffer_destroy(IndexBuffer **buffer);
 
 #endif //BRITANNICUS_INDEX_BUFFER_H

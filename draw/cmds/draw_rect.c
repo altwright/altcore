@@ -246,12 +246,12 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *cmd) {
     switch (cmd->mode) {
         case RENDER_CMD_DRAW_RECT_MODE_FILL: {
             rgba8 color = cmd->data.fill.color;
-            bool is_repeating_byte_color = (color.r == color.g == color.b == color.a);
+            bool is_nil_color = !color.r && !color.g && !color.b && !color.a;
 
-            if (not_rounded && is_repeating_byte_color) {
+            if (not_rounded && is_nil_color) {
                 for (i32 dst_y_idx = dst_start_y; dst_y_idx < dst_end_y; dst_y_idx++) {
                     i64 px_idx = dst_y_idx * dst_fb_pitch_bytes + dst_start_x * dst_px_size;
-                    memset(dst_fb_bytes + px_idx, color.r, (dst_end_x - dst_start_x) * dst_px_size);
+                    memset(dst_fb_bytes + px_idx, 0, (dst_end_x - dst_start_x) * dst_px_size);
                 }
             } else {
                 for (i32 dst_y_idx = dst_start_y; dst_y_idx < dst_end_y; dst_y_idx++) {

@@ -205,14 +205,15 @@ WindowHandle *window_create(const WindowCreateInfo *info) {
     return handle;
 }
 
-void window_destroy(WindowHandle *handle) {
+void window_destroy(WindowHandle **handle) {
     assert(g_active_window_handles.data);
 
     mtx_lock(&g_active_window_handles.lock);
 
-    SDL_DestroyWindow(handle->window);
+    SDL_DestroyWindow((*handle)->window);
 
-    alt_free(handle);
+    alt_free(*handle);
+    *handle = nullptr;
 
     g_active_window_handles.data[--g_active_window_handles.len] = nullptr;
 

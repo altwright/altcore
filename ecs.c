@@ -252,18 +252,20 @@ EcsHandle *ecs_create(const EcsCreateInfo *info) {
     return ecs;
 }
 
-void ecs_destroy(EcsHandle *ecs) {
-    ARRAY_FOR(component_array, &ecs->component_arrays) {
+void ecs_destroy(EcsHandle **ecs) {
+    ARRAY_FOR(component_array, &(*ecs)->component_arrays) {
         component_array_free(component_array);
     }
 
-    HASHMAP_FREE(&ecs->entity_map);
+    HASHMAP_FREE(&(*ecs)->entity_map);
 
-    if (ecs->entity_fn_ptrs_array.arena) {
-        arena_free(&ecs->entity_fn_ptrs_array.arena);
+    if ((*ecs)->entity_fn_ptrs_array.arena) {
+        arena_free(&(*ecs)->entity_fn_ptrs_array.arena);
     }
 
-    arena_free(&ecs->arena);
+    arena_free(&(*ecs)->arena);
+    alt_free(*ecs);
+    *ecs = nullptr;
 }
 
 void ecs_set_entity_fn_ptrs(EcsHandle *ecs, EntityFnPtrs *fn_ptrs, i64 fn_ptrs_len) {

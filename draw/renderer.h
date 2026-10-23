@@ -166,7 +166,7 @@ Renderer *renderer_create(const RendererCreateInfo *create_info);
 
 void renderer_execute(Renderer *renderer, RenderCmds *cmds);
 
-void renderer_destroy(Renderer *renderer);
+void renderer_destroy(Renderer **renderer);
 
 void renderer_idle(Renderer *renderer);
 

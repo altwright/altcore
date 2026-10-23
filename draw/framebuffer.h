@@ -145,7 +145,7 @@ typedef struct FRAMEBUFFER_SAMPLE_INFO_T {
 
 Framebuffer *framebuffer_create(const FramebufferCreateInfo *create_info);
 
-void framebuffer_destroy(Framebuffer *fb);
+void framebuffer_destroy(Framebuffer **fb);
 
 FramebufferInfo framebuffer_get_info(const Framebuffer *fb);
 

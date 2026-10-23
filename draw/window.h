@@ -97,7 +97,7 @@ void window_get_display_infos(DisplayInfos *out);
 
 WindowHandle* window_create(const WindowCreateInfo* info);
 
-void window_destroy(WindowHandle* handle);
+void window_destroy(WindowHandle** handle);
 
 void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf);
 

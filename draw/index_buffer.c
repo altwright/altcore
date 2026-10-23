@@ -49,9 +49,10 @@ IndexBuffer *index_buffer_create(IndexBufferCreateInfo *info) {
     return index_buffer;
 }
 
-void index_buffer_destroy(IndexBuffer *buffer) {
-    arena_free(&buffer->arena);
-    alt_free(buffer);
+void index_buffer_destroy(IndexBuffer **buffer) {
+    arena_free(&(*buffer)->arena);
+    alt_free(*buffer);
+    *buffer = nullptr;
 }
 
 void index_buffer_impl_get_indices(IndexBuffer *index_buffer, const u16 **indices, i64 *indices_len) {

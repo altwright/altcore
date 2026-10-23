@@ -402,13 +402,13 @@ Model model_load(ModelLoadInfo *info) {
 
 void model_unload(Model *model) {
     ARRAY_FOR(texture, &model->textures) {
-        framebuffer_destroy(*texture);
+        framebuffer_destroy(texture);
     }
 
     ARRAY_FOR(mesh, &model->meshes) {
         ARRAY_FOR(prim, &mesh->prims) {
-            vertex_buffer_destroy(prim->vertices);
-            index_buffer_destroy(prim->indices);
+            vertex_buffer_destroy(&prim->vertices);
+            index_buffer_destroy(&prim->indices);
         }
     }
 

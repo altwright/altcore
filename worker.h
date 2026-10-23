@@ -23,7 +23,7 @@ typedef struct WORKER_CREATE_INFO_T {
 
 Worker *worker_create(WorkerCreateInfo *info);
 
-void worker_destroy(Worker *worker);
+void worker_destroy(Worker **worker);
 
 bool worker_push_task(Worker *worker, const Task *task);
 

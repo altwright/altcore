@@ -93,14 +93,14 @@ Worker *worker_create(WorkerCreateInfo *info) {
     return worker;
 }
 
-void worker_destroy(Worker *worker) {
-    TaskQueue *q = &worker->task_q;
+void worker_destroy(Worker **worker) {
+    TaskQueue *q = &(*worker)->task_q;
 
     atomic_store(&q->shutdown, true);
     cnd_broadcast(&q->not_empty);
     cnd_broadcast(&q->not_full);
 
-    thrd_join(worker->thread, nullptr);
+    thrd_join((*worker)->thread, nullptr);
 
     mtx_destroy(&q->lock);
     cnd_destroy(&q->not_empty);
@@ -108,7 +108,8 @@ void worker_destroy(Worker *worker) {
 
     alt_free(q->data);
 
-    alt_free(worker);
+    alt_free(*worker);
+    *worker = nullptr;
 }
 
 bool worker_push_task(Worker *worker, const Task *task) {

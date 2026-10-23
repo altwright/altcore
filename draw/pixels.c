@@ -136,7 +136,7 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                     break;
             }
 
-            alpha_blend_8(dst->data, new_src.data, offsetof(rgba8, a));
+            alpha_blend_8(dst->data, new_src.data, offsetof(rgba8, a) / sizeof(u8));
 
             break;
         }
@@ -154,7 +154,7 @@ void pixel_set(Pixel *dst_px, const Pixel *src_px) {
                     break;
             }
 
-            alpha_blend_8(dst->data, new_src.data, offsetof(bgra8, a));
+            alpha_blend_8(dst->data, new_src.data, offsetof(bgra8, a) / sizeof(u8));
 
             break;
         }

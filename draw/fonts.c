@@ -93,7 +93,7 @@ static void codepoint_info_init(FontHandle *font, CodepointInfo *codepoint_info)
     HASHMAP_MAKE(&codepoint_info->bitmaps);
 }
 
-FontHandle *font_load(const FontLoadInfo *info) {
+FontHandle *font_create(const FontLoadInfo *info) {
     FontHandle *font = alt_malloc(sizeof(*font));
 
     *font = (FontHandle){
@@ -140,9 +140,10 @@ FontHandle *font_load(const FontLoadInfo *info) {
     return font;
 }
 
-void font_unload(FontHandle *font) {
-    arena_free(&font->arena);
-    alt_free(font);
+void font_destroy(FontHandle **font) {
+    arena_free(&(*font)->arena);
+    alt_free(*font);
+    *font = nullptr;
 }
 
 static CodepointInfo *get_codepoint_info(FontHandle *font, const char *utf8) {

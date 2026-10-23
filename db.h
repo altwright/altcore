@@ -60,7 +60,7 @@ DbReadHandle *db_read_open(const DbReadInfo *info);
 
 u64 db_read_next(DbReadHandle *handle, u8 *out_bytes, u64 out_bytes_len);
 
-void db_read_close(DbReadHandle *handle);
+void db_read_close(DbReadHandle **handle);
 
 /*
  * The size of the byte buffer to be written is read from
@@ -71,6 +71,6 @@ DbWriteHandle *db_write_open(const DbWriteInfo *info);
 
 u64 db_write_next(DbWriteHandle *handle, const u8 *in_bytes, u64 in_bytes_len);
 
-void db_write_close(DbWriteHandle *handle);
+void db_write_close(DbWriteHandle **handle);
 
 #endif //ALTCORE_DB_H

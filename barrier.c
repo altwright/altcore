@@ -50,9 +50,10 @@ void barrier_wait(Barrier *barrier) {
     mtx_unlock(&barrier->lock);
 }
 
-void barrier_destroy(Barrier *barrier) {
-    mtx_destroy(&barrier->lock);
-    cnd_destroy(&barrier->fence_cond);
+void barrier_destroy(Barrier **barrier) {
+    mtx_destroy(&(*barrier)->lock);
+    cnd_destroy(&(*barrier)->fence_cond);
 
-    alt_free(barrier);
+    alt_free(*barrier);
+    *barrier = nullptr;
 }

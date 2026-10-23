@@ -137,7 +137,7 @@ typedef struct ECS_CREATE_INFO_T {
 
 EcsHandle *ecs_create(const EcsCreateInfo *info);
 
-void ecs_destroy(EcsHandle *ecs);
+void ecs_destroy(EcsHandle **ecs);
 
 void ecs_set_entity_fn_ptrs(EcsHandle *ecs, EntityFnPtrs *fn_ptrs, i64 fn_ptrs_len);
 

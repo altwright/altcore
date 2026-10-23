@@ -18,6 +18,6 @@ Barrier *barrier_create(BarrierCreateInfo *info);
 
 void barrier_wait(Barrier *barrier);
 
-void barrier_destroy(Barrier *barrier);
+void barrier_destroy(Barrier **barrier);
 
 #endif //ALTCORE_BARRIER_H

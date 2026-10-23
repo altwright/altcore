@@ -74,7 +74,7 @@ typedef struct VERTEX_BUFFER_CREATE_INFO_T {
 
 VertexBuffer *vertex_buffer_create(VertexBufferCreateInfo *info);
 
-void vertex_buffer_destroy(VertexBuffer *buffer);
+void vertex_buffer_destroy(VertexBuffer **buffer);
 
 void vertex_buffer_get_attributes(
     const VertexBuffer *vert_buffer,

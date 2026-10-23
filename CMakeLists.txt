@@ -72,7 +72,6 @@ add_library(${PROJECT_NAME}
         draw/ui.c
         draw/ui/widgets.c
         draw/fonts.c
-        draw/cmds/clear.c
         draw/cmds/draw_rect.c
         draw/cmds/draw_text.c
         draw/cmds/present.c
