@@ -24,8 +24,8 @@ Model model_load(ModelLoadInfo *info) {
 
     Arena *tmp = arena_make(MIBIBYTE);
 
-    switch (info->type) {
-        case MODEL_DATA_TYPE_GLB: {
+    switch (info->format) {
+        case MODEL_DATA_FORMAT_GLB: {
             cgltf_options glb_options = {
                 .memory = {
                     .alloc_func = glb_alloc,
@@ -33,7 +33,7 @@ Model model_load(ModelLoadInfo *info) {
                 }
             };
             cgltf_data *glb_data = nullptr;
-            cgltf_result glb_result = cgltf_parse(&glb_options, info->data.bytes, info->data.len, &glb_data);
+            cgltf_result glb_result = cgltf_parse(&glb_options, info->bytes.data, info->bytes.len, &glb_data);
             if (glb_result != cgltf_result_success) {
                 crash_msg("Failed to parse GLB data\n");
             }
@@ -160,9 +160,9 @@ Model model_load(ModelLoadInfo *info) {
 
                 for (i64 prim_idx = 0; prim_idx < node->mesh->primitives_count; prim_idx++) {
                     MeshPrimitive *prim = ARRAY_GET(&mesh->prims, prim_idx);
-                    cgltf_primitive node_mesh_prim = node->mesh->primitives[prim_idx];
+                    cgltf_primitive mesh_prim = node->mesh->primitives[prim_idx];
 
-                    switch (node_mesh_prim.type) {
+                    switch (mesh_prim.type) {
                         case cgltf_primitive_type_triangles: {
                             prim->type = MESH_PRIMITIVE_TYPE_TRIANGLES;
                             break;
@@ -173,17 +173,17 @@ Model model_load(ModelLoadInfo *info) {
                     }
 
                     Indices indices = {};
-                    switch (node_mesh_prim.indices->component_type) {
+                    switch (mesh_prim.indices->component_type) {
                         case cgltf_component_type_r_16u: {
                             indices.type = INDICE_TYPE_U16;
                             indices.shorts = (u16s){
                                 .arena = tmp,
-                                .len = (i64) node_mesh_prim.indices->count,
+                                .len = (i64) mesh_prim.indices->count,
                             };
                             ARRAY_MAKE(&indices.shorts);
 
                             cgltf_accessor_unpack_indices(
-                                node_mesh_prim.indices,
+                                mesh_prim.indices,
                                 indices.shorts.data,
                                 sizeof(u16),
                                 indices.shorts.len);
@@ -194,12 +194,12 @@ Model model_load(ModelLoadInfo *info) {
                             indices.type = INDICE_TYPE_U32;
                             indices.longs = (u32s){
                                 .arena = tmp,
-                                .len = (i64) node_mesh_prim.indices->count,
+                                .len = (i64) mesh_prim.indices->count,
                             };
                             ARRAY_MAKE(&indices.longs);
 
                             cgltf_accessor_unpack_indices(
-                                node_mesh_prim.indices,
+                                mesh_prim.indices,
                                 indices.longs.data,
                                 sizeof(u32),
                                 indices.longs.len);
@@ -207,7 +207,7 @@ Model model_load(ModelLoadInfo *info) {
                             break;
                         }
                         default:
-                            crash_msg("Unhandled indices component type %d\n", node_mesh_prim.indices->component_type);
+                            crash_msg("Unhandled indices component type %d\n", mesh_prim.indices->component_type);
                             break;
                     }
 
@@ -240,13 +240,13 @@ Model model_load(ModelLoadInfo *info) {
 
                     VertexAttributes vert_attrs = {
                         .arena = tmp,
-                        .len = (i64) node_mesh_prim.attributes_count,
+                        .len = (i64) mesh_prim.attributes_count,
                     };
                     ARRAY_MAKE(&vert_attrs);
 
                     i64 vertex_count = -1;
-                    for (i64 attr_idx = 0; attr_idx < node_mesh_prim.attributes_count; attr_idx++) {
-                        cgltf_attribute prim_attr = node_mesh_prim.attributes[attr_idx];
+                    for (i64 attr_idx = 0; attr_idx < mesh_prim.attributes_count; attr_idx++) {
+                        cgltf_attribute prim_attr = mesh_prim.attributes[attr_idx];
                         VertexAttribute *vert_attr = ARRAY_GET(&vert_attrs, attr_idx);
 
                         switch (prim_attr.type) {
@@ -355,7 +355,7 @@ Model model_load(ModelLoadInfo *info) {
                         .renderer = info->renderer,
                         .vertices = {
                             .data = vert_attrs.data,
-                            .per_vertex_attribute_count = (i64) node_mesh_prim.attributes_count,
+                            .per_vertex_attribute_count = (i64) mesh_prim.attributes_count,
                             .count = vertex_count,
                         }
                     };
@@ -363,26 +363,29 @@ Model model_load(ModelLoadInfo *info) {
                     prim->vertices = vertex_buffer_create(&vertex_buffer_info);
 
                     prim->material.type = MESH_PRIMITIVE_MATERIAL_TYPE_COUNT;
-                    cgltf_material *prim_material = node_mesh_prim.material;
-                    if (prim_material->has_pbr_metallic_roughness
-                        && prim_material->pbr_metallic_roughness.base_color_texture.texture) {
-                        prim->material.type = MESH_PRIMITIVE_MATERIAL_TYPE_BASIC;
-                        MeshPrimitiveTextureView *material_tex_view = &prim->material.data.basic.texture_view;
-                        cgltf_texture_view color_tex_view = prim_material->pbr_metallic_roughness.base_color_texture;
-                        if (color_tex_view.has_transform) {
-                            for (i64 component_idx = 0; component_idx < 2; component_idx++) {
-                                material_tex_view->offset.data[component_idx] =
-                                        color_tex_view.transform.offset[component_idx];
-                                material_tex_view->scale.data[component_idx] =
-                                        color_tex_view.transform.scale[component_idx];
+                    if (mesh_prim.material) {
+                        cgltf_material *prim_material = mesh_prim.material;
+                        if (prim_material->has_pbr_metallic_roughness
+                            && prim_material->pbr_metallic_roughness.base_color_texture.texture) {
+                            prim->material.type = MESH_PRIMITIVE_MATERIAL_TYPE_BASIC;
+                            MeshPrimitiveTextureView *material_tex_view = &prim->material.data.basic.texture_view;
+                            cgltf_texture_view color_tex_view = prim_material->pbr_metallic_roughness.
+                                    base_color_texture;
+                            if (color_tex_view.has_transform) {
+                                for (i64 component_idx = 0; component_idx < 2; component_idx++) {
+                                    material_tex_view->offset.data[component_idx] =
+                                            color_tex_view.transform.offset[component_idx];
+                                    material_tex_view->scale.data[component_idx] =
+                                            color_tex_view.transform.scale[component_idx];
+                                }
+
+                                material_tex_view->rotation = color_tex_view.transform.rotation;
+                            } else {
+                                material_tex_view->scale = (f32x2){.x = 1, .y = 1};
                             }
 
-                            material_tex_view->rotation = color_tex_view.transform.rotation;
-                        } else {
-                            material_tex_view->scale = (f32x2){.x = 1, .y = 1};
+                            material_tex_view->texture_idx = color_tex_view.texture - glb_data->textures;
                         }
-
-                        material_tex_view->texture_idx = color_tex_view.texture - glb_data->textures;
                     }
                 }
             }
@@ -391,7 +394,7 @@ Model model_load(ModelLoadInfo *info) {
             break;
         }
         default:
-            crash_msg("Unhandled model data type %d\n", info->type);
+            crash_msg("Unhandled model data type %d\n", info->format);
             break;
     }
 

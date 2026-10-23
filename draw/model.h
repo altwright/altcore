@@ -80,24 +80,24 @@ typedef struct MODEL_T {
     Framebuffers textures;
 } Model;
 
-typedef enum MODEL_DATA_TYPE_E {
-#define X_MODEL_DATA_TYPES \
+typedef enum MODEL_DATA_FORMAT_E {
+#define X_MODEL_DATA_FORMATS \
     X(GLB) \
     X(COUNT)
-#define X(type) \
-    MODEL_DATA_TYPE_##type,
-    X_MODEL_DATA_TYPES
+#define X(format) \
+    MODEL_DATA_FORMAT_##format,
+    X_MODEL_DATA_FORMATS
 #undef X
-} ModelDataType;
+} ModelDataFormat;
 
 typedef struct MODEL_LOAD_INFO_T {
     Renderer *renderer;
-    ModelDataType type;
+    ModelDataFormat format;
 
     struct {
-        u8 *bytes;
+        u8 *data;
         i64 len;
-    } data;
+    } bytes;
 } ModelLoadInfo;
 
 Model model_load(ModelLoadInfo *info);
