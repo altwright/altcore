@@ -113,11 +113,10 @@ void vertex_buffer_get_attributes(
     VertexAttribute *out_attributes,
     i64 *out_attributes_len
 ) {
-    if (!out_attributes) {
-        *out_attributes_len = vert_buffer->vert_attr_data_array.len;
-    } else {
-        i64 attr_len = MIN(*out_attributes_len, vert_buffer->vert_attr_data_array.len);
+    i64 attr_len = MIN(*out_attributes_len, vert_buffer->vert_attr_data_array.len);
+    *out_attributes_len = attr_len;
 
+    if (out_attributes) {
         for (i64 attr_idx = 0; attr_idx < attr_len; attr_idx++) {
             VertexAttribute *out_attr = &out_attributes[attr_idx];
             VertexAttributeData *vert_attr_data = ARRAY_GET(&vert_buffer->vert_attr_data_array, attr_idx);

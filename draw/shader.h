@@ -15,4 +15,8 @@ typedef f32x4 (*VertexShaderFnPtr)(i64 indice, void *data);
 
 typedef rgba32f (*FragmentShaderFnPtr)(f32x3 fragment, f32x3 barycentric, void *data);
 
+f32x2 barycentric_f32x2(f32x3 barycentric, f32x2 vert_attrs[3]);
+
+f32x3 barycentric_f32x3(f32x4 barycentric, f32x3 vert_attrs[3]);
+
 #endif //BRITANNICUS_SHADER_H

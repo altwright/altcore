@@ -39,6 +39,8 @@ typedef enum RENDER_CMD_TYPE_E {
     X(DRAW_RECT) \
     X(DRAW_TEXT) \
     X(SCISSOR) \
+    X(VIEWPORT) \
+    X(CLEAR) \
     X(DRAW_MODEL) \
     X(PRESENT) \
     X(COUNT)
@@ -141,10 +143,19 @@ typedef struct RENDER_CMD_SCISSOR_T {
     f32x4 region;
 } RenderCmdScissor;
 
+typedef struct RENDER_CMD_VIEWPORT_T {
+    Framebuffer *framebuffer;
+    f32x4 region;
+} RenderCmdViewport;
+
 typedef struct RENDER_CMD_PRESENT_T {
     WindowHandle *window;
     Framebuffer *framebuffer;
 } RenderCmdPresent;
+
+typedef struct RENDER_CMD_CLEAR_T {
+    Framebuffer *framebuffer;
+} RenderCmdClear;
 
 typedef struct RENDER_CMD_T {
     RenderCmdType type;
@@ -153,6 +164,8 @@ typedef struct RENDER_CMD_T {
         RenderCmdDrawRect draw_rect;
         RenderCmdDrawText draw_text;
         RenderCmdScissor scissor;
+        RenderCmdViewport viewport;
+        RenderCmdClear clear;
         RenderCmdDrawModel draw_model;
         RenderCmdPresent present;
     } data;

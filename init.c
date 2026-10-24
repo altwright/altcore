@@ -10,7 +10,6 @@
 #include <SDL3/SDL_stdinc.h>
 
 #include "memory.h"
-#include "defer.h"
 #include "clock.h"
 #include "db.h"
 
@@ -22,11 +21,9 @@ void alt_init(const AltInitInfo* info) {
 
     clock_init();
     db_init();
-    defer_init();
 }
 
 void alt_deinit() {
-    defer_uninit();
     db_deinit();
     clock_deinit();
 

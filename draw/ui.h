@@ -139,7 +139,7 @@ u16 ui_width_px(UiContext *ui, f64 pct);
 
 u16 ui_height_px(UiContext *ui, f64 pct);
 
-f32x2 ui_viewport_coord(UiContext *ui, f32x2 canvas_coord);
+f32x2 ui_to_viewport_coord(UiContext *ui, f32x2 canvas_coord);
 
 bool ui_elem_double_click(UiMouseInfo *info, bool is_pressed, bool this_frame);
 

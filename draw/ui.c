@@ -470,7 +470,7 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
             case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START: {
                 RenderCmd scissor_cmd = {RENDER_CMD_TYPE_SCISSOR};
 
-                f32x4 new_scissor = f32x4_intersect(ARRAY_PEEK(&scissor_stack), dst_region);
+                f32x4 new_scissor = f32x4_area_intersect(ARRAY_PEEK(&scissor_stack), dst_region);
                 scissor_cmd.data.scissor.framebuffer = ui->current_canvas.fb;
                 scissor_cmd.data.scissor.region = new_scissor;
 
@@ -602,7 +602,7 @@ u16 ui_width_px(UiContext *ui, f64 pct) {
     return MAX(1, px_width);
 }
 
-f32x2 ui_viewport_coord(UiContext *ui, f32x2 canvas_coord) {
+f32x2 ui_to_viewport_coord(UiContext *ui, f32x2 canvas_coord) {
     return (f32x2){
         .x = canvas_coord.x - ui->current_canvas.offset.x,
         .y = canvas_coord.y - ui->current_canvas.offset.y,

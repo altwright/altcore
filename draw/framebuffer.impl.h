@@ -11,4 +11,6 @@ void framebuffer_impl_get_bytes(Framebuffer *fb, u8** out_bytes, i64* out_pitch)
 
 void framebuffer_impl_set_scissor(Framebuffer *fb, f32x4 region);
 
+void framebuffer_impl_set_viewport(Framebuffer *fb, f32x4 region);
+
 #endif //ALTCORE_FRAMEBUFFER_IMPL_H

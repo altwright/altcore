@@ -32,7 +32,7 @@ static void draw_text_line(
 
     i32x4 dst_fb_scissor = ftoi32x4(dst_fb_info.data.pixel.scissor);
 
-    i32x4 dst_fb_intersect = i32x4_intersect(
+    i32x4 dst_fb_intersect = i32x4_area_intersect(
         (i32x4){
             .start_x = 0,
             .start_y = 0,
@@ -41,7 +41,7 @@ static void draw_text_line(
         },
         dst_fb_region
     );
-    dst_fb_intersect = i32x4_intersect(dst_fb_intersect, dst_fb_scissor);
+    dst_fb_intersect = i32x4_area_intersect(dst_fb_intersect, dst_fb_scissor);
 
     const char *prev_utf8 = nullptr;
     STRING_VIEW_FOR(utf8, &text) {

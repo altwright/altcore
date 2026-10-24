@@ -101,6 +101,14 @@ typedef struct PIXEL_T {
 #define RGBA8_CYAN (rgba8){.r = 0, .g = 0xff, .b = 0xff, .a = 0xff}
 #endif
 
+#ifndef RGBA32F_NIL
+#define RGBA32F_NIL (rgba32f){.r = 0, .g = 0, .b = 0, .a = 0}
+#endif
+
+#ifndef RGBA32F_WHITE
+#define RGBA32F_WHITE (rgba32f){.r = 1, .g = 1, .b = 1, .a = 1}
+#endif
+
 i64 pixel_size(PixelFormat format);
 
 void pixel_set(Pixel *dst_px, const Pixel *src_px);

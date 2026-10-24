@@ -246,42 +246,34 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *cmd) {
     switch (cmd->mode) {
         case RENDER_CMD_DRAW_RECT_MODE_FILL: {
             rgba8 color = cmd->data.fill.color;
-            bool is_nil_color = !color.r && !color.g && !color.b && !color.a;
 
-            if (not_rounded && is_nil_color) {
-                for (i32 dst_y_idx = dst_start_y; dst_y_idx < dst_end_y; dst_y_idx++) {
-                    i64 px_idx = dst_y_idx * dst_fb_pitch_bytes + dst_start_x * dst_px_size;
-                    memset(dst_fb_bytes + px_idx, 0, (dst_end_x - dst_start_x) * dst_px_size);
-                }
-            } else {
-                for (i32 dst_y_idx = dst_start_y; dst_y_idx < dst_end_y; dst_y_idx++) {
-                    for (i32 dst_x_idx = dst_start_x; dst_x_idx < dst_end_x; dst_x_idx++) {
-                        if (!not_rounded
-                            && px_outside_rounded_corner(
-                                (f32x2){.x = (f32) dst_x_idx + 0.5f, .y = (f32) dst_y_idx + 0.5f},
-                                top_left_axis,
-                                top_right_axis,
-                                bottom_left_axis,
-                                bottom_right_axis,
-                                corner_radii
-                            )
-                        ) {
-                            continue;
-                        }
-
-                        i64 px_idx = dst_y_idx * dst_fb_pitch_bytes + dst_x_idx * dst_px_size;
-
-                        pixel_set(
-                            &(Pixel){
-                                .format = dst_px_format,
-                                .start = dst_fb_bytes + px_idx
-                            },
-                            &(Pixel){
-                                .format = PIXEL_FORMAT_RGBA8,
-                                .start = color.data
-                            }
-                        );
+            for (i32 dst_y_idx = dst_start_y; dst_y_idx < dst_end_y; dst_y_idx++) {
+                for (i32 dst_x_idx = dst_start_x; dst_x_idx < dst_end_x; dst_x_idx++) {
+                    if (!not_rounded
+                        && px_outside_rounded_corner(
+                            (f32x2){.x = (f32) dst_x_idx + 0.5f, .y = (f32) dst_y_idx + 0.5f},
+                            top_left_axis,
+                            top_right_axis,
+                            bottom_left_axis,
+                            bottom_right_axis,
+                            corner_radii
+                        )
+                    ) {
+                        continue;
                     }
+
+                    i64 px_idx = dst_y_idx * dst_fb_pitch_bytes + dst_x_idx * dst_px_size;
+
+                    pixel_set(
+                        &(Pixel){
+                            .format = dst_px_format,
+                            .start = dst_fb_bytes + px_idx
+                        },
+                        &(Pixel){
+                            .format = PIXEL_FORMAT_RGBA8,
+                            .start = color.data
+                        }
+                    );
                 }
             }
 
@@ -361,7 +353,7 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *cmd) {
                         },
                         &(Pixel){
                             .format = PIXEL_FORMAT_RGBA32F,
-                            .start = (u8*)sample.data
+                            .start = (u8 *) sample.data
                         }
                     );
                 }

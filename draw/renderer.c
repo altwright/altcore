@@ -11,11 +11,13 @@
 #include "../memory.h"
 #include "../worker.h"
 #include "../barrier.h"
+#include "cmds/clear.h"
 #include "cmds/draw_model.h"
 #include "cmds/present.h"
 #include "cmds/draw_rect.h"
 #include "cmds/draw_text.h"
 #include "cmds/scissor.h"
+#include "cmds/viewport.h"
 
 struct RENDERER_T {
     RendererType type;
@@ -120,23 +122,27 @@ void renderer_execute(Renderer *renderer, RenderCmds *cmds) {
                         break;
                     }
                     case RENDER_CMD_TYPE_DRAW_RECT: {
-                        RenderCmdDrawRect *data = &cmd->data.draw_rect;
-                        soft_cmd_draw_rect(data);
+                        soft_cmd_draw_rect(&cmd->data.draw_rect);
                         break;
                     }
                     case RENDER_CMD_TYPE_DRAW_TEXT: {
-                        RenderCmdDrawText *data = &cmd->data.draw_text;
-                        soft_cmd_draw_text(data);
+                        soft_cmd_draw_text(&cmd->data.draw_text);
                         break;
                     }
                     case RENDER_CMD_TYPE_SCISSOR: {
-                        RenderCmdScissor *data = &cmd->data.scissor;
-                        soft_cmd_scissor(data);
+                        soft_cmd_scissor(&cmd->data.scissor);
+                        break;
+                    }
+                    case RENDER_CMD_TYPE_VIEWPORT: {
+                        soft_cmd_viewport(&cmd->data.viewport);
+                        break;
+                    }
+                    case RENDER_CMD_TYPE_CLEAR: {
+                        soft_cmd_clear(&cmd->data.clear);
                         break;
                     }
                     case RENDER_CMD_TYPE_DRAW_MODEL: {
-                        RenderCmdDrawModel *data = &cmd->data.draw_model;
-                        soft_cmd_draw_model(data);
+                        soft_cmd_draw_model(&cmd->data.draw_model);
                         break;
                     }
                     default:

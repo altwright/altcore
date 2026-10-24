@@ -32,6 +32,22 @@ f32 f32x2_dist(f32x2 start, f32x2 end) {
     return glm_vec2_distance(start.data, end.data);
 }
 
+f32x3 f32x3_add(f32x3 left, f32x3 right) {
+    return (f32x3) {
+        .x = left.x + right.x,
+        .y = left.y + right.y,
+        .z = left.z + right.z,
+    };
+}
+
+f32x3 f32x3_scale(f32x3 vec, f32 scale) {
+    return (f32x3){
+        .x = vec.x * scale,
+        .y = vec.y * scale,
+        .z = vec.z * scale,
+    };
+}
+
 f32 f32x3_dot(f32x3 left, f32x3 right) {
     return glm_vec3_dot(left.data, right.data);
 }
@@ -50,7 +66,7 @@ f32x16 f32x16_matrix_look(f32x3 eye, f32x3 dir, f32x3 up) {
     return out;
 }
 
-f32x16 f32x16_matrix_perspective(f32 fov_y_rad, f32 aspect_ratio, f32 near_plane_dist, f32 far_plane_dist) {
+f32x16 f32x16_matrix_projection(f32 fov_y_rad, f32 aspect_ratio, f32 near_plane_dist, f32 far_plane_dist) {
     f32x16 out = {};
     glm_perspective(fov_y_rad, aspect_ratio, near_plane_dist, far_plane_dist, out.matrix.raw);
     return out;
@@ -91,7 +107,7 @@ f32x4 f32x4_add(f32x4 left, f32x4 right) {
     };
 }
 
-f32x4 f32x4_union(f32x4 left, f32x4 right) {
+f32x4 f32x4_area_union(f32x4 left, f32x4 right) {
     f32x4 union_area = {};
 
     f32 start_x = MIN(left.start_x, right.start_x);
@@ -111,7 +127,7 @@ f32x4 f32x4_union(f32x4 left, f32x4 right) {
     return union_area;
 }
 
-f32x4 f32x4_intersect(f32x4 left, f32x4 right) {
+f32x4 f32x4_area_intersect(f32x4 left, f32x4 right) {
     f32x4 intersect_area = {};
 
     f32 start_x = MAX(left.start_x, right.start_x);
@@ -131,10 +147,10 @@ f32x4 f32x4_intersect(f32x4 left, f32x4 right) {
     return intersect_area;
 }
 
-i32x4 i32x4_union(i32x4 left, i32x4 right) {
-    return ftoi32x4(f32x4_union(itof32x4(left), itof32x4(right)));
+i32x4 i32x4_area_union(i32x4 left, i32x4 right) {
+    return ftoi32x4(f32x4_area_union(itof32x4(left), itof32x4(right)));
 }
 
-i32x4 i32x4_intersect(i32x4 left, i32x4 right) {
-    return ftoi32x4(f32x4_intersect(itof32x4(left), itof32x4(right)));
+i32x4 i32x4_area_intersect(i32x4 left, i32x4 right) {
+    return ftoi32x4(f32x4_area_intersect(itof32x4(left), itof32x4(right)));
 }

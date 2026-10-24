@@ -89,12 +89,23 @@ typedef struct FRAMEBUFFER_PIXEL_CREATE_INFO_T {
     } data;
 } FramebufferPixelCreateInfo;
 
+typedef struct FRAMEBUFFER_DEPTH_CREATE_INFO_T {
+    FramebufferCreateActionType type;
+
+    union {
+        struct {
+            i32x2 size;
+        } new;
+    } data;
+} FramebufferDepthCreateInfo;
+
 typedef struct FRAMEBUFFER_CREATE_INFO_T {
     Renderer *renderer;
     FramebufferType type;
 
     union {
         FramebufferPixelCreateInfo pixel;
+        FramebufferDepthCreateInfo depth;
     } data;
 } FramebufferCreateInfo;
 
@@ -102,13 +113,21 @@ typedef struct FRAMEBUFFER_PIXEL_INFO_T {
     PixelFormat format;
     i32x2 size;
     f32x4 scissor;
+    f32x4 viewport;
 } FramebufferPixelInfo;
+
+typedef struct FRAMEBUFFER_DEPTH_INFO_T {
+    i32x2 size;
+    f32x4 scissor;
+    f32x4 viewport;
+} FramebufferDepthInfo;
 
 typedef struct FRAMEBUFFER_INFO_T {
     FramebufferType type;
 
     union {
         FramebufferPixelInfo pixel;
+        FramebufferDepthInfo depth;
     } data;
 } FramebufferInfo;
 
@@ -150,5 +169,7 @@ void framebuffer_destroy(Framebuffer **fb);
 FramebufferInfo framebuffer_get_info(const Framebuffer *fb);
 
 rgba32f framebuffer_get_sample(Framebuffer *fb, f32x2 normalized_coord, FramebufferSampleInfo sample_info);
+
+void framebuffer_set_sample(Framebuffer *fb, f32x2 normalized_coord, FramebufferSampleInfo sample_info, rgba32f sample);
 
 #endif //ALTCORE_FRAMEBUFFER_H

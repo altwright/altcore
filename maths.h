@@ -63,13 +63,17 @@ f32x2 f32x2_scale(f32x2 vec, f32 scale);
 
 f32 f32x2_dist(f32x2 start, f32x2 end);
 
+f32x3 f32x3_add(f32x3 left, f32x3 right);
+
+f32x3 f32x3_scale(f32x3 vec, f32 scale);
+
 f32 f32x3_dot(f32x3 left, f32x3 right);
 
 f32x16 f32x16_matrix_id();
 
 f32x16 f32x16_matrix_look(f32x3 eye, f32x3 dir, f32x3 up);
 
-f32x16 f32x16_matrix_perspective(f32 fov_y_rad, f32 aspect_ratio, f32 near_plane_dist, f32 far_plane_dist);
+f32x16 f32x16_matrix_projection(f32 fov_y_rad, f32 aspect_ratio, f32 near_plane_dist, f32 far_plane_dist);
 
 f32x16 f32x16_matrix_mul(f32x16 left, f32x16 right);
 
@@ -79,12 +83,12 @@ f32x4 f32x4_scale(f32x4 src, f32 scale);
 
 f32x4 f32x4_add(f32x4 left, f32x4 right);
 
-f32x4 f32x4_union(f32x4 left, f32x4 right);
+f32x4 f32x4_area_union(f32x4 left, f32x4 right);
 
-f32x4 f32x4_intersect(f32x4 left, f32x4 right);
+f32x4 f32x4_area_intersect(f32x4 left, f32x4 right);
 
-i32x4 i32x4_union(i32x4 left, i32x4 right);
+i32x4 i32x4_area_union(i32x4 left, i32x4 right);
 
-i32x4 i32x4_intersect(i32x4 left, i32x4 right);
+i32x4 i32x4_area_intersect(i32x4 left, i32x4 right);
 
 #endif //ALTCORE_MATHS_H

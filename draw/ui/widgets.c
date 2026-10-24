@@ -632,7 +632,7 @@ void widget_text_edit_ui(WidgetTextEditUiInfo *info) {
                 .x = line_wrapper_elem_data.boundingBox.x,
                 .y = line_wrapper_elem_data.boundingBox.y,
             };
-            f32x2 pointer_viewport_coord = ui_viewport_coord(info->text->ui, info->mouse->pointer.canvas_pos.curr_frame);
+            f32x2 pointer_viewport_coord = ui_to_viewport_coord(info->text->ui, info->mouse->pointer.canvas_pos.curr_frame);
             f32x2 pointer_rel_pos = f32x2_sub(pointer_viewport_coord, line_wrapper_elem_top_left_coord);
 
             if (ui_elem_left_button(info->mouse, true, true)) {
@@ -787,7 +787,7 @@ static f64 get_scale_value(
         Clay_ElementData self_data = Clay_GetElementData(self_id);
 
         if (self_data.boundingBox.width > 0 && self_data.boundingBox.height > 0) {
-            f32x2 pointer_coord = ui_viewport_coord(ui, mouse->pointer.canvas_pos.curr_frame);
+            f32x2 pointer_coord = ui_to_viewport_coord(ui, mouse->pointer.canvas_pos.curr_frame);
             f32x2 bbox_start = {
                 .x = self_data.boundingBox.x,
                 .y = self_data.boundingBox.y,

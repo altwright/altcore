@@ -10,7 +10,6 @@ set(HEADER_FILEPATHS
         types.h
         arenas.h
         strings.h
-        defer.h
         memory.h
         hashmap.h
         debug.h
@@ -48,7 +47,6 @@ add_library(${PROJECT_NAME}
         types.c
         arenas.c
         strings.c
-        defer.c
         memory.c
         hashmap.c
         debug.c
@@ -76,7 +74,9 @@ add_library(${PROJECT_NAME}
         draw/cmds/draw_text.c
         draw/cmds/present.c
         draw/cmds/scissor.c
+        draw/cmds/viewport.c
         draw/cmds/draw_model.c
+        draw/cmds/clear.c
 )
 
 add_subdirectory(libs/SDL3-3.4.4 EXCLUDE_FROM_ALL)

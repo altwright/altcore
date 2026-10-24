@@ -12,33 +12,17 @@
 
 constexpr f32 kEpsilon = 0.0001f;
 
-static f32x3 to_screen_space(f32x4 clip_space, i32x2 screen_size) {
+static f32x3 to_screen_space(f32x4 clip_space, f32x4 viewport) {
     f32 inv_w = 1.0f / clip_space.w;
     return (f32x3){
-        .x = (clip_space.x * inv_w * 0.5f + 0.5f) * (f32) screen_size.width,
-        .y = (clip_space.y * inv_w * 0.5f + 0.5f) * (f32) screen_size.height,
-        .z = clip_space.z * inv_w,
+        .x = (clip_space.x * inv_w * 0.5f + 0.5f) * viewport.width + viewport.start_x,
+        .y = (clip_space.y * inv_w * 0.5f + 0.5f) * viewport.height + viewport.start_y,
+        .z = (clip_space.z * inv_w * 0.5f + 0.5f),
     };
 }
 
 static f32 screen_triangle_area_2(f32x2 a, f32x2 b, f32x2 c) {
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-}
-
-static bool tri_face_culled(f32x4 clip_space_tri[3], RenderCmdDrawModelCullMode cull_mode) {
-    bool culled = false;
-
-
-    switch (cull_mode) {
-        case RENDER_CMD_DRAW_MODEL_CULL_MODE_NONE: {
-            break;
-        }
-        default:
-            crash_msg("Unhandled cull mode %d\n", cull_mode);
-            break;
-    }
-
-    return culled;
 }
 
 void soft_cmd_draw_model(RenderCmdDrawModel *data) {
@@ -50,6 +34,7 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
     i32x2 dst_fb_size = dst_fb_info.data.pixel.size;
     PixelFormat dst_fb_pixel_format = dst_fb_info.data.pixel.format;
     i64 dst_fb_pixel_format_size = pixel_size(dst_fb_pixel_format);
+    f32x4 dst_fb_viewport = dst_fb_info.data.pixel.viewport;
     f32x4 dst_fb_scissor = dst_fb_info.data.pixel.scissor;
 
     u8 *dst_fb_bytes = nullptr;
@@ -96,7 +81,8 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                         f32x2 screen_space_2d_tri[3] = {};
                         for (i64 vert_idx = 0; vert_idx < 3; vert_idx++) {
                             clip_space_tri_inv_w[vert_idx] = 1 / clip_space_triangle[vert_idx].w;
-                            screen_space_3d_tri[vert_idx] = to_screen_space(clip_space_triangle[vert_idx], dst_fb_size);
+                            screen_space_3d_tri[vert_idx] = to_screen_space(
+                                clip_space_triangle[vert_idx], dst_fb_viewport);
                             screen_space_2d_tri[vert_idx] = f32x3to2(screen_space_3d_tri[vert_idx]);
                         }
 
@@ -167,12 +153,25 @@ void soft_cmd_draw_model(RenderCmdDrawModel *data) {
                             )
                         );
 
-                        i32x4 bbox = ftoi32x4(f32x4_intersect(
-                            dst_fb_scissor,
-                            (f32x4){
-                                .start_x = min_x, .start_y = min_y, .width = max_x - min_x, .height = max_y - min_y
-                            }
-                        ));
+                        i32x4 bbox = ftoi32x4(
+                            f32x4_area_intersect(
+                                (f32x4){
+                                    .start_x = 0,
+                                    .start_y = 0,
+                                    .width = (f32) dst_fb_size.width,
+                                    .height = (f32) dst_fb_size.height,
+                                },
+                                f32x4_area_intersect(
+                                    dst_fb_scissor,
+                                    (f32x4){
+                                        .start_x = min_x,
+                                        .start_y = min_y,
+                                        .width = max_x - min_x,
+                                        .height = max_y - min_y
+                                    }
+                                )
+                            )
+                        );
 
                         for (i32 y_idx = bbox.start_y; y_idx < bbox.start_y + bbox.height; y_idx++) {
                             for (i32 x_idx = bbox.start_x; x_idx < bbox.start_x + bbox.width; x_idx++) {
