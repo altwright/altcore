@@ -105,6 +105,10 @@ typedef struct PIXEL_T {
 #define RGBA32F_NIL (rgba32f){.r = 0, .g = 0, .b = 0, .a = 0}
 #endif
 
+#ifndef RGBA32F_BLACK
+#define RGBA32F_BLACK (rgba32f){.r = 0, .g = 0, .b = 0, .a = 1}
+#endif
+
 #ifndef RGBA32F_WHITE
 #define RGBA32F_WHITE (rgba32f){.r = 1, .g = 1, .b = 1, .a = 1}
 #endif

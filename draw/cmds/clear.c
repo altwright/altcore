@@ -20,7 +20,18 @@ void soft_cmd_clear(RenderCmdClear *data) {
         case FRAMEBUFFER_TYPE_PIXEL: {
             FramebufferPixelInfo pixel_info = fb_info.data.pixel;
             for (i64 y_idx = 0; y_idx < pixel_info.size.height; y_idx++) {
-                memset(bytes + y_idx * pitch, 0, pixel_info.size.width * pixel_size(pixel_info.format));
+                for (i64 x_idx = 0; x_idx < pixel_info.size.width; x_idx++) {
+                    pixel_set(
+                        &(Pixel) {
+                            .format = pixel_info.format,
+                            .start = bytes + y_idx * pitch + x_idx * pixel_size(pixel_info.format),
+                        },
+                        &(Pixel) {
+                            .format = PIXEL_FORMAT_RGBA32F,
+                            .start = (u8*)&RGBA32F_BLACK,
+                        }
+                    );
+                }
             }
             break;
         }

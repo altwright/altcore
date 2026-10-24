@@ -40,8 +40,8 @@ struct UI_CONTEXT_T {
 
     struct {
         f32x2 offset;
-        Framebuffer *fb;
-    } current_canvas;
+        Framebuffer *canvas;
+    } current_dst;
 
     i64 current_loc_idx;
     i64 num_str_loc_sets;
@@ -302,10 +302,10 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
         f32 canvas_aspect_ratio = canvas_size.width / canvas_size.height;
         if (canvas_aspect_ratio > ui->viewport_aspect_ratio) {
             ui_size.width = ui_size.height * ui->viewport_aspect_ratio;
-            ui->current_canvas.offset.x = (canvas_size.width - ui_size.width) / 2;
+            ui->current_dst.offset.x = (canvas_size.width - ui_size.width) / 2;
         } else {
             ui_size.height = ui_size.width / ui->viewport_aspect_ratio;
-            ui->current_canvas.offset.y = (canvas_size.height - ui_size.height) / 2;
+            ui->current_dst.offset.y = (canvas_size.height - ui_size.height) / 2;
         }
     }
 
@@ -315,19 +315,19 @@ void ui_begin_layout(UiContext *ui, const UiBeginLayoutInfo *layout_info) {
             ui->debug_enabled = false;
         } else {
             ui_size.width += (f32) Clay__debugViewWidth;
-            ui->current_canvas.offset.x = (canvas_size.width - ui_size.width) / 2;
+            ui->current_dst.offset.x = (canvas_size.width - ui_size.width) / 2;
         }
     }
     Clay_SetDebugModeEnabled(ui->debug_enabled);
 
     Clay_SetLayoutDimensions(ui_size);
 
-    ui->current_canvas.fb = layout_info->canvas;
+    ui->current_dst.canvas = layout_info->canvas;
 
     Clay_SetPointerState(
         (Clay_Vector2){
-            .x = layout_info->mouse.pointer.canvas_pos.curr_frame.x - ui->current_canvas.offset.x,
-            .y = layout_info->mouse.pointer.canvas_pos.curr_frame.y - ui->current_canvas.offset.y,
+            .x = layout_info->mouse.pointer.canvas_pos.curr_frame.x - ui->current_dst.offset.x,
+            .y = layout_info->mouse.pointer.canvas_pos.curr_frame.y - ui->current_dst.offset.y,
         },
         layout_info->mouse.pointer.pressed.curr_frame != 0
     );
@@ -366,8 +366,8 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
     ARRAY_MAKE(&render_cmds);
 
     f32x4 canvas_region_offset = {
-        .start_x = ui->current_canvas.offset.x,
-        .start_y = ui->current_canvas.offset.y,
+        .start_x = ui->current_dst.offset.x,
+        .start_y = ui->current_dst.offset.y,
     };
 
     f32x4s scissor_stack = {
@@ -376,7 +376,7 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
     };
     ARRAY_MAKE(&scissor_stack);
 
-    FramebufferInfo fb_info = framebuffer_get_info(ui->current_canvas.fb);
+    FramebufferInfo fb_info = framebuffer_get_info(ui->current_dst.canvas);
     if (fb_info.type != FRAMEBUFFER_TYPE_PIXEL) {
         crash_msg("Unhandled framebuffer type %d", fb_info.type);
     }
@@ -398,7 +398,7 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
             case CLAY_RENDER_COMMAND_TYPE_RECTANGLE: {
                 RenderCmd cmd = {.type = RENDER_CMD_TYPE_DRAW_RECT};
                 cmd.data.draw_rect.mode = RENDER_CMD_DRAW_RECT_MODE_FILL;
-                cmd.data.draw_rect.dst = ui->current_canvas.fb;
+                cmd.data.draw_rect.dst = ui->current_dst.canvas;
                 cmd.data.draw_rect.dst_region = dst_region;
                 cmd.data.draw_rect.corner_radii = clay_to_render_corner_radii(
                     clay_cmd->renderData.rectangle.cornerRadius
@@ -416,7 +416,7 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
             case CLAY_RENDER_COMMAND_TYPE_BORDER: {
                 RenderCmd cmd = {.type = RENDER_CMD_TYPE_DRAW_RECT};
                 cmd.data.draw_rect.mode = RENDER_CMD_DRAW_RECT_MODE_BORDER;
-                cmd.data.draw_rect.dst = ui->current_canvas.fb;
+                cmd.data.draw_rect.dst = ui->current_dst.canvas;
                 cmd.data.draw_rect.dst_region = dst_region;
                 cmd.data.draw_rect.corner_radii = clay_to_render_corner_radii(
                     clay_cmd->renderData.border.cornerRadius
@@ -446,7 +446,7 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 render_cmd_data->text.start = clay_cmd_data->stringContents.chars;
                 render_cmd_data->text.len = clay_cmd_data->stringContents.length;
 
-                render_cmd_data->dst_fb = ui->current_canvas.fb;
+                render_cmd_data->dst_fb = ui->current_dst.canvas;
                 render_cmd_data->dst_fb_region = dst_region;
 
                 u16 font_theme_idx = clay_cmd->renderData.text.fontId & 0xff;
@@ -471,7 +471,7 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 RenderCmd scissor_cmd = {RENDER_CMD_TYPE_SCISSOR};
 
                 f32x4 new_scissor = f32x4_area_intersect(ARRAY_PEEK(&scissor_stack), dst_region);
-                scissor_cmd.data.scissor.framebuffer = ui->current_canvas.fb;
+                scissor_cmd.data.scissor.framebuffer = ui->current_dst.canvas;
                 scissor_cmd.data.scissor.region = new_scissor;
 
                 ARRAY_PUSH(&render_cmds, &scissor_cmd);
@@ -482,7 +482,7 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
             }
             case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END: {
                 RenderCmd scissor_cmd = {RENDER_CMD_TYPE_SCISSOR};
-                scissor_cmd.data.scissor.framebuffer = ui->current_canvas.fb;
+                scissor_cmd.data.scissor.framebuffer = ui->current_dst.canvas;
                 ARRAY_POP(&scissor_stack);
                 scissor_cmd.data.scissor.region = ARRAY_PEEK(&scissor_stack);
 
@@ -497,7 +497,7 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
                 RenderCmdDrawRect *rect_data = &cmd.data.draw_rect;
 
                 rect_data->mode = RENDER_CMD_DRAW_RECT_MODE_BLIT;
-                rect_data->dst = ui->current_canvas.fb;
+                rect_data->dst = ui->current_dst.canvas;
                 rect_data->dst_region = dst_region;
                 rect_data->corner_radii = clay_to_render_corner_radii(image_cmd->cornerRadius);
 
@@ -517,8 +517,8 @@ RenderCmds ui_end_layout(Arena *arena, UiContext *ui) {
 
     Clay_SetMeasureTextFunction(nullptr, nullptr);
 
-    ui->current_canvas.offset = (f32x2){.x = 0, .y = 0};
-    ui->current_canvas.fb = nullptr;
+    ui->current_dst.offset = (f32x2){.x = 0, .y = 0};
+    ui->current_dst.canvas = nullptr;
 
     return render_cmds;
 }
@@ -569,11 +569,11 @@ i64 ui_get_locale(UiContext *ui) {
 }
 
 u16 ui_height_px(UiContext *ui, f64 pct) {
-    if (!ui->current_canvas.fb) {
+    if (!ui->current_dst.canvas) {
         return 0;
     }
 
-    FramebufferInfo canvas_info = framebuffer_get_info(ui->current_canvas.fb);
+    FramebufferInfo canvas_info = framebuffer_get_info(ui->current_dst.canvas);
     if (canvas_info.type != FRAMEBUFFER_TYPE_PIXEL) {
         return 0;
     }
@@ -586,11 +586,11 @@ u16 ui_height_px(UiContext *ui, f64 pct) {
 }
 
 u16 ui_width_px(UiContext *ui, f64 pct) {
-    if (!ui->current_canvas.fb) {
+    if (!ui->current_dst.canvas) {
         return 0;
     }
 
-    FramebufferInfo canvas_info = framebuffer_get_info(ui->current_canvas.fb);
+    FramebufferInfo canvas_info = framebuffer_get_info(ui->current_dst.canvas);
     if (canvas_info.type != FRAMEBUFFER_TYPE_PIXEL) {
         return 0;
     }
@@ -604,8 +604,8 @@ u16 ui_width_px(UiContext *ui, f64 pct) {
 
 f32x2 ui_to_viewport_coord(UiContext *ui, f32x2 canvas_coord) {
     return (f32x2){
-        .x = canvas_coord.x - ui->current_canvas.offset.x,
-        .y = canvas_coord.y - ui->current_canvas.offset.y,
+        .x = canvas_coord.x - ui->current_dst.offset.x,
+        .y = canvas_coord.y - ui->current_dst.offset.y,
     };
 }
 
