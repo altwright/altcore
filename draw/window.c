@@ -270,15 +270,6 @@ WindowHandle *window_impl_get_handle_from_id(SDL_WindowID id) {
     return matching_handle;
 }
 
-void window_impl_update_surfaces() {
-    mtx_lock(&g_active_window_handles.lock);
-    for (i32 window_idx = 0; window_idx < g_active_window_handles.len; window_idx++) {
-        // Needs to be called on the main thread
-        SDL_UpdateWindowSurface(g_active_window_handles.data[window_idx]->window);
-    }
-    mtx_unlock(&g_active_window_handles.lock);
-}
-
 void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf) {
     mtx_lock(&g_active_window_handles.lock);
 
@@ -297,6 +288,7 @@ void window_present_framebuffer(WindowHandle* handle, Framebuffer* buf) {
         (i32)pitch
     );
 
+    SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_NONE);
     SDL_BlitSurface(surface, nullptr, handle->window_surface, nullptr);
 
     SDL_UpdateWindowSurface(handle->window);
