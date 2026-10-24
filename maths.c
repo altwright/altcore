@@ -6,6 +6,7 @@
 
 #include "cglm/cam.h"
 #include "cglm/vec2.h"
+#include "cglm/affine.h"
 
 f32x2 f32x2_add(f32x2 left, f32x2 right) {
     return (f32x2){
@@ -66,6 +67,12 @@ f32x16 f32x16_matrix_id() {
             .raw = GLM_MAT4_IDENTITY_INIT
         },
     };
+}
+
+f32x16 f32x16_matrix_translate(f32x16 orig, f32x3 delta) {
+    f32x16 out = orig;
+    glm_translate(out.matrix.raw, delta.data);
+    return out;
 }
 
 f32x16 f32x16_matrix_look(f32x3 eye, f32x3 dir, f32x3 up) {

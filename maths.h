@@ -79,6 +79,8 @@ f32x16 f32x16_matrix_look(f32x3 eye, f32x3 dir, f32x3 up);
 
 f32x16 f32x16_matrix_projection(f32 fov_y_rad, f32 aspect_ratio, f32 near_plane_dist, f32 far_plane_dist);
 
+f32x16 f32x16_matrix_translate(f32x16 orig, f32x3 delta);
+
 f32x16 f32x16_matrix_mul(f32x16 left, f32x16 right);
 
 f32x4 f32x16_matrix_mulv(f32x16 left, f32x4 right);
