@@ -67,6 +67,10 @@ f32x3 f32x3_add(f32x3 left, f32x3 right);
 
 f32x3 f32x3_scale(f32x3 vec, f32 scale);
 
+f32 f32x3_mag(f32x3 vec);
+
+f32x3 f32x3_unit(f32x3 vec);
+
 f32 f32x3_dot(f32x3 left, f32x3 right);
 
 f32x16 f32x16_matrix_id();

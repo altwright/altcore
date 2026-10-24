@@ -249,9 +249,17 @@ void soft_cmd_draw_rect(RenderCmdDrawRect *cmd) {
 
             for (i32 dst_y_idx = dst_start_y; dst_y_idx < dst_end_y; dst_y_idx++) {
                 for (i32 dst_x_idx = dst_start_x; dst_x_idx < dst_end_x; dst_x_idx++) {
+                    f32x2 px_pos = {.x = (f32) dst_x_idx + 0.5f, .y = (f32) dst_y_idx + 0.5f};
                     if (!not_rounded
+                        && px_beyond_corner_axes(
+                            px_pos,
+                            top_left_axis,
+                            top_right_axis,
+                            bottom_left_axis,
+                            bottom_right_axis
+                        )
                         && px_outside_rounded_corner(
-                            (f32x2){.x = (f32) dst_x_idx + 0.5f, .y = (f32) dst_y_idx + 0.5f},
+                            px_pos,
                             top_left_axis,
                             top_right_axis,
                             bottom_left_axis,

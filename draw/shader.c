@@ -16,7 +16,7 @@ f32x2 barycentric_f32x2(f32x3 barycentric, f32x2 vert_attrs[3]) {
     return val;
 }
 
-f32x3 barycentric_f32x3(f32x4 barycentric, f32x3 vert_attrs[3]) {
+f32x3 barycentric_f32x3(f32x3 barycentric, f32x3 vert_attrs[3]) {
     f32x3 val = {};
 
     for (i64 vert_idx = 0; vert_idx < 3; vert_idx++) {

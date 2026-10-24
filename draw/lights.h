@@ -8,10 +8,15 @@
 #include "../types.h"
 #include "pixels.h"
 
-typedef struct POINT_LIGHT_COMPONENT_T {
+typedef struct POINT_LIGHT_T {
     f32 fade_start_radius;
     f32 fade_end_radius;
-    rgba8 color;
-} PointLightComponent;
+    rgba32f color;
+} PointLight;
+
+typedef struct DIRECTIONAL_LIGHT_T {
+    f32x3 norm_dir;
+    rgba32f color;
+} DirectionalLight;
 
 #endif //ALTCORE_LIGHTS_H

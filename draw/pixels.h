@@ -113,6 +113,10 @@ typedef struct PIXEL_T {
 #define RGBA32F_WHITE (rgba32f){.r = 1, .g = 1, .b = 1, .a = 1}
 #endif
 
+#ifndef RGBA32F_GREY
+#define RGBA32F_GREY (rgba32f){.r = 0.5f, .g = 0.5f, .b = 0.5f, .a = 1}
+#endif
+
 i64 pixel_size(PixelFormat format);
 
 void pixel_set(Pixel *dst_px, const Pixel *src_px);

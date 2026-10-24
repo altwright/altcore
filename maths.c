@@ -22,7 +22,7 @@ f32x2 f32x2_sub(f32x2 left, f32x2 right) {
 }
 
 f32x2 f32x2_scale(f32x2 vec, f32 scale) {
-    return (f32x2) {
+    return (f32x2){
         .x = vec.x * scale,
         .y = vec.y * scale,
     };
@@ -33,7 +33,7 @@ f32 f32x2_dist(f32x2 start, f32x2 end) {
 }
 
 f32x3 f32x3_add(f32x3 left, f32x3 right) {
-    return (f32x3) {
+    return (f32x3){
         .x = left.x + right.x,
         .y = left.y + right.y,
         .z = left.z + right.z,
@@ -46,6 +46,14 @@ f32x3 f32x3_scale(f32x3 vec, f32 scale) {
         .y = vec.y * scale,
         .z = vec.z * scale,
     };
+}
+
+f32 f32x3_mag(f32x3 vec) {
+    return sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
+f32x3 f32x3_unit(f32x3 vec) {
+    return f32x3_scale(vec, 1 / f32x3_mag(vec));
 }
 
 f32 f32x3_dot(f32x3 left, f32x3 right) {
